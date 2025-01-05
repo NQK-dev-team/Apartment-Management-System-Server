@@ -1,0 +1,16 @@
+.vscode
+
+# Ignore env files
+.env
+.env.*
+!.env.example
+!.env.dist
+
+# Ignore assets
+assets/*
+
+# Ignore certs
+certs/*
+
+# Keep all .gitkeep files
+!*.gitkeep

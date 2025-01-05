@@ -1,0 +1,4 @@
+First name,Middle name,Last name,SSN,Old SSN,Birthday,Birthplace,Email,Password,Phone number,Front SSN card,Back SSN card,Portrait,Is customer,Is manager,Is owner
+Nguyễn,Văn,A,123456789012,123456789,1/1/2000,test,test@gmail.com,123456,0123456789,https://images.pexels.com/photos/2071882/pexels-photo-2071882.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500,https://images.pexels.com/photos/2071882/pexels-photo-2071882.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500,https://images.pexels.com/photos/2071882/pexels-photo-2071882.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500,1,0,0
+Lê,Văn,B,131234567890,123456700,1/1/2000,test,test@gmail.com,123456,0123456789,https://images.pexels.com/photos/2071882/pexels-photo-2071882.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500,https://images.pexels.com/photos/2071882/pexels-photo-2071882.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500,https://images.pexels.com/photos/2071882/pexels-photo-2071882.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500,1,0,0
+
