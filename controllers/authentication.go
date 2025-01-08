@@ -108,7 +108,7 @@ func (c *AuthenticationController) RefreshToken(ctx *gin.Context) {
 
 	jwtToken, err := c.authenticationService.GetNewToken(ctx, token.RefreshToken)
 
-	if err != nil {
+	if err != nil || jwtToken == "" {
 		response.Message = config.GetMessageCode("TOKEN_REFRESH_FAILED")
 		ctx.JSON(401, response)
 		return
