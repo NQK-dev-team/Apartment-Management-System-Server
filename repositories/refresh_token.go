@@ -23,7 +23,7 @@ func (r *RefreshTokenRepository) Create(ctx *gin.Context, refreshToken *models.R
 }
 
 func (r *RefreshTokenRepository) GetByUserID(ctx *gin.Context, refreshToken *models.RefreshTokenModel, userID int64) error {
-	if err := config.DB.Where("user_id = ?", userID).First(refreshToken).Error; err != nil {
+	if err := config.DB.Where("user_id = ?", userID).Order("created_at DESC").First(refreshToken).Error; err != nil {
 		return err
 	}
 
