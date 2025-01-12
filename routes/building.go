@@ -2,6 +2,7 @@ package routes
 
 import (
 	"api/controllers"
+	"api/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
@@ -9,6 +10,10 @@ import (
 func InitBuildingRoutes(router *gin.RouterGroup) {
 	r := router.Group("/building")
 	buildingController := controllers.NewBuildingController()
+	authorizationMiddle := middlewares.NewAuthorizationMiddleware()
 
-	r.GET("/", buildingController.Get)
+	r.Use(authorizationMiddle.AuthManagerMiddleware)
+	{
+		r.GET("/", buildingController.Get)
+	}
 }

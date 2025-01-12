@@ -12,7 +12,10 @@ var refreshTokenMigration *migrations.RefreshTokenMigration
 var emailVerifyTokenMigration *migrations.EmailVerifyTokenMigration
 var passwordResetTokenMigration *migrations.PasswordResetTokenMigration
 var buildingMigration *migrations.BuildingMigration
-var roomMigration *migrations.RoomMigration
+var contractMigration *migrations.ContractMigration
+var messageMigration *migrations.MessageMigration
+var notificationMigration *migrations.NotificationMigration
+var supportTicketMigration *migrations.SupportTicketMigration
 
 func migrateUp() {
 	fmt.Println("--------- Migrate Up Start ---------")
@@ -21,18 +24,24 @@ func migrateUp() {
 	emailVerifyTokenMigration.Up()
 	passwordResetTokenMigration.Up()
 	buildingMigration.Up()
-	roomMigration.Up()
+	contractMigration.Up()
+	messageMigration.Up()
+	notificationMigration.Up()
+	supportTicketMigration.Up()
 	fmt.Println("--------- Migrate Up Finish ---------")
 }
 
 func migrateDown() {
 	fmt.Println("--------- Migrating Down Start ---------")
-	userMigration.Down()
-	refreshTokenMigration.Down()
-	emailVerifyTokenMigration.Down()
-	passwordResetTokenMigration.Down()
+	supportTicketMigration.Down()
+	notificationMigration.Down()
+	messageMigration.Down()
+	contractMigration.Down()
 	buildingMigration.Down()
-	roomMigration.Down()
+	passwordResetTokenMigration.Down()
+	emailVerifyTokenMigration.Down()
+	refreshTokenMigration.Down()
+	userMigration.Down()
 	fmt.Println("--------- Migrating Down Finish ---------")
 }
 
@@ -42,7 +51,10 @@ func initMigrations() {
 	emailVerifyTokenMigration = migrations.NewEmailVerifyTokenMigration()
 	passwordResetTokenMigration = migrations.NewPasswordResetTokenMigration()
 	buildingMigration = migrations.NewBuildingMigration()
-	roomMigration = migrations.NewRoomMigration()
+	contractMigration = migrations.NewContractMigration()
+	messageMigration = migrations.NewMessageMigration()
+	notificationMigration = migrations.NewNotificationMigration()
+	supportTicketMigration = migrations.NewSupportTicketMigration()
 }
 
 func migrateHandler(mode string) {

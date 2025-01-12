@@ -18,6 +18,6 @@ func InitRoutes(router *gin.RouterGroup) {
 	{
 		// Init other sub-routes
 		InitBuildingRoutes(r)
-
+		
 	}
 }
