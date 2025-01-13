@@ -12,17 +12,16 @@ type DefaultFileModel struct {
 	Title     string         `json:"title" gorm:"column:title;type:varchar(255);not null;"`
 	Path      string         `json:"path" gorm:"column:path;type:varchar(255);not null;"`
 	CreatedAt time.Time      `json:"createdAt" gorm:"column:created_at;type:timestamp with time zone;not null;default:now();"`
-	CreatedBy string         `json:"createdBy" gorm:"column:created_by;type:varchar(16);not null;"`
+	CreatedBy int64          `json:"createdBy" gorm:"column:created_by;type:bigint;"`
 	DeletedAt gorm.DeletedAt `json:"deletedAt" gorm:"column:deleted_at;type:timestamp with time zone;"`
-	DeletedBy string         `json:"deletedBy" gorm:"column:deleted_by;type:varchar(16);"`
+	DeletedBy int64          `json:"deletedBy" gorm:"column:deleted_by;type:bigint;"`
 }
 
 func (u *DefaultFileModel) BeforeCreate(tx *gorm.DB) error {
 	userID, _ := tx.Get("userID")
-	if userID == nil {
-		userID = "SYSTEM"
+	if userID != nil {
+		u.CreatedBy = userID.(int64)
 	}
-	u.CreatedBy = userID.(string)
 	u.CreatedAt = time.Now()
 
 	return nil

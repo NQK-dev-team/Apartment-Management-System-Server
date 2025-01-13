@@ -13,7 +13,7 @@ type ManagerResolveSupportTicketModel struct {
 	SupportTicket   SupportTicketModel `json:"supportTicket" gorm:"foreignKey:support_ticket_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	ManagerID       int64              `json:"managerID" gorm:"column:manager_id;primaryKey;"`
 	Manager         UserModel          `json:"manager" gorm:"foreignKey:manager_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Result          int                `json:"result" gorm:"column:result;type:int;not null;"` // 0: Rejected, 1: Approved
+	Result          bool               `json:"result" gorm:"column:result;type:bool;not null;"` // 0: Rejected, 1: Approved
 	ResolveTime     time.Time          `json:"resolveTime" gorm:"column:resolve_time;type:timestamp with time zone;not null;default:now()"`
 }
 

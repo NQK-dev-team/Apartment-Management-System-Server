@@ -11,20 +11,19 @@ import (
 type DefaultModel struct {
 	ID        int64          `json:"ID" gorm:"primaryKey; column:id; autoIncrement; not null;"`
 	CreatedAt time.Time      `json:"createdAt" gorm:"column:created_at;type:timestamp with time zone;not null;default:now();"`
-	CreatedBy string         `json:"createdBy" gorm:"column:created_by;type:varchar(16);not null;"`
+	CreatedBy int64          `json:"createdBy" gorm:"column:created_by;type:bigint;"`
 	UpdatedAt time.Time      `json:"updatedAt" gorm:"column:updated_at;type:timestamp with time zone;not null;default:now();"`
-	UpdatedBy string         `json:"updatedBy" gorm:"column:updated_by;type:varchar(16);not null;"`
+	UpdatedBy int64          `json:"updatedBy" gorm:"column:updated_by;type:bigint;"`
 	DeletedAt gorm.DeletedAt `json:"deletedAt" gorm:"column:deleted_at;type:timestamp with time zone;"`
 	DeletedBy string         `json:"deletedBy" gorm:"column:deleted_by;type:varchar(16);"`
 }
 
 func (u *DefaultModel) BeforeCreate(tx *gorm.DB) error {
 	userID, _ := tx.Get("userID")
-	if userID == nil {
-		userID = "SYSTEM"
+	if userID != nil {
+		u.CreatedBy = userID.(int64)
+		u.UpdatedBy = userID.(int64)
 	}
-	u.CreatedBy = userID.(string)
-	u.UpdatedBy = userID.(string)
 	// u.CreatedAt = time.Now()
 	// u.UpdatedAt = time.Now()
 
@@ -37,10 +36,9 @@ func (u *DefaultModel) BeforeUpdate(tx *gorm.DB) error {
 	}
 
 	userID, _ := tx.Get("userID")
-	if userID == nil {
-		userID = "SYSTEM"
+	if userID != nil {
+		tx.Statement.SetColumn("updated_by", userID.(int64))
 	}
-	tx.Statement.SetColumn("updated_by", userID.(string))
 	tx.Statement.SetColumn("updated_at", time.Now())
 
 	return nil
