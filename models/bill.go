@@ -4,7 +4,7 @@ import "time"
 
 type BillModel struct {
 	DefaultModel
-	Period      string        `json:"period" gorm:"column:period;not null;type:varchar(20);"`
+	Period      time.Time     `json:"period" gorm:"column:period;not null;type:date;"`
 	Status      int           `json:"status" gorm:"column:status;not null;type:int;"` // 0: Unpaid, 1: Paid, 2: Overdue, 3: Processing
 	Note        string        `json:"note" gorm:"column:note;type:varchar(255);"`
 	PaymentTime time.Time     `json:"paymentTime" gorm:"column:payment_time;type:timestamp with time zone;default:now();"`
