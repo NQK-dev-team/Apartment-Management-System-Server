@@ -15,6 +15,7 @@ func NewBillMigration() *BillMigration {
 func (m *BillMigration) Up() {
 	config.DB.AutoMigrate(&models.BillModel{})
 	config.DB.AutoMigrate(&models.ExtraPaymentModel{})
+	config.DB.Exec("ALTER TABLE bill ADD CONSTRAINT bill_status CHECK (status >= 0 AND status <= 3);")
 }
 
 func (m *BillMigration) Down() {

@@ -11,7 +11,7 @@ type RoomResidentModel struct {
 	POB                     string    `json:"pob" gorm:"column:pob;type:varchar(255);"`
 	Email                   string    `json:"email" gorm:"column:email;type:varchar(255);not null;uniqueIndex:idx_email;"`
 	Phone                   string    `json:"phone" gorm:"column:phone;type:varchar(10);not null;"`
-	RelationWithHouseholder int       `json:"relationWithHouseholder" gorm:"column:relation_with_householder;type:int;"`
+	RelationWithHouseholder int       `json:"relationWithHouseholder" gorm:"column:relation_with_householder;type:int;"` // 0: Child, 1: Spouse, 2: Parent, null: Other
 	UserAccountID           int64     `json:"userAccountID" gorm:"column:user_account_id;"`
 	UserAccount             UserModel `json:"userAccount" gorm:"foreignKey:user_account_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }

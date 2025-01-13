@@ -21,6 +21,8 @@ func (m *ContractMigration) Up() {
 	m.billMigration.Up()
 	config.DB.AutoMigrate(&models.RoomResidentModel{})
 	config.DB.AutoMigrate(&models.RoomResidentListModel{})
+	config.DB.Exec("ALTER TABLE contract ADD CONSTRAINT contract_status CHECK (status >= 0 AND status <= 4);")
+	config.DB.Exec("ALTER TABLE room_resident ADD CONSTRAINT room_resident_relationship CHECK ((relation_with_householder >= 0 AND relation_with_householder <= 2) OR relation_with_householder IS NULL);")
 }
 
 func (m *ContractMigration) Down() {
