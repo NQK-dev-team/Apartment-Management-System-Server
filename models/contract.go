@@ -4,7 +4,7 @@ import "time"
 
 type ContractModel struct {
 	DefaultModel
-	Status        int       `json:"status" gorm:"column:status;type:int;not null;"` // 0: Active, 1: Expired, 2: Canceled, 3: Waiting for signatures, 4: Not in effect yet
+	Status        int       `json:"status" gorm:"column:status;type:int;not null;"` // 0: Active, 1: Expired, 2: Cancelled, 3: Waiting for signatures, 4: Not in effect yet
 	Value         float64   `json:"value" gorm:"column:value;type:float;not null;"`
 	Type          int       `json:"type" gorm:"column:type;type:int;not null;"` // 0: Rent, 1: Buy
 	StartDate     time.Time `json:"startDate" gorm:"column:start_date;type:date;not null;default:now();"`
