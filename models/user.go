@@ -10,7 +10,7 @@ type UserModel struct {
 	MiddleName       string       `json:"middleName" gorm:"column:middle_name;type:varchar(255);"`
 	LastName         string       `json:"lastName" gorm:"column:last_name;type:varchar(255);not null;"`
 	SSN              string       `json:"ssn" gorm:"column:ssn;type:varchar(12);not null;uniqueIndex:idx_ssn;"`
-	OldSSN           string       `json:"oldSSN" gorm:"column:old_ssn;type:varchar(9);unique;"`
+	OldSSN           string       `json:"oldSSN" gorm:"column:old_ssn;type:varchar(9);"`
 	DOB              string       `json:"dob" gorm:"column:dob;type:date;not null;"`
 	POB              string       `json:"pob" gorm:"column:pob;type:varchar(255);"`
 	Email            string       `json:"email" gorm:"column:email;type:varchar(255);not null;uniqueIndex:idx_email;"`
