@@ -5,10 +5,10 @@ import "time"
 type ContractModel struct {
 	DefaultModel
 	Status        int       `json:"status" gorm:"column:status;type:int;not null;"` // 0: Active, 1: Expired, 2: Cancelled, 3: Waiting for signatures, 4: Not in effect yet
-Value         float64   `json:"value" gorm:"column:value;type:float;not null;"`
+	Value         float64   `json:"value" gorm:"column:value;type:float;not null;"`
 	Type          int       `json:"type" gorm:"column:type;type:int;not null;"` // 0: Rent, 1: Buy
 	StartDate     time.Time `json:"startDate" gorm:"column:start_date;type:date;not null;default:now();"`
-	EndDate       time.Time `json:"endDate" gorm:"column:end_date;type:date;default:now();"`
+	EndDate       time.Time `json:"endDate" gorm:"column:end_date;type:date;"`
 	SignDate      time.Time `json:"signDate" gorm:"column:sign_date;type:date;default:now();"`
 	CreatorID     int64     `json:"creatorID" gorm:"column:creator_id;not null;"`
 	Creator       UserModel `json:"creator" gorm:"foreignKey:creator_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
