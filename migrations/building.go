@@ -20,6 +20,7 @@ func (m *BuildingMigration) Up() {
 	config.DB.AutoMigrate(&models.BuildingServiceModel{})
 	config.DB.AutoMigrate(&models.BuildingImageModel{})
 	config.DB.AutoMigrate(&models.ManagerScheduleModel{})
+	config.DB.Exec("ALTER TABLE manager_schedule ADD CONSTRAINT manager_schedule_period CHECK (start_date<=end_date);")
 	m.roomMigration.Up()
 }
 
