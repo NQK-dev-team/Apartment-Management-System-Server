@@ -10,7 +10,7 @@ type RoomModel struct {
 	Floor       int           `json:"floor" gorm:"column:floor;type:int;not null;"`
 	Description string        `json:"description" gorm:"column:description;type:varchar(255);"`
 	Area        float32       `json:"area" gorm:"column:area;type:numeric;not null;"`
-	Status      int           `json:"status" gorm:"column:status;type:int;not null;default:1;"` // 0: Rented, 1: Bought, 2: Available, 3: Maintenanced, 4: Unavailable
+	Status      int           `json:"status" gorm:"column:status;type:int;not null;default:1;"` // 1: Rented, 2: Bought, 3: Available, 4: Maintenanced, 5: Unavailable
 	BuildingID  int64         `json:"buildingID" gorm:"column:building_id;primaryKey;"`
 	Building    BuildingModel `json:"building" gorm:"foreignKey:building_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
