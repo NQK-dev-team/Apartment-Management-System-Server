@@ -2,7 +2,7 @@ package models
 
 type SupportTicketModel struct {
 	DefaultModel
-	Status     int           `json:"status" gorm:"column:status;type:int;not null;default:0;"` // 0: Pending, 1: Approved, 2: Rejected
+	Status     int           `json:"status" gorm:"column:status;type:int;not null;default:1;"` // 1: Pending, 2: Approved, 3: Rejected
 	Title      string        `json:"title" gorm:"column:title;type:varchar(255);not null;"`
 	Content    string        `json:"content" gorm:"column:content;type:text;not null;"`
 	ContractID int64         `json:"contractID" gorm:"column:contract_id;not null;"`
