@@ -16,7 +16,7 @@ func (m *SupportTicketMigration) Up() {
 	config.DB.AutoMigrate(&models.SupportTicketModel{})
 	config.DB.AutoMigrate(&models.SupportTicketFileModel{})
 	config.DB.AutoMigrate(&models.ManagerResolveSupportTicketModel{})
-	config.DB.Exec("ALTER TABLE support_ticket ADD CONSTRAINT support_ticket_status CHECK (status >= 0 AND status <= 2);")
+	config.DB.Exec("ALTER TABLE support_ticket ADD CONSTRAINT support_ticket_status CHECK (status >= 1 AND status <= 3);")
 }
 
 func (m *SupportTicketMigration) Down() {
