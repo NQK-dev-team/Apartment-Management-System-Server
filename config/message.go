@@ -3,11 +3,11 @@ package config
 import "github.com/gin-gonic/gin"
 
 type DataResponse struct {
-	Message       string      `json:"message;"`
-	Data          interface{} `json:"data;"`
-	ValidateError interface{} `json:"validateError;"`
-	JWTToken      string      `json:"jwtToken;"`
-	RefreshToken  string      `json:"refreshToken;"`
+	Message       string      `json:"message"`
+	Data          interface{} `json:"data"`
+	ValidateError interface{} `json:"validateError"`
+	JWTToken      string      `json:"jwtToken"`
+	RefreshToken  string      `json:"refreshToken"`
 }
 
 func NewDataResponse(ctx *gin.Context) *DataResponse {
