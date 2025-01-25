@@ -1,6 +1,6 @@
 package structs
 
-type  WTPayload struct {
+type JWTPayload struct {
 	UserID     int64  `json:"userID"`
 	FullName   string `json:"fullName"`
 	ImagePath  string `json:"imagePath"`
