@@ -11,10 +11,14 @@ import (
 
 type AuthenticationController struct {
 	authenticationService *services.AuthenticationService
+	emailService          *services.EmailService
 }
 
 func NewAuthenticationController() *AuthenticationController {
-	return &AuthenticationController{authenticationService: services.NewAuthenticationService()}
+	return &AuthenticationController{
+		authenticationService: services.NewAuthenticationService(),
+		emailService:          services.NewEmailService(),
+	}
 }
 
 func (c *AuthenticationController) Login(ctx *gin.Context) {
@@ -29,6 +33,7 @@ func (c *AuthenticationController) Login(ctx *gin.Context) {
 
 	if err := utils.Validate.Struct(&account); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = err.Error()
 		ctx.JSON(400, response)
 		return
 	}
@@ -48,6 +53,7 @@ func (c *AuthenticationController) Login(ctx *gin.Context) {
 	}
 
 	if jwtToken == "" && !isEmailVerified {
+		c.emailService.SendEmailVerificationEmail(ctx, account.Email)
 		response.Message = config.GetMessageCode("EMAIL_NOT_VERIFIED")
 		ctx.JSON(401, response)
 		return
@@ -72,6 +78,7 @@ func (c *AuthenticationController) VerifyToken(ctx *gin.Context) {
 
 	if err := utils.Validate.Struct(&token); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = err.Error()
 		ctx.JSON(400, response)
 		return
 	}
@@ -102,6 +109,7 @@ func (c *AuthenticationController) RefreshToken(ctx *gin.Context) {
 
 	if err := utils.Validate.Struct(&token); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = err.Error()
 		ctx.JSON(400, response)
 		return
 	}
