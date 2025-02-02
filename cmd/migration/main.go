@@ -16,6 +16,7 @@ var contractMigration *migrations.ContractMigration
 var messageMigration *migrations.MessageMigration
 var notificationMigration *migrations.NotificationMigration
 var supportTicketMigration *migrations.SupportTicketMigration
+var emailQueueMigration *migrations.EmailQueueMigration
 
 func migrateUp() {
 	fmt.Println("--------- Migrate Up Start ---------")
@@ -28,6 +29,7 @@ func migrateUp() {
 	messageMigration.Up()
 	notificationMigration.Up()
 	supportTicketMigration.Up()
+	emailQueueMigration.Up()
 	fmt.Println("--------- Migrate Up Finish ---------")
 }
 
@@ -42,6 +44,7 @@ func migrateDown() {
 	emailVerifyTokenMigration.Down()
 	refreshTokenMigration.Down()
 	userMigration.Down()
+	emailQueueMigration.Down()
 	fmt.Println("--------- Migrating Down Finish ---------")
 }
 
@@ -55,6 +58,7 @@ func initMigrations() {
 	messageMigration = migrations.NewMessageMigration()
 	notificationMigration = migrations.NewNotificationMigration()
 	supportTicketMigration = migrations.NewSupportTicketMigration()
+	emailQueueMigration = migrations.NewEmailQueueMigration()
 }
 
 func migrateHandler(mode string) {

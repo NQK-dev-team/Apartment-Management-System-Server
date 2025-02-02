@@ -20,6 +20,7 @@ func (u *PasswordResetTokenModel) TableName() string {
 
 func (u *PasswordResetTokenModel) BeforeCreate(tx *gorm.DB) error {
 	// u.CreatedAt = time.Now()
+	u.ExpiresAt = time.Now().Add(24 * time.Hour)
 
 	return nil
 }

@@ -39,6 +39,8 @@ var messageList = map[string]string{
 	"TOKEN_VERIFY_FAILED":  "MSG_E0005",
 	"TOKEN_REFRESH_FAILED": "MSG_E0006",
 	"PERMISSION_DENIED":    "MSG_E0007",
+	"USER_NOT_FOUND":       "MSG_E0008",
+	"REQUEST_SPAM":         "MSG_E0009",
 
 	// Parameter error messages
 	"INVALID_PARAMETER":    "MSG_V0001",
@@ -53,6 +55,8 @@ var messageList = map[string]string{
 	"LOGOUT_SUCCESS":        "MSG_I0006",
 	"TOKEN_VERIFY_SUCCESS":  "MSG_I0007",
 	"TOKEN_REFRESH_SUCCESS": "MSG_I0008",
+	"EMAIL_SENT":            "MSG_I0009",
+	"PASSWORD_RESET":        "MSG_I0010",
 }
 
 func GetMessageCode(key string) string {

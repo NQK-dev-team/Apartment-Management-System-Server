@@ -20,6 +20,7 @@ func (u *EmailVerifyTokenModel) TableName() string {
 
 func (u *EmailVerifyTokenModel) BeforeCreate(tx *gorm.DB) error {
 	// u.CreatedAt = time.Now()
+	u.ExpiresAt = time.Now().Add(24 * 7 * time.Hour)
 
 	return nil
 }
