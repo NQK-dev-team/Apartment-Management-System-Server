@@ -3,6 +3,9 @@ package repositories
 import (
 	"api/config"
 	"api/models"
+	"errors"
+
+	"gorm.io/gorm"
 )
 
 type EmailQueueRepository struct {
@@ -30,6 +33,9 @@ func (r *EmailQueueRepository) Get(jobs *[]models.EmailQueueModel) error {
 
 func (r *EmailQueueRepository) Delete(ID int64) error {
 	if err := config.DB.Where("id = ?", ID).Delete(&models.EmailQueueModel{}).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return err
 	}
 

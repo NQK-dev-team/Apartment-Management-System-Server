@@ -30,7 +30,7 @@ func NewEmailService() *EmailService {
 	}
 }
 
-func (s *EmailService) SendResetPasswordEmail(ctx *gin.Context, email string) {
+func (s *EmailService) SendResetPasswordEmail(ctx *gin.Context, email string) (bool, error) {
 	tokens := []models.PasswordResetTokenModel{}
 	s.passwordResetTokenRepository.GetByEmail(ctx, email, &tokens)
 	isSpam := true
@@ -52,7 +52,7 @@ func (s *EmailService) SendResetPasswordEmail(ctx *gin.Context, email string) {
 	}
 
 	if isSpam {
-		return
+		return isSpam, nil
 	}
 
 	// Get the current working directory
@@ -60,7 +60,7 @@ func (s *EmailService) SendResetPasswordEmail(ctx *gin.Context, email string) {
 	passwordResetTemplate := filepath.Join(cwd, "mails", "password_reset.html")
 	template, err := template.ParseFiles(passwordResetTemplate)
 	if err != nil {
-		return
+		return false, err
 	}
 
 	var user models.UserModel
@@ -69,25 +69,25 @@ func (s *EmailService) SendResetPasswordEmail(ctx *gin.Context, email string) {
 	tokenString, err := utils.GenerateString(64)
 
 	if err != nil {
-		return
+		return false, err
 	}
 
 	hasedToken, err := utils.HashString(tokenString)
 
 	if err != nil {
-		return
+		return false, err
 	}
 
 	var body bytes.Buffer
 	data := structs.ResetPasswordTemplateData{
 		Name:              user.LastName,
-		ResetPasswordLink: ctx.Request.Host + "/new-password?email=" + email + "&token=" + tokenString,
+		ResetPasswordLink: ctx.GetHeader("Origin") + "/new-password?email=" + email + "&token=" + tokenString,
 	}
 
 	err = template.Execute(&body, data)
 
 	if err != nil {
-		return
+		return false, err
 	}
 
 	// // Send email
@@ -108,16 +108,18 @@ func (s *EmailService) SendResetPasswordEmail(ctx *gin.Context, email string) {
 		Subject:       "Đổi mật khẩu - Reset your password",
 		Body:          body.String(),
 	}); err != nil {
-		return
+		return false, err
 	}
 
 	s.passwordResetTokenRepository.Create(ctx, &models.PasswordResetTokenModel{
 		Email: email,
 		Token: hasedToken,
 	})
+
+	return false, nil
 }
 
-func (s *EmailService) SendEmailVerificationEmail(ctx *gin.Context, email string) {
+func (s *EmailService) SendEmailVerificationEmail(ctx *gin.Context, email string) (bool, error) {
 	tokens := []models.EmailVerifyTokenModel{}
 	s.emailVerifyTokenRepository.GetByEmail(ctx, email, &tokens)
 	isSpam := true
@@ -139,7 +141,7 @@ func (s *EmailService) SendEmailVerificationEmail(ctx *gin.Context, email string
 	}
 
 	if isSpam {
-		return
+		return isSpam, nil
 	}
 
 	// Get the current working directory
@@ -147,7 +149,7 @@ func (s *EmailService) SendEmailVerificationEmail(ctx *gin.Context, email string
 	emailVerificationTemplate := filepath.Join(cwd, "mails", "email_verification.html")
 	template, err := template.ParseFiles(emailVerificationTemplate)
 	if err != nil {
-		return
+		return false, err
 	}
 
 	var user models.UserModel
@@ -156,25 +158,25 @@ func (s *EmailService) SendEmailVerificationEmail(ctx *gin.Context, email string
 	tokenString, err := utils.GenerateString(64)
 
 	if err != nil {
-		return
+		return false, err
 	}
 
 	hasedToken, err := utils.HashString(tokenString)
 
 	if err != nil {
-		return
+		return false, err
 	}
 
 	var body bytes.Buffer
 	data := structs.VerificationTemplateData{
 		Name:             user.LastName,
-		VerificationLink: ctx.Request.Host + "/verify-email?email=" + email + "&token=" + tokenString,
+		VerificationLink: ctx.GetHeader("Origin") + "/verify-email?email=" + email + "&token=" + tokenString,
 	}
 
 	err = template.Execute(&body, data)
 
 	if err != nil {
-		return
+		return false, err
 	}
 
 	// // Send email
@@ -195,11 +197,13 @@ func (s *EmailService) SendEmailVerificationEmail(ctx *gin.Context, email string
 		Subject:       "Xác thực email - Verify your email",
 		Body:          body.String(),
 	}); err != nil {
-		return
+		return false, err
 	}
 
 	s.emailVerifyTokenRepository.Create(ctx, &models.EmailVerifyTokenModel{
 		Email: email,
 		Token: hasedToken,
 	})
+
+	return false, nil
 }

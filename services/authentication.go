@@ -6,6 +6,7 @@ import (
 	"api/repositories"
 	"api/structs"
 	"api/utils"
+	"database/sql"
 	"errors"
 	"fmt"
 	"strconv"
@@ -185,6 +186,91 @@ func (s *AuthenticationService) ExtractJWTData(ctx *gin.Context, jwt string) *st
 	return &claims
 }
 
-func (s *AuthenticationService) Logout(ctx *gin.Context) error {
-	return nil
+func (s *AuthenticationService) CheckResetPasswordToken(ctx *gin.Context, token string, email string) (bool, error) {
+	passwordResetToken := []models.PasswordResetTokenModel{}
+	if err := s.passwordResetTokenRepository.GetByEmail(ctx, email, &passwordResetToken); err != nil {
+		return false, err
+	}
+
+	if len(passwordResetToken) == 0 {
+		return false, nil
+	}
+
+	if !utils.CompareHashString(passwordResetToken[0].Token, token) {
+		return false, nil
+	}
+
+	if passwordResetToken[0].ExpiresAt.Before(time.Now()) {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func (s *AuthenticationService) VerifyEmail(ctx *gin.Context, verifyEmailToken structs.VerifyEmailToken) (bool, error) {
+	emailVerifyToken := []models.EmailVerifyTokenModel{}
+	if err := s.emailVerifyTokenRepository.GetByEmail(ctx, verifyEmailToken.Email, &emailVerifyToken); err != nil {
+		return false, err
+	}
+
+	if len(emailVerifyToken) == 0 {
+		return false, nil
+	}
+
+	if !utils.CompareHashString(emailVerifyToken[0].Token, verifyEmailToken.Token) {
+		return false, nil
+	}
+
+	if emailVerifyToken[0].ExpiresAt.Before(time.Now()) {
+		return false, nil
+	}
+
+	var user = &models.UserModel{}
+	s.userRepository.GetByEmail(ctx, user, verifyEmailToken.Email)
+	// if err := s.userRepository.GetByEmail(ctx, user, verifyEmailToken.Email); err != nil {
+	// 	return false, err
+	// }
+
+	// if user.ID == 0 {
+	// 	return false, nil
+	// }
+
+	user.EmailVerifiedAt = sql.NullTime{Time: time.Now(), Valid: true}
+	// ctx.Set("userID", user.ID)
+
+	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		if err := s.userRepository.Update(ctx, user); err != nil {
+			return err
+		}
+		if err := s.emailVerifyTokenRepository.Delete(ctx, verifyEmailToken.Email); err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (s *AuthenticationService) DeleteRefreshToken(ctx *gin.Context, userID int64) error {
+	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		if err := s.refreshTokenRepository.Delete(ctx, userID); err != nil {
+			return err
+		}
+		return nil
+	})
+	return err
+}
+
+func (s *AuthenticationService) DeletePasswordResetToken(ctx *gin.Context, email string) error {
+	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		if err := s.passwordResetTokenRepository.Delete(ctx, email); err != nil {
+			return err
+		}
+		return nil
+	})
+	return err
 }
