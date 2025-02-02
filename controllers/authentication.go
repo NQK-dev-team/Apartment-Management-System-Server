@@ -297,8 +297,22 @@ func (c *AuthenticationController) VerifyEmail(ctx *gin.Context) {
 		return
 	}
 
+	isValid, err := c.authenticationService.CheckEmailVerifyToken(ctx, token)
+
+	if err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	if !isValid {
+		response.Message = config.GetMessageCode("TOKEN_VERIFY_FAILED")
+		ctx.JSON(401, response)
+		return
+	}
+
 	var user = &models.UserModel{}
-	err := c.userSerivce.GetUserByEmail(ctx, token.Email, user)
+	err = c.userSerivce.GetUserByEmail(ctx, token.Email, user)
 
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
@@ -314,17 +328,11 @@ func (c *AuthenticationController) VerifyEmail(ctx *gin.Context) {
 
 	ctx.Set("userID", user.ID)
 
-	isValid, err := c.authenticationService.VerifyEmail(ctx, token)
+	err = c.authenticationService.VerifyEmail(ctx, token)
 
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(500, response)
-		return
-	}
-
-	if !isValid {
-		response.Message = config.GetMessageCode("TOKEN_VERIFY_FAILED")
-		ctx.JSON(401, response)
 		return
 	}
 

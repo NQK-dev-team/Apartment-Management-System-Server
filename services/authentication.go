@@ -207,7 +207,7 @@ func (s *AuthenticationService) CheckResetPasswordToken(ctx *gin.Context, token 
 	return true, nil
 }
 
-func (s *AuthenticationService) VerifyEmail(ctx *gin.Context, verifyEmailToken structs.VerifyEmailToken) (bool, error) {
+func (s *AuthenticationService) CheckEmailVerifyToken(ctx *gin.Context, verifyEmailToken structs.VerifyEmailToken) (bool, error) {
 	emailVerifyToken := []models.EmailVerifyTokenModel{}
 	if err := s.emailVerifyTokenRepository.GetByEmail(ctx, verifyEmailToken.Email, &emailVerifyToken); err != nil {
 		return false, err
@@ -225,18 +225,14 @@ func (s *AuthenticationService) VerifyEmail(ctx *gin.Context, verifyEmailToken s
 		return false, nil
 	}
 
+	return true, nil
+}
+
+func (s *AuthenticationService) VerifyEmail(ctx *gin.Context, verifyEmailToken structs.VerifyEmailToken) error {
 	var user = &models.UserModel{}
 	s.userRepository.GetByEmail(ctx, user, verifyEmailToken.Email)
-	// if err := s.userRepository.GetByEmail(ctx, user, verifyEmailToken.Email); err != nil {
-	// 	return false, err
-	// }
-
-	// if user.ID == 0 {
-	// 	return false, nil
-	// }
 
 	user.EmailVerifiedAt = sql.NullTime{Time: time.Now(), Valid: true}
-	// ctx.Set("userID", user.ID)
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
 		if err := s.userRepository.Update(ctx, user); err != nil {
@@ -248,11 +244,7 @@ func (s *AuthenticationService) VerifyEmail(ctx *gin.Context, verifyEmailToken s
 		return nil
 	})
 
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
+	return err
 }
 
 func (s *AuthenticationService) DeleteRefreshToken(ctx *gin.Context, userID int64) error {
