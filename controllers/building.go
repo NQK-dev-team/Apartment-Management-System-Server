@@ -2,7 +2,10 @@ package controllers
 
 import (
 	"api/config"
+	"api/models"
 	"api/services"
+	"api/structs"
+	"api/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,8 +20,42 @@ func NewBuildingController() *BuildingController {
 	}
 }
 
-func (c *BuildingController) Get(ctx *gin.Context) {
+func (c *BuildingController) GetBuildings(ctx *gin.Context) {
 	response := config.NewDataResponse(ctx)
-	response.ValidateError = "123"
+	var buildings = &[]models.BuildingModel{}
+
+	if err := c.buildingService.GetBuilding(ctx, buildings); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	response.Data = buildings
+	ctx.JSON(200, response)
+}
+
+func (c *BuildingController) GetBuildingRooms(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	var buildingStruct = structs.BuildingID{
+		ID: ctx.Param("id"),
+	}
+
+	if err := utils.Validate.Struct(&buildingStruct); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = err.Error()
+		ctx.JSON(400, response)
+		return
+	}
+
+	var rooms = &[]models.RoomModel{}
+
+	if err := c.buildingService.GetBuildingRooms(ctx, buildingStruct.ID, rooms); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	response.Data = rooms
 	ctx.JSON(200, response)
 }
