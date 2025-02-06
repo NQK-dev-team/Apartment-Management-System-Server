@@ -34,7 +34,7 @@ func (c *BuildingController) GetBuildings(ctx *gin.Context) {
 	ctx.JSON(200, response)
 }
 
-func (c *BuildingController) GetBuildingRooms(ctx *gin.Context) {
+func (c *BuildingController) GetBuildingRoom(ctx *gin.Context) {
 	response := config.NewDataResponse(ctx)
 
 	var buildingStruct = structs.BuildingID{
@@ -48,14 +48,14 @@ func (c *BuildingController) GetBuildingRooms(ctx *gin.Context) {
 		return
 	}
 
-	var rooms = &[]models.RoomModel{}
+	var room = &[]models.RoomModel{}
 
-	if err := c.buildingService.GetBuildingRooms(ctx, buildingStruct.ID, rooms); err != nil {
+	if err := c.buildingService.GetBuildingRoom(ctx, buildingStruct.ID, room); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(500, response)
 		return
 	}
 
-	response.Data = rooms
+	response.Data = room
 	ctx.JSON(200, response)
 }

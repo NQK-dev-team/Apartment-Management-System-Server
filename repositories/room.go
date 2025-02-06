@@ -13,8 +13,8 @@ func NewRoomRepository() *RoomRepository {
 	return &RoomRepository{}
 }
 
-func (r *RoomRepository) GetBuildingRooms(ctx *gin.Context, buildingID string, rooms *[]models.RoomModel) error {
-	if err := config.DB.Where("building_id = ?", buildingID).Find(rooms).Error; err != nil {
+func (r *RoomRepository) GetBuildingRoom(ctx *gin.Context, buildingID string, room *[]models.RoomModel) error {
+	if err := config.DB.Where("building_id = ?", buildingID).Find(room).Error; err != nil {
 		return err
 	}
 	return nil

@@ -23,6 +23,6 @@ func (s *BuildingService) GetBuilding(ctx *gin.Context, buildings *[]models.Buil
 	return s.buildingRepository.Get(ctx, buildings)
 }
 
-func (s *BuildingService) GetBuildingRooms(ctx *gin.Context, buildingID string, rooms *[]models.RoomModel) error {
-	return s.roomRepository.GetBuildingRooms(ctx, buildingID, rooms)
+func (s *BuildingService) GetBuildingRoom(ctx *gin.Context, buildingID string, room *[]models.RoomModel) error {
+	return s.roomRepository.GetBuildingRoom(ctx, buildingID, room)
 }
