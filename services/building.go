@@ -19,10 +19,10 @@ func NewBuildingService() *BuildingService {
 	}
 }
 
-func (s *BuildingService) GetBuilding(ctx *gin.Context, buildings *[]models.BuildingModel) error {
-	return s.buildingRepository.Get(ctx, buildings)
+func (s *BuildingService) GetBuilding(ctx *gin.Context, building *[]models.BuildingModel) error {
+	return s.buildingRepository.Get(ctx, building)
 }
 
-func (s *BuildingService) GetBuildingRoom(ctx *gin.Context, buildingID string, room *[]models.RoomModel) error {
+func (s *BuildingService) GetBuildingRoom(ctx *gin.Context, buildingID int64, room *[]models.RoomModel) error {
 	return s.roomRepository.GetBuildingRoom(ctx, buildingID, room)
 }

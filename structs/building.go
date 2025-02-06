@@ -1,5 +1,5 @@
 package structs
 
 type BuildingID struct {
-	ID string `json:"id" validate:"required"`
+	ID int64 `json:"id" validate:"required"`
 }
