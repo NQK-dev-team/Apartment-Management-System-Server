@@ -14,7 +14,7 @@ func NewRoomRepository() *RoomRepository {
 }
 
 func (r *RoomRepository) GetBuildingRoom(ctx *gin.Context, buildingID int64, room *[]models.RoomModel) error {
-	if err := config.DB.Where("building_id = ?", buildingID).Find(room).Error; err != nil {
+	if err := config.DB.Preload("Building").Where("building_id = ?", buildingID).Find(room).Error; err != nil {
 		return err
 	}
 	return nil
