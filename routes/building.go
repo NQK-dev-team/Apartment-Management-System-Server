@@ -20,5 +20,6 @@ func InitBuildingRoutes(router *gin.RouterGroup) {
 
 	r.Use(authorizationMiddle.AuthOwnerMiddleware)
 	{
+		r.POST("/add", buildingController.CreateBuilding)
 	}
 }
