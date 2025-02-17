@@ -23,6 +23,13 @@ func (r *BuildingRepository) Get(ctx *gin.Context, building *[]models.BuildingMo
 	return nil
 }
 
+func (r *BuildingRepository) GetBuildingBaseOnSchedule(ctx *gin.Context, building *[]models.BuildingModel, userID int64) error {
+	if err := config.DB.Model(&models.BuildingModel{}).Select("building.*").Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id").Where("manager_schedule.start_date <= now() AND manager_schedule.end_date >= now() AND manager_schedule.manager_id = ?", userID).Scan(building).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *BuildingRepository) GetById(ctx *gin.Context, building *models.BuildingModel, id int64) error {
 	if err := config.DB.Where("id = ?", id).First(building).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

@@ -25,9 +25,16 @@ func (c *BuildingController) GetBuilding(ctx *gin.Context) {
 	response := config.NewDataResponse(ctx)
 	var building = &[]models.BuildingModel{}
 
-	if err := c.buildingService.GetBuilding(ctx, building); err != nil {
+	isAuthenticated, err := c.buildingService.GetBuilding(ctx, building)
+	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(500, response)
+		return
+	}
+
+	if !isAuthenticated {
+		response.Message = config.GetMessageCode("INVALID_CREDENTIALS")
+		ctx.JSON(401, response)
 		return
 	}
 

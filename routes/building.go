@@ -17,4 +17,8 @@ func InitBuildingRoutes(router *gin.RouterGroup) {
 		r.GET("/", buildingController.GetBuilding)
 		r.GET("/:id/room", buildingController.GetBuildingRoom)
 	}
+
+	r.Use(authorizationMiddle.AuthOwnerMiddleware)
+	{
+	}
 }

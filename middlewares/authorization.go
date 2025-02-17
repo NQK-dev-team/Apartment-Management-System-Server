@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"api/config"
+	"api/constants"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,7 +18,7 @@ func (m *AuthorizationMiddleware) AuthOwnerMiddleware(ctx *gin.Context) {
 	role, _ := ctx.Get("role")
 	response := config.NewDataResponse(ctx)
 
-	if role != "110" {
+	if role != constants.Roles.Owner {
 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
 		ctx.AbortWithStatusJSON(403, response)
 		return
@@ -30,7 +31,7 @@ func (m *AuthorizationMiddleware) AuthManagerMiddleware(ctx *gin.Context) {
 	role, _ := ctx.Get("role")
 	response := config.NewDataResponse(ctx)
 
-	if role != "110" && role != "010" {
+	if role != constants.Roles.Owner && role != constants.Roles.Manager {
 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
 		ctx.AbortWithStatusJSON(403, response)
 		return
@@ -43,7 +44,7 @@ func (m *AuthorizationMiddleware) AuthCustomerMiddleware(ctx *gin.Context) {
 	role, _ := ctx.Get("role")
 	response := config.NewDataResponse(ctx)
 
-	if role != "001" {
+	if role != constants.Roles.Customer {
 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
 		ctx.AbortWithStatusJSON(403, response)
 		return
