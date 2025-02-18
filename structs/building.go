@@ -6,12 +6,6 @@ type BuildingID struct {
 	ID int64 `json:"id" validate:"required"`
 }
 
-type NewManagerSchedule struct {
-	ID        int64  `form:"ID" validate:"required"`
-	StartDate string `form:"startDate" validate:"required,datetime=2006-01-02"`
-	EndDate   string `form:"endDate" validate:"datetime=2006-01-02,gtefield=StartDate"`
-}
-
 type NewRoom struct {
 	No          int                     `form:"no" validate:"required,min=1001"`
 	Floor       int                     `form:"floor" validate:"required,min=1"`
@@ -32,7 +26,6 @@ type NewBuilding struct {
 	TotalRoom  int                     `form:"totalRoom"`
 	TotalFloor int                     `form:"totalFloor"`
 	Services   []NewService            `form:"services[]" validate:"required"`
-	Managers   []NewManagerSchedule    `form:"managers[]" validate:"required"`
 	Images     *[]multipart.FileHeader `validate:"required,min=1"`
 	Rooms      []NewRoom               `form:"rooms[]" validate:"required"`
 }
