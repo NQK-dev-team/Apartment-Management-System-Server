@@ -1,9 +1,5 @@
 package models
 
-import (
-	"gorm.io/gorm"
-)
-
 type RoomModel struct {
 	DefaultModel
 	No          int           `json:"no" gorm:"column:no;type:int;not null;"`
@@ -19,16 +15,16 @@ func (u *RoomModel) TableName() string {
 	return "room"
 }
 
-func (u *RoomModel) BeforeCreate(tx *gorm.DB) error {
-	lastRoom := RoomModel{}
-	// Get the last room of the building floor
-	tx.Where("building_id = ? AND floor = ?", u.BuildingID, u.Floor).Order("no desc").First(&lastRoom)
+// func (u *RoomModel) BeforeCreate(tx *gorm.DB) error {
+// 	lastRoom := RoomModel{}
+// 	// Get the last room of the building floor
+// 	tx.Where("building_id = ? AND floor = ?", u.BuildingID, u.Floor).Order("no desc").First(&lastRoom)
 
-	if lastRoom.No == 0 {
-		u.No = 1000*u.Floor + 1
-	} else {
-		u.No = lastRoom.No + 1
-	}
+// 	if lastRoom.No == 0 {
+// 		u.No = 1000*u.Floor + 1
+// 	} else {
+// 		u.No = lastRoom.No + 1
+// 	}
 
-	return nil
-}
+// 	return nil
+// }

@@ -13,14 +13,12 @@ type NewManagerSchedule struct {
 }
 
 type NewRoom struct {
+	No          int                     `form:"no" validate:"required,min=1001"`
+	Floor       int                     `form:"floor" validate:"required,min=1"`
 	Status      int                     `form:"status" validate:"require,min=1,max=5"`
 	Area        float64                 `form:"area" validate:"required,gt=0"`
 	Description string                  `form:"description" validate:"required"`
 	Images      *[]multipart.FileHeader `validate:"required,min=1"`
-}
-
-type NewFloor struct {
-	Rooms []NewRoom `form:"rooms[]" validate:"required"`
 }
 
 type NewService struct {
@@ -29,10 +27,12 @@ type NewService struct {
 }
 
 type NewBuilding struct {
-	Name     string                  `form:"name" validate:"required"`
-	Address  string                  `form:"address" validate:"required"`
-	Services []NewService            `form:"services[]" validate:"required"`
-	Floors   []NewFloor              `form:"floors[]" validate:"required"`
-	Managers []NewManagerSchedule    `form:"managers[]" validate:"required"`
-	Images   *[]multipart.FileHeader `validate:"required,min=1"`
+	Name       string                  `form:"name" validate:"required"`
+	Address    string                  `form:"address" validate:"required"`
+	TotalRoom  int                     `form:"totalRoom"`
+	TotalFloor int                     `form:"totalFloor"`
+	Services   []NewService            `form:"services[]" validate:"required"`
+	Managers   []NewManagerSchedule    `form:"managers[]" validate:"required"`
+	Images     *[]multipart.FileHeader `validate:"required,min=1"`
+	Rooms      []NewRoom               `form:"rooms[]" validate:"required"`
 }
