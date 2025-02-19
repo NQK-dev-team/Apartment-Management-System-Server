@@ -4,6 +4,8 @@ import (
 	"api/config"
 	"api/services"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 func emailWorker() {
@@ -12,6 +14,12 @@ func emailWorker() {
 }
 
 func main() {
+	// Load .env file
+	err := godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
+
 	config.InitMailer()
 	config.InitDB()
 
