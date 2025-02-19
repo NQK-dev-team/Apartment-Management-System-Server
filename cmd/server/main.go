@@ -35,9 +35,10 @@ func main() {
 	}
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     corsOrigin,
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Refresh-Token"},
+		AllowOrigins: corsOrigin,
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		// AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Refresh-Token"},
+		AllowHeaders:     []string{"*"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: false,
 		MaxAge:           12 * time.Hour,
@@ -53,6 +54,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	// Router settings
+	// Limit form size to 50 MB
+	router.MaxMultipartMemory = 50 << 20 // 50 MB
 
 	// Init routes
 	r := router.Group("api")
