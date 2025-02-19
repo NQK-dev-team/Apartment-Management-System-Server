@@ -12,7 +12,7 @@ type NewRoom struct {
 	Status      int                     `form:"status" validate:"require,min=1,max=5"`
 	Area        float64                 `form:"area" validate:"required,gt=0"`
 	Description string                  `form:"description" validate:"required"`
-	Images      *[]multipart.FileHeader `validate:"required,min=1"`
+	Images      []*multipart.FileHeader `validate:"required,min=1"`
 }
 
 type NewService struct {
@@ -26,6 +26,6 @@ type NewBuilding struct {
 	TotalRoom  int                     `form:"totalRoom"`
 	TotalFloor int                     `form:"totalFloor"`
 	Services   []NewService            `form:"services[]" validate:"required"`
-	Images     *[]multipart.FileHeader `validate:"required,min=1"`
+	Images     []*multipart.FileHeader `validate:"required,min=1"`
 	Rooms      []NewRoom               `form:"rooms[]" validate:"required"`
 }

@@ -79,9 +79,19 @@ func (c *BuildingController) CreateBuilding(ctx *gin.Context) {
 	var building = &structs.NewBuilding{}
 
 	if err := ctx.ShouldBind(building); err != nil {
-		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		response.Message = config.GetMessageCode("INVALID_`PARAMETER")
 		ctx.JSON(400, response)
 		return
+	}
+
+	form, _ := ctx.MultipartForm()
+	buildingImages := form.File["images[]"]
+	building.Images = buildingImages
+
+	for _, room := range building.Rooms {
+		roomNoStr := strconv.Itoa(room.No)
+		roomImages := form.File["roomImages["+roomNoStr+"]"]
+		room.Images = roomImages
 	}
 
 	if err := utils.Validate.Struct(building); err != nil {
