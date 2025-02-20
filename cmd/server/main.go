@@ -55,6 +55,9 @@ func main() {
 		panic(err)
 	}
 
+	// Init AWS S3 service
+	utils.InitS3Connection()
+
 	// Router settings
 	// Limit form size to 50 MB
 	router.MaxMultipartMemory = 50 << 20 // 50 MB
