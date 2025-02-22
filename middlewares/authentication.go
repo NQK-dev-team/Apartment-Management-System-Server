@@ -77,9 +77,9 @@ func (m *AuthenticationMiddleware) AuthMiddleware(ctx *gin.Context) {
 
 	ctx.Set("role", utils.GetRoleString(claims))
 
-	if response.JWTToken != jwt {
-		ctx.Set("jwt", response.JWTToken)
-	}
+	// if response.JWTToken != jwt {
+	ctx.Set("jwt", response.JWTToken)
+	// }
 
 	ctx.Next()
 }

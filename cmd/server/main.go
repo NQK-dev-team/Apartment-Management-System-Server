@@ -3,6 +3,7 @@ package main
 import (
 	"api/config"
 	"api/routes"
+	"api/utils"
 	"fmt"
 	"net/http"
 	"strings"
@@ -49,6 +50,9 @@ func main() {
 	// Init routes
 	r := router.Group("api")
 	routes.InitRoutes(r)
+
+	// Init custom validation rules
+	utils.InitCustomValidationRules()
 
 	// Start server
 	var app *http.Server

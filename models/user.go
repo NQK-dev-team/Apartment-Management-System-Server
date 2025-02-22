@@ -2,10 +2,14 @@ package models
 
 import (
 	"database/sql"
+	"strconv"
+
+	"gorm.io/gorm"
 )
 
 type UserModel struct {
 	DefaultModel
+	No               string       `json:"no" gorm:"column:no;type:varchar(8);not null;uniqueIndex:idx_no;"`
 	FirstName        string       `json:"firstName" gorm:"column:first_name;type:varchar(255);not null;"`
 	MiddleName       string       `json:"middleName" gorm:"column:middle_name;type:varchar(255);"`
 	LastName         string       `json:"lastName" gorm:"column:last_name;type:varchar(255);not null;"`
@@ -27,4 +31,21 @@ type UserModel struct {
 
 func (u *UserModel) TableName() string {
 	return "user"
+}
+
+func (u *UserModel) BeforeCreate(tx *gorm.DB) error {
+	lastUser := UserModel{}
+
+	// Get the last room of the building floor
+	tx.Raw("SELECT * FROM user ORDER BY no::integer DESC LIMIT 1").Scan(&lastUser)
+
+	if lastUser.No == "" {
+		u.No = "00000001"
+	} else {
+		lastUserNo := lastUser.No
+		lastUserNoInt, _ := strconv.Atoi(lastUserNo)
+		u.No = strconv.Itoa(lastUserNoInt + 1)
+	}
+
+	return nil
 }
