@@ -4,6 +4,6 @@ import (
 	"os"
 )
 
-func GetEnv(key string) (string, error) {
-	return os.Getenv(key), nil
+func GetEnv(key string) string {
+	return os.Getenv(key)
 }

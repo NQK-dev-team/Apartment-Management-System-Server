@@ -20,7 +20,11 @@ func main() {
 		panic(err)
 	}
 
-	config.InitMailer()
+	err = config.InitMailer()
+	if err != nil {
+		panic(err)
+	}
+
 	config.InitDB()
 
 	for {

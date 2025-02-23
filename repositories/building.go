@@ -17,14 +17,14 @@ func NewBuildingRepository() *BuildingRepository {
 }
 
 func (r *BuildingRepository) Get(ctx *gin.Context, building *[]models.BuildingModel) error {
-	if err := config.DB.Find(building).Error; err != nil {
+	if err := config.DB.Model(&models.BuildingModel{}).Preload("Images").Find(building).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r *BuildingRepository) GetBuildingBaseOnSchedule(ctx *gin.Context, building *[]models.BuildingModel, userID int64) error {
-	if err := config.DB.Model(&models.BuildingModel{}).Select("building.*").Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id").Where("manager_schedule.start_date <= now() AND manager_schedule.end_date >= now() AND manager_schedule.manager_id = ?", userID).Scan(building).Error; err != nil {
+	if err := config.DB.Model(&models.BuildingModel{}).Preload("Images").Select("building.*").Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id").Where("manager_schedule.start_date <= now() AND manager_schedule.end_date >= now() AND manager_schedule.manager_id = ?", userID).Scan(building).Error; err != nil {
 		return err
 	}
 	return nil
@@ -38,6 +38,14 @@ func (r *BuildingRepository) GetById(ctx *gin.Context, building *models.Building
 		return err
 	}
 	return nil
+}
+
+func (r *BuildingRepository) GetNewID(ctx *gin.Context) (int64, error) {
+	lastestBuilding := models.BuildingModel{}
+	if err := config.DB.Order("id desc").First(&lastestBuilding).Error; err != nil {
+		return 0, err
+	}
+	return lastestBuilding.ID + 1, nil
 }
 
 func (r *BuildingRepository) Create(ctx *gin.Context, building *models.BuildingModel) error {

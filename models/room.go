@@ -2,13 +2,14 @@ package models
 
 type RoomModel struct {
 	DefaultModel
-	No          int           `json:"no" gorm:"column:no;type:int;not null;"`
-	Floor       int           `json:"floor" gorm:"column:floor;type:int;not null;"`
-	Description string        `json:"description" gorm:"column:description;type:varchar(255);"`
-	Area        float32       `json:"area" gorm:"column:area;type:numeric;not null;"`
-	Status      int           `json:"status" gorm:"column:status;type:int;not null;default:1;"` // 1: Rented, 2: Bought, 3: Available, 4: Maintenanced, 5: Unavailable
-	BuildingID  int64         `json:"buildingID" gorm:"column:building_id;primaryKey;"`
-	Building    BuildingModel `json:"building" gorm:"foreignKey:building_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	No          int              `json:"no" gorm:"column:no;type:int;not null;"`
+	Floor       int              `json:"floor" gorm:"column:floor;type:int;not null;"`
+	Description string           `json:"description" gorm:"column:description;type:varchar(255);"`
+	Area        float64          `json:"area" gorm:"column:area;type:numeric;not null;"`
+	Status      int              `json:"status" gorm:"column:status;type:int;not null;default:1;"` // 1: Rented, 2: Bought, 3: Available, 4: Maintenanced, 5: Unavailable
+	BuildingID  int64            `json:"buildingID" gorm:"column:building_id;primaryKey;"`
+	Images      []RoomImageModel `json:"images" gorm:"foreignKey:room_id,building_id;references:id,building_id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	// Building    BuildingModel `json:"building" gorm:"foreignKey:building_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 func (u *RoomModel) TableName() string {

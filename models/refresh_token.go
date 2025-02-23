@@ -22,8 +22,8 @@ func (u *RefreshTokenModel) TableName() string {
 
 func (u *RefreshTokenModel) BeforeCreate(tx *gorm.DB) error {
 	// u.CreatedAt = time.Now()
-	expirationTimeStr, err := config.GetEnv("JWT_REFRESH_EXPIRE_TIME")
-	if err != nil {
+	expirationTimeStr := config.GetEnv("JWT_REFRESH_EXPIRE_TIME")
+	if expirationTimeStr == "" {
 		expirationTimeStr = "604800"
 	}
 	expirationTime, err := strconv.Atoi(expirationTimeStr)

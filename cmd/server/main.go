@@ -25,8 +25,8 @@ func main() {
 
 	// Middleware
 	// CORS
-	corsOriginList, err := config.GetEnv("CORS_ORIGIN")
-	if err != nil {
+	corsOriginList := config.GetEnv("CORS_ORIGIN")
+	if corsOriginList == "" {
 		corsOriginList = "*"
 	}
 	corsOrigin := strings.Split(corsOriginList, ",")
@@ -71,13 +71,13 @@ func main() {
 
 	// Start server
 	var app *http.Server
-	isHTTPS, err := config.GetEnv("HTTPS")
-	if err != nil {
+	isHTTPS := config.GetEnv("HTTPS")
+	if isHTTPS == "" {
 		isHTTPS = "false"
 	}
 
-	port, err := config.GetEnv("PORT")
-	if err != nil {
+	port := config.GetEnv("PORT")
+	if port == "" {
 		port = "8080"
 	}
 
@@ -100,14 +100,8 @@ func main() {
 	fmt.Println("|                                      |")
 	fmt.Println("----------------------------------------")
 
-	certPath, err := config.GetEnv("CERT_PATH")
-	if err != nil {
-		certPath = ""
-	}
-	keyPath, err := config.GetEnv("KEY_PATH")
-	if err != nil {
-		keyPath = ""
-	}
+	certPath := config.GetEnv("CERT_PATH")
+	keyPath := config.GetEnv("KEY_PATH")
 
 	if isHTTPS == "true" && certPath != "" && keyPath != "" {
 		app.ListenAndServeTLS(certPath, keyPath)

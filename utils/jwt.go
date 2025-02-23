@@ -3,6 +3,7 @@ package utils
 import (
 	"api/config"
 	"api/structs"
+	"errors"
 	"strconv"
 	"time"
 
@@ -10,13 +11,13 @@ import (
 )
 
 func GenerateJWTToken(claim structs.JWTPayload) (string, error) {
-	secretKey, err := config.GetEnv("JWT_SECRET_KEY")
-	if err != nil {
-		return "", err
+	secretKey := config.GetEnv("JWT_SECRET_KEY")
+	if secretKey == "" {
+		return "", errors.New("JWT_SECRET_KEY environment variable is not set")
 	}
-	expireTimeConfig, err := config.GetEnv("JWT_EXPIRE_TIME")
-	if err != nil {
-		return "", err
+	expireTimeConfig := config.GetEnv("JWT_EXPIRE_TIME")
+	if expireTimeConfig == "" {
+		return "", errors.New("JWT_EXPIRE_TIME environment variable is not set")
 	}
 	expireTime, err := strconv.Atoi(expireTimeConfig)
 	if err != nil {
@@ -38,9 +39,9 @@ func GenerateJWTToken(claim structs.JWTPayload) (string, error) {
 }
 
 func ValidateJWTToken(tokenString string) (*jwt.Token, error) {
-	secretKey, err := config.GetEnv("JWT_SECRET_KEY")
-	if err != nil {
-		return nil, err
+	secretKey := config.GetEnv("JWT_SECRET_KEY")
+	if secretKey == "" {
+		return nil, errors.New("JWT_SECRET_KEY environment variable is not set")
 	}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {

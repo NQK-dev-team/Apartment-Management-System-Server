@@ -101,11 +101,11 @@ func (c *BuildingController) CreateBuilding(ctx *gin.Context) {
 		return
 	}
 
-	// if err := c.buildingService.CreateBuilding(ctx, building); err != nil {
-	// 	response.Message = config.GetMessageCode("SYSTEM_ERROR")
-	// 	ctx.JSON(500, response)
-	// 	return
-	// }
+	if err := c.buildingService.CreateBuilding(ctx, building); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
 
 	ctx.JSON(200, response)
 }
