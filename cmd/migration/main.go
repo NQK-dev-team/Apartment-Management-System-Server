@@ -5,6 +5,8 @@ import (
 	"api/migrations"
 	"fmt"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 var userMigration *migrations.UserMigration
@@ -62,8 +64,14 @@ func initMigrations() {
 }
 
 func migrateHandler(mode string) {
+	// Load .env file
+	err := godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
+
 	// Init DB
-	err := config.InitDB()
+	err = config.InitDB()
 	if err != nil {
 		panic(err)
 	}

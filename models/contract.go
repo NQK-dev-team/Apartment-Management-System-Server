@@ -16,7 +16,8 @@ type ContractModel struct {
 	Householder   UserModel `json:"householder" gorm:"foreignKey:householder_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	RoomID        int64     `json:"roomID" gorm:"column:room_id;not null;"`
 	BuildingID    int64     `json:"buildingID" gorm:"column:building_id;not null;"`
-	Room          RoomModel `json:"room" gorm:"foreignKey:room_id,building_id;references:id,building_id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	// Room          RoomModel           `json:"room" gorm:"foreignKey:room_id,building_id;references:id,building_id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Files []ContractFileModel `json:"files" gorm:"foreignKey:contract_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 func (u *ContractModel) TableName() string {

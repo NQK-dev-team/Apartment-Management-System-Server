@@ -9,9 +9,9 @@ import (
 )
 
 type ManagerResolveSupportTicketModel struct {
-	SupportTicketID int64              `json:"supportTicketID" gorm:"column:support_ticket_id;primaryKey;"`
+	SupportTicketID int64              `json:"supportTicketID" gorm:"column:support_ticket_id;not null;"`
 	SupportTicket   SupportTicketModel `json:"supportTicket" gorm:"foreignKey:support_ticket_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	ManagerID       int64              `json:"managerID" gorm:"column:manager_id;primaryKey;"`
+	ManagerID       int64              `json:"managerID" gorm:"column:manager_id;not null;"`
 	Manager         UserModel          `json:"manager" gorm:"foreignKey:manager_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Result          bool               `json:"result" gorm:"column:result;type:bool;not null;"` // 0: Rejected, 1: Approved
 	ResolveTime     time.Time          `json:"resolveTime" gorm:"column:resolve_time;type:timestamp with time zone;not null;default:now()"`

@@ -19,3 +19,11 @@ func (r *RoomRepository) GetBuildingRoom(ctx *gin.Context, buildingID int64, roo
 	}
 	return nil
 }
+
+func (r *RoomRepository) GetNewID(ctx *gin.Context) (int64, error) {
+	lastestRoom := models.RoomModel{}
+	if err := config.DB.Order("id desc").First(&lastestRoom).Error; err != nil {
+		return 0, err
+	}
+	return lastestRoom.ID + 1, nil
+}

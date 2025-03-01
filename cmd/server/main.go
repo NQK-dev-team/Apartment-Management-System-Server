@@ -11,15 +11,22 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
 	router := gin.New()
 
+	// Load .env file
+	err := godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
+
 	// Middleware
 	// CORS
-	corsOriginList, err := config.GetEnv("CORS_ORIGIN")
-	if err != nil {
+	corsOriginList := config.GetEnv("CORS_ORIGIN")
+	if corsOriginList == "" {
 		corsOriginList = "*"
 	}
 	corsOrigin := strings.Split(corsOriginList, ",")
@@ -28,9 +35,10 @@ func main() {
 	}
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     corsOrigin,
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Refresh-Token"},
+		AllowOrigins: corsOrigin,
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		// AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Refresh-Token"},
+		AllowHeaders:     []string{"*"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: false,
 		MaxAge:           12 * time.Hour,
@@ -47,6 +55,13 @@ func main() {
 		panic(err)
 	}
 
+	// Init AWS S3 service
+	utils.InitS3Connection()
+
+	// Router settings
+	// Limit form size to 50 MB
+	router.MaxMultipartMemory = 50 << 20 // 50 MB
+
 	// Init routes
 	r := router.Group("api")
 	routes.InitRoutes(r)
@@ -56,13 +71,13 @@ func main() {
 
 	// Start server
 	var app *http.Server
-	isHTTPS, err := config.GetEnv("HTTPS")
-	if err != nil {
+	isHTTPS := config.GetEnv("HTTPS")
+	if isHTTPS == "" {
 		isHTTPS = "false"
 	}
 
-	port, err := config.GetEnv("PORT")
-	if err != nil {
+	port := config.GetEnv("PORT")
+	if port == "" {
 		port = "8080"
 	}
 
@@ -85,14 +100,8 @@ func main() {
 	fmt.Println("|                                      |")
 	fmt.Println("----------------------------------------")
 
-	certPath, err := config.GetEnv("CERT_PATH")
-	if err != nil {
-		certPath = ""
-	}
-	keyPath, err := config.GetEnv("KEY_PATH")
-	if err != nil {
-		keyPath = ""
-	}
+	certPath := config.GetEnv("CERT_PATH")
+	keyPath := config.GetEnv("KEY_PATH")
 
 	if isHTTPS == "true" && certPath != "" && keyPath != "" {
 		app.ListenAndServeTLS(certPath, keyPath)
