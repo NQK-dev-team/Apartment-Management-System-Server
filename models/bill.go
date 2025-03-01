@@ -11,7 +11,7 @@ type BillModel struct {
 	Amount      float64       `json:"amount" gorm:"column:amount;not null;type:numeric;"`
 	PayerID     int64         `json:"payerID" gorm:"column:payer_id;"`
 	Payer       UserModel     `json:"payer" gorm:"foreignKey:payer_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	ContractID  int64         `json:"contractID" gorm:"column:contract_id;primaryKey;"`
+	ContractID  int64         `json:"contractID" gorm:"column:contract_id;not null;"`
 	Contract    ContractModel `json:"contract" gorm:"foreignKey:contract_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 }
 
