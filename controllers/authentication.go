@@ -373,3 +373,66 @@ func (c *AuthenticationController) Logout(ctx *gin.Context) {
 	response.Message = config.GetMessageCode("LOGOUT_SUCCESS")
 	ctx.JSON(200, response)
 }
+
+func (c *AuthenticationController) VerifyPassword(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	verifyPasswordStruct := structs.VerifyPassword{}
+
+	if err := ctx.ShouldBindJSON(&verifyPasswordStruct); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
+	}
+
+	if err := utils.Validate.Struct(&verifyPasswordStruct); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = err.Error()
+		ctx.JSON(400, response)
+		return
+	}
+
+	// Get the JWT token from the header
+	jwt := ctx.GetHeader("Authorization")
+	if jwt != "" {
+		// Trim the "Bearer " prefix
+		jwt = jwt[7:]
+	}
+
+	if jwt == "" {
+		response.Data = false
+		ctx.JSON(200, response)
+		return
+	}
+
+	if _, err := c.authenticationService.VerifyToken(ctx, jwt); err != nil {
+		response.Data = false
+		ctx.JSON(200, response)
+		return
+	}
+
+	claims := c.authenticationService.ExtractJWTData(ctx, jwt)
+
+	if claims == nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	user := &models.UserModel{}
+
+	if err := c.userSerivce.GetUserByID(ctx, claims.UserID, user); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	if !c.authenticationService.CheckPassword(ctx, verifyPasswordStruct.Password, user.Password) {
+		response.Data = false
+		ctx.JSON(200, response)
+		return
+	}
+
+	response.Data = true
+	ctx.JSON(200, response)
+}

@@ -14,6 +14,7 @@ func NewExtraPaymentMigration() *ExtraPaymentMigration {
 
 func (m *ExtraPaymentMigration) Up() {
 	config.DB.AutoMigrate(&models.ExtraPaymentModel{})
+	config.DB.Exec("ALTER TABLE extra_payment ADD CONSTRAINT extra_payment_composite_key UNIQUE (bill_id, contract_id);")
 }
 
 func (m *ExtraPaymentMigration) Down() {

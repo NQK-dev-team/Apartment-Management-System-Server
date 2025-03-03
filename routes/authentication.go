@@ -17,4 +17,5 @@ func InitAuthRoutes(router *gin.RouterGroup) {
 	r.POST("/check-reset-password-token", authenticationController.CheckResetPasswordToken)
 	r.POST("/reset-password", authenticationController.ResetPassword)
 	r.POST("/verify-email", authenticationController.VerifyEmail)
+	r.POST("/verify-password", authenticationController.VerifyPassword)
 }

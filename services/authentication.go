@@ -266,3 +266,7 @@ func (s *AuthenticationService) DeletePasswordResetToken(ctx *gin.Context, email
 	})
 	return err
 }
+
+func (s *AuthenticationService) CheckPassword(ctx *gin.Context, providedPassword string, userPassword string) bool {
+	return utils.CompareHashPassword(userPassword, providedPassword)
+}

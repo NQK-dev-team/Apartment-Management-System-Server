@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"io"
 	"mime/multipart"
 	"os"
@@ -11,6 +13,7 @@ import (
 	"time"
 
 	appConfig "api/config"
+	"api/structs"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -34,12 +37,12 @@ func InitS3Connection() {
 	}
 
 	localS3Client := s3.NewFromConfig(cfg)
-	_, err = localS3Client.HeadObject(context.TODO(), &s3.HeadObjectInput{})
+	// _, err = localS3Client.HeadObject(context.TODO(), &s3.HeadObjectInput{})
 
-	if err != nil {
-		s3Error = err
-		return
-	}
+	// if err != nil {
+	// 	s3Error = err
+	// 	return
+	// }
 
 	s3Client = localS3Client
 }
@@ -65,6 +68,7 @@ func saveFileToS3(file *multipart.FileHeader, filePath string) error {
 	}
 	defer fileContent.Close()
 
+	// uploader := manager.NewUploader(s3Client)
 	_, err = s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket: aws.String(appConfig.GetEnv("AWS_BUCKET")),
 		Key:    aws.String(filePath),
@@ -104,6 +108,28 @@ func saveFileToLocal(file *multipart.FileHeader, filePath string) error {
 	return nil
 }
 
+func StoreFile(file *multipart.FileHeader, folder string) (string, error) {
+	fileName := generateUniqueFileName() + filepath.Ext(file.Filename)
+	if folder[len(folder)-1:] != "/" {
+		folder = folder + "/"
+	}
+
+	filePath := folder + fileName
+
+	if checkS3Connection() {
+		if err := saveFileToS3(file, filePath); err != nil {
+			if err := saveFileToLocal(file, filePath); err != nil {
+				return "", err
+			}
+		}
+		return "/api/" + filePath, nil
+	}
+	if err := saveFileToLocal(file, filePath); err != nil {
+		return "", err
+	}
+	return "/api/" + filePath, nil
+}
+
 func removeFileFromS3(filePath string) error {
 	_, err := s3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
 		Bucket: aws.String(appConfig.GetEnv("AWS_BUCKET")),
@@ -124,25 +150,6 @@ func removeFileFromLocal(filePath string) error {
 	return nil
 }
 
-func StoreFile(file *multipart.FileHeader, folder string) (string, error) {
-	fileName := generateUniqueFileName() + filepath.Ext(file.Filename)
-	filePath := folder + "/" + fileName
-
-	if checkS3Connection() {
-		if err := saveFileToS3(file, filePath); err != nil {
-			if err := saveFileToLocal(file, filePath); err != nil {
-				return "", err
-			}
-			return "/api/" + filePath, nil
-		}
-		return filePath, nil
-	}
-	if err := saveFileToLocal(file, filePath); err != nil {
-		return "", err
-	}
-	return "/api/" + filePath, nil
-}
-
 func RemoveFile(filePath string) {
 	filePath = strings.Replace(filePath, "/api/", "", -1)
 
@@ -153,4 +160,77 @@ func RemoveFile(filePath string) {
 		return
 	}
 	removeFileFromLocal(filePath)
+}
+
+func getFileFromS3(file *structs.CustomFileStruct, filePath string) error {
+	result, err := s3Client.GetObject(context.TODO(), &s3.GetObjectInput{
+		Bucket: aws.String(appConfig.GetEnv("AWS_BUCKET")),
+		Key:    aws.String(filePath),
+	})
+	if err != nil {
+		return err
+	}
+	defer result.Body.Close()
+
+	// Read file content into buffer
+	buf := new(bytes.Buffer)
+	if _, err := io.Copy(buf, result.Body); err != nil {
+		return err
+	}
+
+	// Extract file metadata
+	contentLength := aws.ToInt64(result.ContentLength)
+
+	if contentLength == 0 {
+		return errors.New("file is empty")
+	}
+
+	// Populate the file struct
+	file.Filename = filepath.Base(filePath)
+	file.Content = buf.Bytes()
+	file.Size = contentLength
+	file.Header = make(map[string][]string)
+	file.Header.Set("Content-Type", "application/octet-stream")
+
+	return nil
+}
+
+func getFileFromLocal(file *structs.CustomFileStruct, filePath string) error {
+	filePath = filepath.Join("assets", "files", filePath)
+	fileContent, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer fileContent.Close()
+
+	fileInfo, err := fileContent.Stat()
+	if err != nil {
+		return err
+	}
+
+	fileBytes, err := io.ReadAll(fileContent)
+
+	if err != nil {
+		return err
+	}
+
+	// *file = *fileHeader
+	file.Filename = filepath.Base(filePath)
+	file.Size = fileInfo.Size()
+	file.Header = make(map[string][]string)
+	file.Content = fileBytes
+	file.Header.Set("Content-Type", "application/octet-stream")
+
+	return nil
+}
+
+func GetFile(file *structs.CustomFileStruct, filePath string) error {
+	if checkS3Connection() {
+		if err := getFileFromS3(file, filePath); err != nil {
+			return getFileFromLocal(file, filePath)
+		}
+		return nil
+	}
+
+	return getFileFromLocal(file, filePath)
 }

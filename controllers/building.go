@@ -109,3 +109,29 @@ func (c *BuildingController) CreateBuilding(ctx *gin.Context) {
 
 	ctx.JSON(200, response)
 }
+
+func (c *BuildingController) GetBuildingDetail(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	building := &models.BuildingModel{}
+
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+
+	if err != nil {
+		id = 0
+	}
+
+	if err := c.buildingService.GetBuildingDetail(ctx, building, id); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	if building.ID == 0 {
+		response.Message = config.GetMessageCode("DATA_NOT_FOUND")
+		ctx.JSON(404, response)
+		return
+	}
+
+	response.Data = building
+	ctx.JSON(200, response)
+}

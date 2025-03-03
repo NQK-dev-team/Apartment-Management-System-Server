@@ -41,6 +41,8 @@ var messageList = map[string]string{
 	"PERMISSION_DENIED":    "MSG_E0007",
 	"USER_NOT_FOUND":       "MSG_E0008",
 	"REQUEST_SPAM":         "MSG_E0009",
+	"IMAGE_NOT_FOUND":      "MSG_E0010",
+	"DATA_NOT_FOUND":       "MSG_E0011",
 
 	// Parameter error messages
 	"INVALID_PARAMETER":    "MSG_V0001",

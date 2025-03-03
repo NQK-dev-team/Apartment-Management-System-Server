@@ -154,3 +154,7 @@ func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.New
 	}
 	return nil
 }
+
+func (s *BuildingService) GetBuildingDetail(ctx *gin.Context, building *models.BuildingModel, id int64) error {
+	return s.buildingRepository.GetById(ctx, building, id)
+}

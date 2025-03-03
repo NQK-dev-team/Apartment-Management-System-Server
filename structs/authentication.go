@@ -34,3 +34,7 @@ type VerifyEmailToken struct {
 	Token string `json:"token" validate:"required"`
 	Email string `json:"email" validate:"required"`
 }
+
+type VerifyPassword struct {
+	Password string `json:"password" validate:"required"`
+}
