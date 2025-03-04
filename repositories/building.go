@@ -4,6 +4,7 @@ import (
 	"api/config"
 	"api/models"
 	"errors"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -31,7 +32,7 @@ func (r *BuildingRepository) GetBuildingBaseOnSchedule(ctx *gin.Context, buildin
 }
 
 func (r *BuildingRepository) GetById(ctx *gin.Context, building *models.BuildingModel, id int64) error {
-	if err := config.DB.Where("id = ?", id).Preload("Images").Preload("Services").Preload("Rooms").First(building).Error; err != nil {
+	if err := config.DB.Where("id = ?", id).Preload("Rooms").First(building).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -86,16 +87,44 @@ func (r *BuildingRepository) Update(ctx *gin.Context, building *models.BuildingM
 	return nil
 }
 
-func (r *BuildingRepository) QuietUpdate(ctx *gin.Context, building *models.BuildingModel) error {
-	if err := config.DB.Set("isQuiet", true).Session(&gorm.Session{FullSaveAssociations: true}).Save(building).Error; err != nil {
+func (r *BuildingRepository) Delete(ctx *gin.Context, id []int64) error {
+	now := time.Now()
+	userID := ctx.GetInt64("userID")
+
+	if err := config.DB.Set("isQuiet", true).Model(&models.BuildingModel{}).Where("id in ?", id).UpdateColumns(models.BuildingModel{
+		DefaultModel: models.DefaultModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
+		return err
+	}
+
+	if err := config.DB.Set("isQuiet", true).Model(&models.BuildingImageModel{}).Where("building_id in ?", id).UpdateColumns(models.BuildingImageModel{
+		DefaultFileModel: models.DefaultFileModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
+		return err
+	}
+
+	if err := config.DB.Set("isQuiet", true).Model(&models.BuildingServiceModel{}).Where("building_id in ?", id).UpdateColumns(models.BuildingServiceModel{
+		DefaultModel: models.DefaultModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
 		return err
 	}
 	return nil
 }
-
-// func (r *BuildingRepository) Delete(ctx *gin.Context, building *models.BuildingModel) error {
-// 	if err := config.DB.Delete(building).Error; err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }

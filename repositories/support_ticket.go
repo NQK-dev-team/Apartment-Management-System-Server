@@ -4,6 +4,7 @@ import (
 	"api/config"
 	"api/models"
 	"errors"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -26,9 +27,33 @@ func (r *SupportTicketRepository) GetById(ctx *gin.Context, ticket *models.Suppo
 	return nil
 }
 
-func (r *SupportTicketRepository) QuietUpdate(ctx *gin.Context, ticket *models.SupportTicketModel) error {
-	if err := config.DB.Session(&gorm.Session{FullSaveAssociations: true}).Save(ticket).Error; err != nil {
+func (r *SupportTicketRepository) Delete(ctx *gin.Context, id []int64) error {
+	now := time.Now()
+	userID := ctx.GetInt64("userID")
+
+	if err := config.DB.Set("isQuiet", true).Model(&models.SupportTicketModel{}).Where("id IN ?", id).UpdateColumns(models.SupportTicketModel{
+		DefaultModel: models.DefaultModel{
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+			DeletedBy: userID,
+		},
+	}).Error; err != nil {
 		return err
 	}
+
+	if err := config.DB.Set("isQuiet", true).Model(&models.SupportTicketFileModel{}).Where("support_ticket_id IN ?", id).UpdateColumns(models.SupportTicketFileModel{
+		DefaultFileModel: models.DefaultFileModel{
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+			DeletedBy: userID,
+		},
+	}).Error; err != nil {
+		return err
+	}
+
 	return nil
 }

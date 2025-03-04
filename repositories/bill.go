@@ -4,6 +4,7 @@ import (
 	"api/config"
 	"api/models"
 	"errors"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -26,9 +27,33 @@ func (r *BillRepository) GetById(ctx *gin.Context, bill *models.BillModel, id in
 	return nil
 }
 
-func (r *BillRepository) QuietUpdate(ctx *gin.Context, bill *models.BillModel) error {
-	if err := config.DB.Set("isQuiet", true).Session(&gorm.Session{FullSaveAssociations: true}).Save(bill).Error; err != nil {
+func (r *BillRepository) Delete(ctx *gin.Context, id []int64) error {
+	now := time.Now()
+	userID := ctx.GetInt64("userID")
+
+	if err := config.DB.Set("isQuiet", true).Model(&models.BillModel{}).Where("id IN ?", id).UpdateColumns(models.BillModel{
+		DefaultModel: models.DefaultModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
 		return err
 	}
+
+	if err := config.DB.Set("isQuiet", true).Model(&models.ExtraPaymentModel{}).Where("bill_id IN ?", id).UpdateColumns(models.ExtraPaymentModel{
+		DefaultModel: models.DefaultModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
+		return err
+	}
+
 	return nil
 }

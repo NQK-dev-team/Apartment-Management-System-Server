@@ -3,6 +3,7 @@ package repositories
 import (
 	"api/config"
 	"api/models"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -44,16 +45,33 @@ func (r *RoomRepository) GetNewImageID(ctx *gin.Context) (int64, error) {
 	return lastestImage.ID + 1, nil
 }
 
-func (r *RoomRepository) QuietUpdate(ctx *gin.Context, room *models.RoomModel) error {
-	if err := config.DB.Set("isQuiet", true).Session(&gorm.Session{FullSaveAssociations: true}).Save(room).Error; err != nil {
+func (r *RoomRepository) Delete(ctx *gin.Context, id []int64) error {
+	now := time.Now()
+	userID := ctx.GetInt64("userID")
+
+	if err := config.DB.Set("isQuiet", true).Model(&models.RoomModel{}).Where("id in ?", id).UpdateColumns(models.RoomModel{
+		DefaultModel: models.DefaultModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
 		return err
 	}
+
+	if err := config.DB.Set("isQuiet", true).Model(&models.RoomImageModel{}).Where("room_id in ?", id).UpdateColumns(models.RoomImageModel{
+		DefaultFileModel: models.DefaultFileModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
+		return err
+	}
+
 	return nil
 }
-
-// func(r*RoomRepository) Delete(ctx *gin.Context, room *models.RoomModel) error {
-// 	if err := config.DB.Delete(room).Error; err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
