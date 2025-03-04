@@ -1,5 +1,7 @@
 package models
 
+import "gorm.io/gorm"
+
 type SupportTicketModel struct {
 	DefaultModel
 	Status     int                      `json:"status" gorm:"column:status;type:int;not null;default:1;"` // 1: Pending, 2: Approved, 3: Rejected
@@ -14,4 +16,16 @@ type SupportTicketModel struct {
 
 func (u *SupportTicketModel) TableName() string {
 	return "support_ticket"
+}
+
+func (u *SupportTicketModel) BeforeDelete(tx *gorm.DB) error {
+	userID, _ := tx.Get("userID")
+
+	return tx.Transaction(func(tx1 *gorm.DB) error {
+		if err := tx1.Set("userID", userID).Model(&SupportTicketFileModel{}).Where("support_ticket_id = ?", u.ID).Delete(&SupportTicketFileModel{}).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
