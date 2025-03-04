@@ -86,9 +86,16 @@ func (r *BuildingRepository) Update(ctx *gin.Context, building *models.BuildingM
 	return nil
 }
 
-func (r *BuildingRepository) Delete(ctx *gin.Context, building *models.BuildingModel) error {
-	if err := config.DB.Delete(building).Error; err != nil {
+func (r *BuildingRepository) QuietUpdate(ctx *gin.Context, building *models.BuildingModel) error {
+	if err := config.DB.Set("isQuiet", true).Session(&gorm.Session{FullSaveAssociations: true}).Save(building).Error; err != nil {
 		return err
 	}
 	return nil
 }
+
+// func (r *BuildingRepository) Delete(ctx *gin.Context, building *models.BuildingModel) error {
+// 	if err := config.DB.Delete(building).Error; err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }

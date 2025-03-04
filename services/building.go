@@ -8,18 +8,21 @@ import (
 	"api/structs"
 	"api/utils"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
 type BuildingService struct {
+	roomService        *RoomService
 	buildingRepository *repositories.BuildingRepository
 	roomRepository     *repositories.RoomRepository
 }
 
 func NewBuildingService() *BuildingService {
 	return &BuildingService{
+		roomService:        NewRoomService(),
 		buildingRepository: repositories.NewBuildingRepository(),
 		roomRepository:     repositories.NewRoomRepository(),
 	}
@@ -113,6 +116,17 @@ func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.New
 			deleteImageList = append(deleteImageList, fileName)
 		}
 
+		for index, val := range building.Services {
+			newBuilding.Services = append(newBuilding.Services, models.BuildingServiceModel{
+				Name:       val.Name,
+				Price:      val.Price,
+				BuildingID: newBuildingID,
+				DefaultModel: models.DefaultModel{
+					ID: newBuildingServiceIDStart + int64(index),
+				},
+			})
+		}
+
 		for roomLoopIndex, val := range building.Rooms {
 			newRoom := models.RoomModel{
 				No:          val.No,
@@ -143,17 +157,6 @@ func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.New
 				})
 			}
 			newBuilding.Rooms = append(newBuilding.Rooms, newRoom)
-		}
-
-		for index, val := range building.Services {
-			newBuilding.Services = append(newBuilding.Services, models.BuildingServiceModel{
-				Name:       val.Name,
-				Price:      val.Price,
-				BuildingID: newBuildingID,
-				DefaultModel: models.DefaultModel{
-					ID: newBuildingServiceIDStart + int64(index),
-				},
-			})
 		}
 
 		if err := s.buildingRepository.Create(ctx, newBuilding); err != nil {
@@ -192,27 +195,38 @@ func (s *BuildingService) DeleteBuilding(ctx *gin.Context, id int64) error {
 		userID = 0
 	}
 
-	deletedBuilding.DeletedBy.Valid = true
-	deletedBuilding.DeletedBy.Value = userID.(int64)
+	now := time.Now()
 
-	for _, image := range deletedBuilding.Images {
-		image.DeletedBy.Valid = true
-		image.DeletedBy.Value = userID.(int64)
+	deletedBuilding.DefaultModel.DeletedBy = userID.(int64)
+	deletedBuilding.DefaultModel.DeletedAt.Valid = true
+	deletedBuilding.DefaultModel.DeletedAt.Time = now
+
+	for index := range deletedBuilding.Images {
+		deletedBuilding.Images[index].DefaultFileModel.DeletedBy = userID.(int64)
+		deletedBuilding.Images[index].DefaultFileModel.DeletedAt.Valid = true
+		deletedBuilding.Images[index].DefaultFileModel.DeletedAt.Time = now
 	}
 
-	for _, service := range deletedBuilding.Services {
-		service.DeletedBy.Valid = true
-		service.DeletedBy.Value = userID.(int64)
+	for index := range deletedBuilding.Services {
+		deletedBuilding.Services[index].DefaultModel.DeletedBy = userID.(int64)
+		deletedBuilding.Services[index].DefaultModel.DeletedAt.Valid = true
+		deletedBuilding.Services[index].DefaultModel.DeletedAt.Time = now
 	}
 
 	return config.DB.Transaction(func(tx *gorm.DB) error {
-		if err := s.buildingRepository.Update(ctx, deletedBuilding); err != nil {
+		if err := s.buildingRepository.QuietUpdate(ctx, deletedBuilding); err != nil {
 			return err
 		}
 
-		if err := s.buildingRepository.Delete(ctx, deletedBuilding); err != nil {
-			return err
+		for _, room := range deletedBuilding.Rooms {
+			if err := s.roomService.DeleteWithoutTransaction(ctx, room.ID); err != nil {
+				return err
+			}
 		}
+
+		// if err := s.buildingRepository.Delete(ctx, deletedBuilding); err != nil {
+		// 	return err
+		// }
 
 		return nil
 	})

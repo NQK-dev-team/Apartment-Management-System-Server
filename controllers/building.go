@@ -88,10 +88,10 @@ func (c *BuildingController) CreateBuilding(ctx *gin.Context) {
 	buildingImages := form.File["images[]"]
 	building.Images = buildingImages
 
-	for _, room := range building.Rooms {
+	for index,room := range building.Rooms {
 		roomNoStr := strconv.Itoa(room.No)
 		roomImages := form.File["roomImages["+roomNoStr+"]"]
-		room.Images = roomImages
+		building.Rooms[index].Images = roomImages
 	}
 
 	if err := utils.Validate.Struct(building); err != nil {
