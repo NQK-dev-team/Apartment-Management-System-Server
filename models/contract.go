@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -12,8 +13,8 @@ type ContractModel struct {
 	Value          float64              `json:"value" gorm:"column:value;type:float;not null;"`
 	Type           int                  `json:"type" gorm:"column:type;type:int;not null;"` // 1: Rent, 2: Buy
 	StartDate      time.Time            `json:"startDate" gorm:"column:start_date;type:date;not null;default:now();"`
-	EndDate        time.Time            `json:"endDate" gorm:"column:end_date;type:date;"`
-	SignDate       time.Time            `json:"signDate" gorm:"column:sign_date;type:date;default:now();"`
+	EndDate        sql.NullTime         `json:"endDate" gorm:"column:end_date;type:date;"`
+	SignDate       sql.NullTime         `json:"signDate" gorm:"column:sign_date;type:date;default:now();"`
 	CreatorID      int64                `json:"creatorID" gorm:"column:creator_id;not null;"`
 	Creator        UserModel            `json:"creator" gorm:"foreignKey:creator_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	HouseholderID  int64                `json:"householderID" gorm:"column:householder_id;not null;"`
