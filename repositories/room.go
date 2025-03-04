@@ -22,8 +22,16 @@ func (r *RoomRepository) GetBuildingRoom(ctx *gin.Context, buildingID int64, roo
 
 func (r *RoomRepository) GetNewID(ctx *gin.Context) (int64, error) {
 	lastestRoom := models.RoomModel{}
-	if err := config.DB.Order("id desc").First(&lastestRoom).Error; err != nil {
+	if err := config.DB.Order("id desc").Unscoped().First(&lastestRoom).Error; err != nil {
 		return 0, err
 	}
 	return lastestRoom.ID + 1, nil
+}
+
+func (r *RoomRepository) GetNewImageID(ctx *gin.Context) (int64, error) {
+	lastestImage := models.RoomImageModel{}
+	if err := config.DB.Order("id desc").Unscoped().First(&lastestImage).Error; err != nil {
+		return 0, err
+	}
+	return lastestImage.ID + 1, nil
 }

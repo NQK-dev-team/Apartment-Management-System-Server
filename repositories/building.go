@@ -42,10 +42,26 @@ func (r *BuildingRepository) GetById(ctx *gin.Context, building *models.Building
 
 func (r *BuildingRepository) GetNewID(ctx *gin.Context) (int64, error) {
 	lastestBuilding := models.BuildingModel{}
-	if err := config.DB.Order("id desc").First(&lastestBuilding).Error; err != nil {
+	if err := config.DB.Order("id desc").Unscoped().First(&lastestBuilding).Error; err != nil {
 		return 0, err
 	}
 	return lastestBuilding.ID + 1, nil
+}
+
+func (r *BuildingRepository) GetNewImageID(ctx *gin.Context) (int64, error) {
+	lastestImage := models.BuildingImageModel{}
+	if err := config.DB.Order("id desc").Unscoped().First(&lastestImage).Error; err != nil {
+		return 0, err
+	}
+	return lastestImage.ID + 1, nil
+}
+
+func (r *BuildingRepository) GetNewServiceID(ctx *gin.Context) (int64, error) {
+	lastestService := models.BuildingServiceModel{}
+	if err := config.DB.Order("id desc").Unscoped().First(&lastestService).Error; err != nil {
+		return 0, err
+	}
+	return lastestService.ID + 1, nil
 }
 
 func (r *BuildingRepository) Create(ctx *gin.Context, building *models.BuildingModel) error {
@@ -71,11 +87,7 @@ func (r *BuildingRepository) Update(ctx *gin.Context, building *models.BuildingM
 }
 
 func (r *BuildingRepository) Delete(ctx *gin.Context, building *models.BuildingModel) error {
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		userID = 0
-	}
-	if err := config.DB.Set("userID", userID).Delete(building).Error; err != nil {
+	if err := config.DB.Delete(building).Error; err != nil {
 		return err
 	}
 	return nil

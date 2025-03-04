@@ -68,6 +68,26 @@ func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.New
 			return err
 		}
 
+		newBuildingImageIDStart, err := s.buildingRepository.GetNewImageID(ctx)
+		if err != nil {
+			return err
+		}
+
+		newBuildingServiceIDStart, err := s.buildingRepository.GetNewServiceID(ctx)
+		if err != nil {
+			return err
+		}
+
+		newRoomID, err := s.roomRepository.GetNewID(ctx)
+		if err != nil {
+			return err
+		}
+
+		newRoomImageIDStart, err := s.roomRepository.GetNewImageID(ctx)
+		if err != nil {
+			return err
+		}
+
 		newBuildingIDStr := strconv.Itoa(int(newBuildingID))
 
 		newBuilding := &models.BuildingModel{}
@@ -77,7 +97,7 @@ func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.New
 		newBuilding.TotalFloor = building.TotalFloor
 		newBuilding.TotalRoom = building.TotalRoom
 
-		for _, image := range building.Images {
+		for index, image := range building.Images {
 			fileName, err := utils.StoreFile(image, "images/buildings/"+newBuildingIDStr+"/")
 			if err != nil {
 				return err
@@ -86,19 +106,14 @@ func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.New
 				BuildingID: newBuildingID,
 				DefaultFileModel: models.DefaultFileModel{
 					Path: fileName,
+					No:   index + 1,
+					ID:   newBuildingImageIDStart + int64(index),
 				},
 			})
 			deleteImageList = append(deleteImageList, fileName)
 		}
 
-		for index, val := range building.Rooms {
-			newRoomID, err := s.roomRepository.GetNewID(ctx)
-			if err != nil {
-				return err
-			}
-
-			newRoomID = newRoomID + int64(index)
-
+		for roomLoopIndex, val := range building.Rooms {
 			newRoom := models.RoomModel{
 				No:          val.No,
 				Floor:       val.Floor,
@@ -107,37 +122,39 @@ func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.New
 				Description: val.Description,
 				BuildingID:  newBuildingID,
 				DefaultModel: models.DefaultModel{
-					ID: newRoomID,
+					ID: newRoomID + int64(roomLoopIndex),
 				},
 			}
 
 			roomNoStr := strconv.Itoa(int(val.No))
 
-			for _, image := range val.Images {
+			for roomImageLoopIndex, image := range val.Images {
 				fileName, err := utils.StoreFile(image, "images/buildings/"+newBuildingIDStr+"/"+"rooms/"+roomNoStr+"/")
 				if err != nil {
 					return err
 				}
 				newRoom.Images = append(newRoom.Images, models.RoomImageModel{
-					BuildingID: newBuildingID,
-					RoomID:     newRoomID,
+					RoomID: newRoomID,
 					DefaultFileModel: models.DefaultFileModel{
 						Path: fileName,
+						No:   roomImageLoopIndex + 1,
+						ID:   newRoomImageIDStart + int64(roomLoopIndex*(len(building.Rooms)-1)) + int64(roomImageLoopIndex),
 					},
 				})
 			}
 			newBuilding.Rooms = append(newBuilding.Rooms, newRoom)
 		}
 
-		for _, val := range building.Services {
+		for index, val := range building.Services {
 			newBuilding.Services = append(newBuilding.Services, models.BuildingServiceModel{
 				Name:       val.Name,
 				Price:      val.Price,
 				BuildingID: newBuildingID,
+				DefaultModel: models.DefaultModel{
+					ID: newBuildingServiceIDStart + int64(index),
+				},
 			})
 		}
-
-		ctx.Set("userID", utils.GetUserID(ctx))
 
 		if err := s.buildingRepository.Create(ctx, newBuilding); err != nil {
 			return err
@@ -157,4 +174,46 @@ func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.New
 
 func (s *BuildingService) GetBuildingDetail(ctx *gin.Context, building *models.BuildingModel, id int64) error {
 	return s.buildingRepository.GetById(ctx, building, id)
+}
+
+func (s *BuildingService) DeleteBuilding(ctx *gin.Context, id int64) error {
+	deletedBuilding := &models.BuildingModel{
+		DefaultModel: models.DefaultModel{
+			ID: id,
+		},
+	}
+
+	if err := s.buildingRepository.GetById(ctx, deletedBuilding, id); err != nil {
+		return err
+	}
+
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		userID = 0
+	}
+
+	deletedBuilding.DeletedBy.Valid = true
+	deletedBuilding.DeletedBy.Value = userID.(int64)
+
+	for _, image := range deletedBuilding.Images {
+		image.DeletedBy.Valid = true
+		image.DeletedBy.Value = userID.(int64)
+	}
+
+	for _, service := range deletedBuilding.Services {
+		service.DeletedBy.Valid = true
+		service.DeletedBy.Value = userID.(int64)
+	}
+
+	return config.DB.Transaction(func(tx *gorm.DB) error {
+		if err := s.buildingRepository.Update(ctx, deletedBuilding); err != nil {
+			return err
+		}
+
+		if err := s.buildingRepository.Delete(ctx, deletedBuilding); err != nil {
+			return err
+		}
+
+		return nil
+	})
 }

@@ -79,7 +79,7 @@ func (c *BuildingController) CreateBuilding(ctx *gin.Context) {
 	var building = &structs.NewBuilding{}
 
 	if err := ctx.ShouldBind(building); err != nil {
-		response.Message = config.GetMessageCode("INVALID_`PARAMETER")
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
 		ctx.JSON(400, response)
 		return
 	}
@@ -133,5 +133,22 @@ func (c *BuildingController) GetBuildingDetail(ctx *gin.Context) {
 	}
 
 	response.Data = building
+	ctx.JSON(200, response)
+}
+
+func (c *BuildingController) DeleteBuilding(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+
+	if err != nil {
+		id = 0
+	}
+
+	if err := c.buildingService.DeleteBuilding(ctx, id); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
 	ctx.JSON(200, response)
 }
