@@ -18,9 +18,9 @@ func NewBuildingMigration() *BuildingMigration {
 func (m *BuildingMigration) Up() {
 	config.DB.AutoMigrate(&models.BuildingModel{})
 	config.DB.AutoMigrate(&models.BuildingServiceModel{})
-	// config.DB.Exec("ALTER TABLE building_service ADD CONSTRAINT building_service_composite_key UNIQUE (id, building_id);")
+	config.DB.Exec("ALTER TABLE building_service ADD CONSTRAINT building_service_composite_key UNIQUE (id, building_id);")
 	config.DB.AutoMigrate(&models.BuildingImageModel{})
-	// config.DB.Exec("ALTER TABLE building_image ADD CONSTRAINT building_image_composite_key UNIQUE (id, building_id);")
+	config.DB.Exec("ALTER TABLE building_image ADD CONSTRAINT building_image_composite_key UNIQUE (id, building_id);")
 	config.DB.AutoMigrate(&models.ManagerScheduleModel{})
 	config.DB.Exec("ALTER TABLE manager_schedule ADD CONSTRAINT manager_schedule_period CHECK (start_date<=end_date);")
 	m.roomMigration.Up()

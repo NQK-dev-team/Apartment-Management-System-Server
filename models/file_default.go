@@ -1,6 +1,7 @@
 package models
 
 import (
+	"api/structs"
 	"time"
 
 	"gorm.io/gorm"
@@ -14,7 +15,7 @@ type DefaultFileModel struct {
 	CreatedAt time.Time      `json:"createdAt" gorm:"column:created_at;type:timestamp with time zone;not null;default:now();"`
 	CreatedBy int64          `json:"createdBy" gorm:"column:created_by;type:bigint;"`
 	DeletedAt gorm.DeletedAt `json:"deletedAt" gorm:"column:deleted_at;type:timestamp with time zone;"`
-	DeletedBy interface{}    `json:"deletedBy" gorm:"column:deleted_by;type:bigint;"`
+	DeletedBy *structs.Int64 `json:"deletedBy" gorm:"column:deleted_by;type:bigint;"`
 }
 
 func (u *DefaultFileModel) BeforeCreate(tx *gorm.DB) error {

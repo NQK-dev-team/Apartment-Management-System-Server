@@ -82,7 +82,11 @@ func (r *UserRepository) Update(ctx *gin.Context, user *models.UserModel) error 
 }
 
 func (r *UserRepository) Delete(ctx *gin.Context, users *models.UserModel) error {
-	if err := config.DB.Model(&models.UserModel{}).Delete(users).Error; err != nil {
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		userID = 0
+	}
+	if err := config.DB.Set("userID", userID).Model(&models.UserModel{}).Delete(users).Error; err != nil {
 		return err
 	}
 	return nil
