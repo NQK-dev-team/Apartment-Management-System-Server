@@ -14,8 +14,8 @@ type DefaultModel struct {
 	CreatedBy int64          `json:"createdBy" gorm:"column:created_by;type:bigint;"`
 	UpdatedAt time.Time      `json:"updatedAt" gorm:"column:updated_at;type:timestamp with time zone;not null;default:now();"`
 	UpdatedBy int64          `json:"updatedBy" gorm:"column:updated_by;type:bigint;"`
-	DeletedAt gorm.DeletedAt `json:"deletedAt" gorm:"column:deleted_at;type:timestamp with time zone;"`
-	DeletedBy interface{}    `json:"deletedBy" gorm:"column:deleted_by;type:bigint;"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"column:deleted_at;type:timestamp with time zone;"`
+	DeletedBy interface{}    `json:"-" gorm:"column:deleted_by;type:bigint;"`
 }
 
 func (u *DefaultModel) BeforeCreate(tx *gorm.DB) error {
