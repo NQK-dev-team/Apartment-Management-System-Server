@@ -81,5 +81,7 @@ func (m *AuthenticationMiddleware) AuthMiddleware(ctx *gin.Context) {
 	ctx.Set("jwt", response.JWTToken)
 	// }
 
+	ctx.Set("userID", claims.UserID)
+
 	ctx.Next()
 }

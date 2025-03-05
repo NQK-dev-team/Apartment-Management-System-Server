@@ -4,6 +4,7 @@ import (
 	"api/config"
 	"api/models"
 	"errors"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -31,7 +32,7 @@ func (r *BuildingRepository) GetBuildingBaseOnSchedule(ctx *gin.Context, buildin
 }
 
 func (r *BuildingRepository) GetById(ctx *gin.Context, building *models.BuildingModel, id int64) error {
-	if err := config.DB.Where("id = ?", id).Preload("Images").First(building).Error; err != nil {
+	if err := config.DB.Where("id = ?", id).Preload("Rooms").First(building).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -42,10 +43,26 @@ func (r *BuildingRepository) GetById(ctx *gin.Context, building *models.Building
 
 func (r *BuildingRepository) GetNewID(ctx *gin.Context) (int64, error) {
 	lastestBuilding := models.BuildingModel{}
-	if err := config.DB.Order("id desc").First(&lastestBuilding).Error; err != nil {
+	if err := config.DB.Order("id desc").Unscoped().First(&lastestBuilding).Error; err != nil {
 		return 0, err
 	}
 	return lastestBuilding.ID + 1, nil
+}
+
+func (r *BuildingRepository) GetNewImageID(ctx *gin.Context) (int64, error) {
+	lastestImage := models.BuildingImageModel{}
+	if err := config.DB.Order("id desc").Unscoped().First(&lastestImage).Error; err != nil {
+		return 0, err
+	}
+	return lastestImage.ID + 1, nil
+}
+
+func (r *BuildingRepository) GetNewServiceID(ctx *gin.Context) (int64, error) {
+	lastestService := models.BuildingServiceModel{}
+	if err := config.DB.Order("id desc").Unscoped().First(&lastestService).Error; err != nil {
+		return 0, err
+	}
+	return lastestService.ID + 1, nil
 }
 
 func (r *BuildingRepository) Create(ctx *gin.Context, building *models.BuildingModel) error {
@@ -70,12 +87,43 @@ func (r *BuildingRepository) Update(ctx *gin.Context, building *models.BuildingM
 	return nil
 }
 
-func (r *BuildingRepository) Delete(ctx *gin.Context, building *models.BuildingModel) error {
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		userID = 0
+func (r *BuildingRepository) Delete(ctx *gin.Context, id []int64) error {
+	now := time.Now()
+	userID := ctx.GetInt64("userID")
+
+	if err := config.DB.Set("isQuiet", true).Model(&models.BuildingModel{}).Where("id in ?", id).UpdateColumns(models.BuildingModel{
+		DefaultModel: models.DefaultModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
+		return err
 	}
-	if err := config.DB.Set("userID", userID).Delete(building).Error; err != nil {
+
+	if err := config.DB.Set("isQuiet", true).Model(&models.BuildingImageModel{}).Where("building_id in ?", id).UpdateColumns(models.BuildingImageModel{
+		DefaultFileModel: models.DefaultFileModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
+		return err
+	}
+
+	if err := config.DB.Set("isQuiet", true).Model(&models.BuildingServiceModel{}).Where("building_id in ?", id).UpdateColumns(models.BuildingServiceModel{
+		DefaultModel: models.DefaultModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
 		return err
 	}
 	return nil

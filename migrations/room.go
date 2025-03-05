@@ -14,11 +14,11 @@ func NewRoomMigration() *RoomMigration {
 
 func (m *RoomMigration) Up() {
 	config.DB.AutoMigrate(&models.RoomModel{})
-	config.DB.Exec("ALTER TABLE room ADD CONSTRAINT room_composite_key UNIQUE (building_id, id);")
+	// config.DB.Exec("ALTER TABLE room ADD CONSTRAINT room_composite_key UNIQUE (building_id, id);")
 	config.DB.Exec("ALTER TABLE room ADD CONSTRAINT room_status CHECK (status >= 1 AND status <= 5);")
 
 	config.DB.AutoMigrate(&models.RoomImageModel{})
-	config.DB.Exec("ALTER TABLE room_image ADD CONSTRAINT room_image_composite_key UNIQUE (room_id, building_id, id);")
+	// config.DB.Exec("ALTER TABLE room_image ADD CONSTRAINT room_image_composite_key UNIQUE (room_id, building_id, id);")
 	// config.DB.Exec("ALTER TABLE room ADD CONSTRAINT unique_room_id_building_id UNIQUE (ID, building_id);")
 }
 
