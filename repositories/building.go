@@ -128,3 +128,36 @@ func (r *BuildingRepository) Delete(ctx *gin.Context, id []int64) error {
 	}
 	return nil
 }
+
+func (r *BuildingRepository) DeleteServices(ctx *gin.Context, id []int64) error {
+	now := time.Now()
+	userID := ctx.GetInt64("userID")
+
+	if err := config.DB.Set("isQuiet", true).Model(&models.BuildingServiceModel{}).Where("id in ?", id).UpdateColumns(models.BuildingServiceModel{
+		DefaultModel: models.DefaultModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BuildingRepository) GetBuildingService(ctx *gin.Context, buildingID int64, service *[]models.BuildingServiceModel) error {
+	if err := config.DB.Where("building_id = ?", buildingID).Find(service).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BuildingRepository) AddService(ctx *gin.Context, service *models.BuildingServiceModel) error {
+	userID := ctx.GetInt64("userID")
+	if err := config.DB.Set("userID", userID).Create(service).Error; err != nil {
+		return err
+	}
+	return nil
+}

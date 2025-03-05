@@ -61,6 +61,10 @@ func (s *BuildingService) GetBuildingRoom(ctx *gin.Context, buildingID int64, ro
 	return s.roomRepository.GetBuildingRoom(ctx, buildingID, room)
 }
 
+func (s *BuildingService) GetBuildingService(ctx *gin.Context, buildingID int64, service *[]models.BuildingServiceModel) error {
+	return s.buildingRepository.GetBuildingService(ctx, buildingID, service)
+}
+
 func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.NewBuilding) error {
 	deleteImageList := []string{}
 
@@ -204,5 +208,45 @@ func (s *BuildingService) DeleteBuilding(ctx *gin.Context, id int64) error {
 		}
 
 		return nil
+	})
+}
+
+func (s *BuildingService) DeleteRooms(ctx *gin.Context, buildingID int64, roomIDs []int64) error {
+	return config.DB.Transaction(func(tx *gorm.DB) error {
+		if err := s.roomService.DeleteWithoutTransaction(ctx, roomIDs); err != nil {
+			return err
+		}
+
+		building := &models.BuildingModel{}
+		if err := s.buildingRepository.GetById(ctx, building, buildingID); err != nil {
+			return err
+		}
+
+		building.TotalRoom = building.TotalRoom - len(roomIDs)
+
+		if err := s.buildingRepository.Update(ctx, building); err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+func (s *BuildingService) DeleteServices(ctx *gin.Context, serviceIDs []int64) error {
+	return config.DB.Transaction(func(tx *gorm.DB) error {
+		return s.buildingRepository.DeleteServices(ctx, serviceIDs)
+	})
+}
+
+func (s *BuildingService) AddService(ctx *gin.Context, service *models.BuildingServiceModel) error {
+	return config.DB.Transaction(func(tx *gorm.DB) error {
+		newID, err := s.buildingRepository.GetNewServiceID(ctx)
+		if err != nil {
+			return err
+		}
+
+		service.ID = newID
+
+		return s.buildingRepository.AddService(ctx, service)
 	})
 }
