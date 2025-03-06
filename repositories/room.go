@@ -75,3 +75,14 @@ func (r *RoomRepository) Delete(ctx *gin.Context, id []int64) error {
 
 	return nil
 }
+
+func (r *RoomRepository) Create(ctx *gin.Context, room *models.RoomModel) error {
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		userID = 0
+	}
+	if err := config.DB.Set("userID", userID).Create(room).Error; err != nil {
+		return err
+	}
+	return nil
+}

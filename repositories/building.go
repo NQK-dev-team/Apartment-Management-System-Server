@@ -18,14 +18,14 @@ func NewBuildingRepository() *BuildingRepository {
 }
 
 func (r *BuildingRepository) Get(ctx *gin.Context, building *[]models.BuildingModel) error {
-	if err := config.DB.Model(&models.BuildingModel{}).Preload("Images").Find(building).Error; err != nil {
+	if err := config.DB.Model(&models.BuildingModel{}).Preload("Images").Find(building).Order("id asc").Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r *BuildingRepository) GetBuildingBaseOnSchedule(ctx *gin.Context, building *[]models.BuildingModel, userID int64) error {
-	if err := config.DB.Model(&models.BuildingModel{}).Preload("Images").Select("building.*").Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id").Where("manager_schedule.start_date <= now() AND manager_schedule.end_date >= now() AND manager_schedule.manager_id = ?", userID).Scan(building).Error; err != nil {
+	if err := config.DB.Model(&models.BuildingModel{}).Preload("Images").Select("building.*").Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id").Where("manager_schedule.start_date <= now() AND manager_schedule.end_date >= now() AND manager_schedule.manager_id = ?", userID).Scan(building).Order("id asc").Error; err != nil {
 		return err
 	}
 	return nil

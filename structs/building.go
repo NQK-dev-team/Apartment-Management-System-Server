@@ -9,7 +9,7 @@ type BuildingID struct {
 type NewRoom struct {
 	No          int                     `form:"no" validate:"required,min=1001"`
 	Floor       int                     `form:"floor" validate:"required,min=1"`
-	Status      int                     `form:"status" validate:"require,min=1,max=5"`
+	Status      int                     `form:"status" validate:"required,min=1,max=5"`
 	Area        float64                 `form:"area" validate:"required,gt=0"`
 	Description string                  `form:"description" validate:"required"`
 	Images      []*multipart.FileHeader `validate:"required,min=1"`

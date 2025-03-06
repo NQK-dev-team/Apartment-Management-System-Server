@@ -104,19 +104,19 @@ func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.New
 		newBuilding.TotalRoom = building.TotalRoom
 
 		for index, image := range building.Images {
-			fileName, err := utils.StoreFile(image, "images/buildings/"+newBuildingIDStr+"/")
+			filePath, err := utils.StoreFile(image, "images/buildings/"+newBuildingIDStr+"/")
 			if err != nil {
 				return err
 			}
 			newBuilding.Images = append(newBuilding.Images, models.BuildingImageModel{
 				BuildingID: newBuildingID,
 				DefaultFileModel: models.DefaultFileModel{
-					Path: fileName,
+					Path: filePath,
 					No:   index + 1,
 					ID:   newBuildingImageIDStart + int64(index),
 				},
 			})
-			deleteImageList = append(deleteImageList, fileName)
+			deleteImageList = append(deleteImageList, filePath)
 		}
 
 		for index, val := range building.Services {
@@ -146,18 +146,19 @@ func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.New
 			roomNoStr := strconv.Itoa(int(val.No))
 
 			for roomImageLoopIndex, image := range val.Images {
-				fileName, err := utils.StoreFile(image, "images/buildings/"+newBuildingIDStr+"/"+"rooms/"+roomNoStr+"/")
+				filePath, err := utils.StoreFile(image, "images/buildings/"+newBuildingIDStr+"/"+"rooms/"+roomNoStr+"/")
 				if err != nil {
 					return err
 				}
 				newRoom.Images = append(newRoom.Images, models.RoomImageModel{
 					RoomID: newRoomID,
 					DefaultFileModel: models.DefaultFileModel{
-						Path: fileName,
+						Path: filePath,
 						No:   roomImageLoopIndex + 1,
 						ID:   newRoomImageIDStart + int64(roomLoopIndex*(len(building.Rooms)-1)) + int64(roomImageLoopIndex),
 					},
 				})
+				deleteImageList = append(deleteImageList, filePath)
 			}
 			newBuilding.Rooms = append(newBuilding.Rooms, newRoom)
 		}
@@ -249,4 +250,71 @@ func (s *BuildingService) AddService(ctx *gin.Context, service *models.BuildingS
 
 		return s.buildingRepository.AddService(ctx, service)
 	})
+}
+
+func (s *BuildingService) AddRoom(ctx *gin.Context, buildingID int64, room *structs.NewRoom) error {
+	deleteImageList := []string{}
+	newRoom := &models.RoomModel{
+		No:          room.No,
+		Floor:       room.Floor,
+		Status:      room.Status,
+		Area:        room.Area,
+		Description: room.Description,
+		BuildingID:  buildingID,
+	}
+
+	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		newRoomID, err := s.roomRepository.GetNewID(ctx)
+		if err != nil {
+			return err
+		}
+
+		newRoom.ID = newRoomID
+
+		newRoomImageIDStart, err := s.roomRepository.GetNewImageID(ctx)
+		if err != nil {
+			return err
+		}
+
+		for index, image := range room.Images {
+			filePath, err := utils.StoreFile(image, "images/buildings/"+strconv.Itoa(int(buildingID))+"/"+"rooms/"+strconv.Itoa(int(room.No))+"/")
+			if err != nil {
+				return err
+			}
+			newRoom.Images = append(newRoom.Images, models.RoomImageModel{
+				RoomID: newRoomID,
+				DefaultFileModel: models.DefaultFileModel{
+					Path: filePath,
+					No:   index + 1,
+					ID:   newRoomImageIDStart + int64(index),
+				},
+			})
+			deleteImageList = append(deleteImageList, filePath)
+		}
+
+		if err := s.roomRepository.Create(ctx, newRoom); err != nil {
+			return err
+		}
+
+		building := &models.BuildingModel{}
+		if err := s.buildingRepository.GetById(ctx, building, buildingID); err != nil {
+			return err
+		}
+
+		building.TotalRoom = building.TotalRoom + 1
+
+		if err := s.buildingRepository.Update(ctx, building); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		for _, path := range deleteImageList {
+			utils.RemoveFile(path)
+		}
+	}
+
+	return nil
 }
