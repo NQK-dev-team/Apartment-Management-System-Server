@@ -87,3 +87,10 @@ func (r *UserRepository) Delete(ctx *gin.Context, users *models.UserModel) error
 	}
 	return nil
 }
+
+func (r *UserRepository) GetStaffList(ctx *gin.Context, users *[]models.UserModel) error {
+	if err := config.DB.Model(&models.UserModel{}).Where("is_owner = false AND is_manager = true AND is_customer = false").Find(users).Error; err != nil {
+		return err
+	}
+	return nil
+}

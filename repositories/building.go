@@ -161,3 +161,25 @@ func (r *BuildingRepository) AddService(ctx *gin.Context, service *models.Buildi
 	}
 	return nil
 }
+
+func (r *BuildingRepository) EditService(ctx *gin.Context, service *models.BuildingServiceModel) error {
+	userID := ctx.GetInt64("userID")
+	if err := config.DB.Set("userID", userID).Save(service).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BuildingRepository) GetServiceByID(ctx *gin.Context, service *models.BuildingServiceModel, id int64) error {
+	if err := config.DB.Where("id = ?", id).First(service).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BuildingRepository) GetBuildingSchedule(ctx *gin.Context, buildingID int64, schedule *[]models.ManagerScheduleModel) error {
+	if err := config.DB.Preload("Manager").Where("building_id = ?", buildingID).Find(schedule).Error; err != nil {
+		return err
+	}
+	return nil
+}

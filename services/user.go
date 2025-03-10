@@ -85,3 +85,10 @@ func (s *UserService) DeleteUser(ctx *gin.Context, user *models.UserModel) error
 	})
 	return err
 }
+
+func(s *UserService) GetStaffList(ctx *gin.Context, users *[]models.UserModel) error {
+	if err := s.UserRepository.GetStaffList(ctx, users); err != nil {
+		return err
+	}
+	return nil
+}

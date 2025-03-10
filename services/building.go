@@ -252,6 +252,20 @@ func (s *BuildingService) AddService(ctx *gin.Context, service *models.BuildingS
 	})
 }
 
+func (s *BuildingService) EditService(ctx *gin.Context, newServiceData *models.BuildingServiceModel) error {
+	return config.DB.Transaction(func(tx *gorm.DB) error {
+		service := &models.BuildingServiceModel{}
+		if err := s.buildingRepository.GetServiceByID(ctx, service, newServiceData.ID); err != nil {
+			return err
+		}
+
+		service.Name = newServiceData.Name
+		service.Price = newServiceData.Price
+
+		return s.buildingRepository.EditService(ctx, service)
+	})
+}
+
 func (s *BuildingService) AddRoom(ctx *gin.Context, buildingID int64, room *structs.NewRoom) error {
 	deleteImageList := []string{}
 	newRoom := &models.RoomModel{
@@ -317,4 +331,8 @@ func (s *BuildingService) AddRoom(ctx *gin.Context, buildingID int64, room *stru
 	}
 
 	return nil
+}
+
+func(s *BuildingService) GetBuildingSchedule(ctx *gin.Context, buildingID int64, schedules *[]models.ManagerScheduleModel) error {
+	return s.buildingRepository.GetBuildingSchedule(ctx, buildingID, schedules)
 }

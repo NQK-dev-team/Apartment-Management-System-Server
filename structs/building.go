@@ -15,7 +15,7 @@ type NewRoom struct {
 	Images      []*multipart.FileHeader `validate:"required,min=1"`
 }
 
-type NewService struct {
+type Service struct {
 	Name  string  `form:"name" validate:"required"`
 	Price float64 `form:"price" validate:"required,gt=0"`
 }
@@ -25,7 +25,7 @@ type NewBuilding struct {
 	Address    string                  `form:"address" validate:"required"`
 	TotalRoom  int                     `form:"totalRoom"`
 	TotalFloor int                     `form:"totalFloor"`
-	Services   []NewService            `form:"services[]"`
+	Services   []Service            `form:"services[]"`
 	Images     []*multipart.FileHeader `validate:"required,min=1"`
 	Rooms      []NewRoom               `form:"rooms[]"`
 }
