@@ -15,6 +15,12 @@ type NewRoom struct {
 	Images      []*multipart.FileHeader `validate:"required,min=1"`
 }
 
+type NewSchedule struct {
+	ManagerID int64  `form:"managerID" validate:"required"`
+	StartDate string `form:"startDate" validate:"required"`
+	EndDate   string `form:"endDate" validate:"required"`
+}
+
 type Service struct {
 	Name  string  `form:"name" validate:"required"`
 	Price float64 `form:"price" validate:"required,gt=0"`
@@ -25,7 +31,8 @@ type NewBuilding struct {
 	Address    string                  `form:"address" validate:"required"`
 	TotalRoom  int                     `form:"totalRoom"`
 	TotalFloor int                     `form:"totalFloor"`
-	Services   []Service            `form:"services[]"`
+	Services   []Service               `form:"services[]"`
 	Images     []*multipart.FileHeader `validate:"required,min=1"`
 	Rooms      []NewRoom               `form:"rooms[]"`
+	Schedules  []NewSchedule           `form:"schedules[]"`
 }

@@ -14,16 +14,18 @@ import (
 )
 
 type BuildingService struct {
-	roomService        *RoomService
-	buildingRepository *repositories.BuildingRepository
-	roomRepository     *repositories.RoomRepository
+	roomService               *RoomService
+	buildingRepository        *repositories.BuildingRepository
+	roomRepository            *repositories.RoomRepository
+	managerScheduleRepository *repositories.ManagerScheduleRepository
 }
 
 func NewBuildingService() *BuildingService {
 	return &BuildingService{
-		roomService:        NewRoomService(),
-		buildingRepository: repositories.NewBuildingRepository(),
-		roomRepository:     repositories.NewRoomRepository(),
+		roomService:               NewRoomService(),
+		buildingRepository:        repositories.NewBuildingRepository(),
+		roomRepository:            repositories.NewRoomRepository(),
+		managerScheduleRepository: repositories.NewManagerScheduleRepository(),
 	}
 }
 
@@ -164,6 +166,32 @@ func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.New
 		}
 
 		if err := s.buildingRepository.Create(ctx, newBuilding); err != nil {
+			return err
+		}
+
+		newScheduleIDStart, err := s.managerScheduleRepository.GetNewScheduleID(ctx)
+
+		if err != nil {
+			return err
+		}
+
+		schedules := []models.ManagerScheduleModel{}
+
+		for index, val := range building.Schedules {
+			startDate := utils.ParseTime(val.StartDate)
+			endDate := utils.StringToNullTime(val.EndDate)
+			schedules = append(schedules, models.ManagerScheduleModel{
+				BuildingID: newBuildingID,
+				ManagerID:  val.ManagerID,
+				StartDate:  startDate,
+				EndDate:    endDate,
+				DefaultModel: models.DefaultModel{
+					ID: newScheduleIDStart + int64(index),
+				},
+			})
+		}
+
+		if err := s.managerScheduleRepository.Create(ctx, &schedules); err != nil {
 			return err
 		}
 
@@ -333,6 +361,6 @@ func (s *BuildingService) AddRoom(ctx *gin.Context, buildingID int64, room *stru
 	return nil
 }
 
-func(s *BuildingService) GetBuildingSchedule(ctx *gin.Context, buildingID int64, schedules *[]models.ManagerScheduleModel) error {
+func (s *BuildingService) GetBuildingSchedule(ctx *gin.Context, buildingID int64, schedules *[]models.ManagerScheduleModel) error {
 	return s.buildingRepository.GetBuildingSchedule(ctx, buildingID, schedules)
 }
