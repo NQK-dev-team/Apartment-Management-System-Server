@@ -32,7 +32,7 @@ func (r *BuildingRepository) GetBuildingBaseOnSchedule(ctx *gin.Context, buildin
 }
 
 func (r *BuildingRepository) GetById(ctx *gin.Context, building *models.BuildingModel, id int64) error {
-	if err := config.DB.Where("id = ?", id).Preload("Rooms").Preload("Images").Preload("Services").First(building).Error; err != nil {
+	if err := config.DB.Where("id = ?", id).Preload("Rooms").Preload("Rooms.Images").Preload("Images").Preload("Services").First(building).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
