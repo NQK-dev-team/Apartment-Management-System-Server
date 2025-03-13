@@ -7,6 +7,7 @@ import (
 	"api/repositories"
 	"api/structs"
 	"api/utils"
+	"path/filepath"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -113,9 +114,10 @@ func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.New
 			newBuilding.Images = append(newBuilding.Images, models.BuildingImageModel{
 				BuildingID: newBuildingID,
 				DefaultFileModel: models.DefaultFileModel{
-					Path: filePath,
-					No:   index + 1,
-					ID:   newBuildingImageIDStart + int64(index),
+					Path:  filePath,
+					No:    index + 1,
+					ID:    newBuildingImageIDStart + int64(index),
+					Title: filepath.Base(filePath),
 				},
 			})
 			deleteImageList = append(deleteImageList, filePath)
@@ -155,9 +157,10 @@ func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.New
 				newRoom.Images = append(newRoom.Images, models.RoomImageModel{
 					RoomID: newRoomID,
 					DefaultFileModel: models.DefaultFileModel{
-						Path: filePath,
-						No:   roomImageLoopIndex + 1,
-						ID:   newRoomImageIDStart + int64(roomLoopIndex*(len(building.Rooms)-1)) + int64(roomImageLoopIndex),
+						Path:  filePath,
+						No:    roomImageLoopIndex + 1,
+						ID:    newRoomImageIDStart + int64(roomLoopIndex*(len(building.Rooms)-1)) + int64(roomImageLoopIndex),
+						Title: filepath.Base(filePath),
 					},
 				})
 				deleteImageList = append(deleteImageList, filePath)

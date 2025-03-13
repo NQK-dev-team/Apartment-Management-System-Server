@@ -170,7 +170,22 @@ func (s *AuthenticationService) VerifyToken(ctx *gin.Context, jwtToken string) (
 		return false, err
 	}
 
-	return true, nil
+	token, _ := utils.ValidateJWTToken(jwtToken)
+	claims := structs.JTWClaim{}
+
+	if token == nil {
+		return false, nil
+	}
+
+	utils.ExtractJWTClaim(token, &claims)
+
+	user := models.UserModel{}
+
+	if err := s.userRepository.GetByID(ctx, &user, claims.UserID); err != nil {
+		return false, err
+	}
+
+	return user.IsOwner == claims.IsOwner && user.IsManager == claims.IsManager && user.IsCustomer == claims.IsCustomer, nil
 }
 
 func (s *AuthenticationService) ExtractJWTData(ctx *gin.Context, jwt string) *structs.JTWClaim {
