@@ -395,9 +395,16 @@ func (c *BuildingController) GetBuildingSchedule(ctx *gin.Context) {
 
 	schedule := &[]models.ManagerScheduleModel{}
 
-	if err := c.buildingService.GetBuildingSchedule(ctx, buildingID, schedule); err != nil {
+	isAuthenticated, err := c.buildingService.GetBuildingSchedule(ctx, buildingID, schedule)
+	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(500, response)
+		return
+	}
+
+	if !isAuthenticated {
+		response.Message = config.GetMessageCode("INVALID_CREDENTIALS")
+		ctx.JSON(401, response)
 		return
 	}
 

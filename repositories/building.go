@@ -183,3 +183,10 @@ func (r *BuildingRepository) GetBuildingSchedule(ctx *gin.Context, buildingID in
 	}
 	return nil
 }
+
+func (r *BuildingRepository) GetManagerBuildingSchedule(ctx *gin.Context, buildingID int64, schedule *[]models.ManagerScheduleModel, mangerID int64) error {
+	if err := config.DB.Preload("Manager").Where("building_id = ? AND manager_id = ?", buildingID, mangerID).Find(schedule).Error; err != nil {
+		return err
+	}
+	return nil
+}

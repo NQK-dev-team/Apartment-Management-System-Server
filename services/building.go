@@ -364,6 +364,32 @@ func (s *BuildingService) AddRoom(ctx *gin.Context, buildingID int64, room *stru
 	return nil
 }
 
-func (s *BuildingService) GetBuildingSchedule(ctx *gin.Context, buildingID int64, schedules *[]models.ManagerScheduleModel) error {
-	return s.buildingRepository.GetBuildingSchedule(ctx, buildingID, schedules)
+func (s *BuildingService) GetBuildingSchedule(ctx *gin.Context, buildingID int64, schedules *[]models.ManagerScheduleModel) (bool, error) {
+	role, exists := ctx.Get("role")
+
+	if !exists {
+		return false, nil
+	}
+
+	if role.(string) == constants.Roles.Manager {
+		jwt, exists := ctx.Get("jwt")
+
+		if !exists {
+			return false, nil
+		}
+
+		token, err := utils.ValidateJWTToken(jwt.(string))
+
+		if err != nil {
+			return true, err
+		}
+
+		claim := &structs.JTWClaim{}
+
+		utils.ExtractJWTClaim(token, claim)
+
+		return true, s.buildingRepository.GetManagerBuildingSchedule(ctx, buildingID, schedules, claim.UserID)
+	}
+
+	return true, s.buildingRepository.GetBuildingSchedule(ctx, buildingID, schedules)
 }
