@@ -266,7 +266,7 @@ func (c *BuildingController) AddService(ctx *gin.Context) {
 		return
 	}
 
-	newService := &structs.Service{}
+	newService := &structs.NewService{}
 
 	if err := ctx.ShouldBind(newService); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
@@ -313,7 +313,7 @@ func (c *BuildingController) EditService(ctx *gin.Context) {
 		return
 	}
 
-	service := &structs.Service{}
+	service := &structs.NewService{}
 
 	if err := ctx.ShouldBind(service); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
@@ -410,4 +410,46 @@ func (c *BuildingController) GetBuildingSchedule(ctx *gin.Context) {
 
 	response.Data = schedule
 	ctx.JSON(200, response)
+}
+
+func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	var building = &structs.EditBuilding{}
+
+	if err := ctx.ShouldBind(building); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
+	}
+
+	form, _ := ctx.MultipartForm()
+	building.NewBuildingImages = form.File["newBuildingImages[]"]
+
+	for index, room := range building.NewRooms {
+		roomNoStr := strconv.Itoa(room.No)
+		roomImages := form.File["newRoomImages["+roomNoStr+"]"]
+		building.NewRooms[index].Images = roomImages
+	}
+
+	for index, room := range building.Rooms {
+		roomNoStr := strconv.Itoa(room.No)
+		roomImages := form.File["newRoomImages["+roomNoStr+"]"]
+		building.Rooms[index].Images = roomImages
+	}
+
+	if err := utils.Validate.Struct(building); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = err.Error()
+		ctx.JSON(400, response)
+		return
+	}
+
+	// if err := c.buildingService.CreateBuilding(ctx, building); err != nil {
+	// 	response.Message = config.GetMessageCode("SYSTEM_ERROR")
+	// 	ctx.JSON(500, response)
+	// 	return
+	// }
+
+	ctx.JSON(500, response)
+	// ctx.JSON(200, response)
 }

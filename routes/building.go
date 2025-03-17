@@ -25,6 +25,7 @@ func InitBuildingRoutes(router *gin.RouterGroup) {
 		r.POST("/:id/service/:serviceID/edit", buildingController.EditService)
 		r.POST("/:id/room/add", buildingController.AddRoom)
 		r.GET("/:id/schedule", buildingController.GetBuildingSchedule)
+		r.POST("/:id/update", buildingController.UpdateBuilding)
 	}
 
 	r.Use(authorizationMiddle.AuthOwnerMiddleware)
