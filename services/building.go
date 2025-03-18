@@ -7,6 +7,7 @@ import (
 	"api/repositories"
 	"api/structs"
 	"api/utils"
+	"errors"
 	"path/filepath"
 	"strconv"
 
@@ -392,4 +393,18 @@ func (s *BuildingService) GetBuildingSchedule(ctx *gin.Context, buildingID int64
 	}
 
 	return true, s.buildingRepository.GetBuildingSchedule(ctx, buildingID, schedules)
+}
+
+func (s *BuildingService) UpdateBuilding(ctx *gin.Context, building *structs.EditBuilding) error {
+	role, exists := ctx.Get("role")
+
+	if !exists {
+		return errors.New("role not found")
+	}
+
+	if role.(string) == constants.Roles.Owner {
+
+	}
+
+	return nil
 }

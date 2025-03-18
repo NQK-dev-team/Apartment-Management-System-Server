@@ -422,6 +422,18 @@ func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
 		return
 	}
 
+	if building.ID == 0 {
+		buildingID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+
+		if err != nil {
+			response.Message = config.GetMessageCode("INVALID_PARAMETER")
+			ctx.JSON(400, response)
+			return
+		}
+
+		building.ID = buildingID
+	}
+
 	form, _ := ctx.MultipartForm()
 	building.NewBuildingImages = form.File["newBuildingImages[]"]
 
@@ -444,11 +456,11 @@ func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
 		return
 	}
 
-	// if err := c.buildingService.CreateBuilding(ctx, building); err != nil {
-	// 	response.Message = config.GetMessageCode("SYSTEM_ERROR")
-	// 	ctx.JSON(500, response)
-	// 	return
-	// }
+	if err := c.buildingService.UpdateBuilding(ctx, building); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
 
 	ctx.JSON(500, response)
 	// ctx.JSON(200, response)
