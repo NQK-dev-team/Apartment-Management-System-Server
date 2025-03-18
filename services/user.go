@@ -2,9 +2,12 @@ package services
 
 import (
 	"api/config"
+	"api/constants"
 	"api/models"
 	"api/repositories"
+	"api/structs"
 	"api/utils"
+	"errors"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -86,7 +89,35 @@ func (s *UserService) DeleteUser(ctx *gin.Context, user *models.UserModel) error
 	return err
 }
 
-func(s *UserService) GetStaffList(ctx *gin.Context, users *[]models.UserModel) error {
+func (s *UserService) GetStaffList(ctx *gin.Context, users *[]models.UserModel) error {
+	role, exists := ctx.Get("role")
+
+	if !exists {
+		return errors.New("role not found")
+	}
+
+	if role.(string) == constants.Roles.Manager {
+		jwt, exists := ctx.Get("jwt")
+
+		if !exists {
+			return errors.New("jwt not found")
+		}
+
+		token, err := utils.ValidateJWTToken(jwt.(string))
+
+		if err != nil {
+			return errors.New("jwt not valid")
+		}
+
+		claim := &structs.JTWClaim{}
+
+		utils.ExtractJWTClaim(token, claim)
+
+		if err := s.UserRepository.GetByIDs(ctx, users, []int64{claim.UserID}); err != nil {
+			return err
+		}
+	}
+
 	if err := s.UserRepository.GetStaffList(ctx, users); err != nil {
 		return err
 	}

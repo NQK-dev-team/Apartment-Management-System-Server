@@ -3,6 +3,7 @@ package repositories
 import (
 	"api/config"
 	"api/models"
+	"api/structs"
 	"errors"
 	"time"
 
@@ -40,6 +41,14 @@ func (r *BuildingRepository) GetById(ctx *gin.Context, building *models.Building
 	}
 	return nil
 }
+
+// func (r *BuildingRepository) GetNewImageNo(ctx *gin.Context, buildingID int64) (int, error) {
+// 	lastestImage := models.BuildingImageModel{}
+// 	if err := config.DB.Where("building_id = ?", buildingID).Order("no desc").Unscoped().First(&lastestImage).Error; err != nil {
+// 		return 0, err
+// 	}
+// 	return lastestImage.No + 1, nil
+// }
 
 func (r *BuildingRepository) GetNewID(ctx *gin.Context) (int64, error) {
 	lastestBuilding := models.BuildingModel{}
@@ -129,6 +138,24 @@ func (r *BuildingRepository) Delete(ctx *gin.Context, id []int64) error {
 	return nil
 }
 
+func (r *BuildingRepository) DeleteImages(ctx *gin.Context, id []int64) error {
+	now := time.Now()
+	userID := ctx.GetInt64("userID")
+
+	if err := config.DB.Set("isQuiet", true).Model(&models.BuildingImageModel{}).Where("building_id in ?", id).UpdateColumns(models.BuildingImageModel{
+		DefaultFileModel: models.DefaultFileModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *BuildingRepository) DeleteServices(ctx *gin.Context, id []int64) error {
 	now := time.Now()
 	userID := ctx.GetInt64("userID")
@@ -162,6 +189,14 @@ func (r *BuildingRepository) AddService(ctx *gin.Context, service *models.Buildi
 	return nil
 }
 
+func (r *BuildingRepository) AddBuildingService(ctx *gin.Context, services *[]structs.NewBuildingService) error {
+	userID := ctx.GetInt64("userID")
+	if err := config.DB.Set("userID", userID).Model(&models.BuildingServiceModel{}).Create(services).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *BuildingRepository) EditService(ctx *gin.Context, service *models.BuildingServiceModel) error {
 	userID := ctx.GetInt64("userID")
 	if err := config.DB.Set("userID", userID).Save(service).Error; err != nil {
@@ -186,6 +221,22 @@ func (r *BuildingRepository) GetBuildingSchedule(ctx *gin.Context, buildingID in
 
 func (r *BuildingRepository) GetManagerBuildingSchedule(ctx *gin.Context, buildingID int64, schedule *[]models.ManagerScheduleModel, mangerID int64) error {
 	if err := config.DB.Preload("Manager").Where("building_id = ? AND manager_id = ?", buildingID, mangerID).Find(schedule).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BuildingRepository) AddImage(ctx *gin.Context, image *[]structs.NewBuildingImage) error {
+	userID := ctx.GetInt64("userID")
+	if err := config.DB.Set("userID", userID).Model(&models.BuildingImageModel{}).Create(image).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BuildingRepository) AddBuilingSchedule(ctx *gin.Context, schedule *[]structs.NewBuildingSchedule) error {
+	userID := ctx.GetInt64("userID")
+	if err := config.DB.Set("userID", userID).Model(&models.ManagerScheduleModel{}).Create(schedule).Error; err != nil {
 		return err
 	}
 	return nil

@@ -3,6 +3,7 @@ package repositories
 import (
 	"api/config"
 	"api/models"
+	"api/structs"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -82,6 +83,17 @@ func (r *RoomRepository) Create(ctx *gin.Context, room *models.RoomModel) error 
 		userID = 0
 	}
 	if err := config.DB.Set("userID", userID).Create(room).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *RoomRepository) CreateRoom(ctx *gin.Context, room *[]structs.NewBuildingRoom) error {
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		userID = 0
+	}
+	if err := config.DB.Set("userID", userID).Model(&models.RoomModel{}).Create(room).Error; err != nil {
 		return err
 	}
 	return nil

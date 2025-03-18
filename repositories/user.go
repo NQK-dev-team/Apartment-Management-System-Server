@@ -27,6 +27,17 @@ func (r *UserRepository) GetByID(ctx *gin.Context, user *models.UserModel, id in
 	return nil
 }
 
+func (r *UserRepository) GetByIDs(ctx *gin.Context, user *[]models.UserModel, id []int64) error {
+	if err := config.DB.Where("id = ?", id).Find(user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (r *UserRepository) GetBySSN(ctx *gin.Context, user *models.UserModel, ssn string) error {
 	if err := config.DB.Where("ssn = ?", ssn).First(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

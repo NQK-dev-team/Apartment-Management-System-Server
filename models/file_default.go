@@ -8,7 +8,7 @@ import (
 
 type DefaultFileModel struct {
 	ID        int64          `json:"ID" gorm:"primaryKey; column:id; autoIncrement; not null;"`
-	No        int            `json:"no" gorm:"column:no;type:int;"`
+	No        int            `json:"no" gorm:"column:no;type:int;autoIncrement; not null;"`
 	Title     string         `json:"title" gorm:"column:title;type:varchar(255);not null;"`
 	Path      string         `json:"path" gorm:"column:path;type:varchar(255);not null;"`
 	CreatedAt time.Time      `json:"createdAt" gorm:"column:created_at;type:timestamp with time zone;not null;default:now();"`

@@ -402,8 +402,143 @@ func (s *BuildingService) UpdateBuilding(ctx *gin.Context, building *structs.Edi
 		return errors.New("role not found")
 	}
 
-	if role.(string) == constants.Roles.Owner {
+	buildingIDStr := strconv.Itoa(int(building.ID))
 
+	deleteImageList := []string{}
+
+	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		newBuildingData := &models.BuildingModel{}
+
+		if err := s.buildingRepository.GetById(ctx, newBuildingData, building.ID); err != nil {
+			return err
+		}
+
+		if role.(string) == constants.Roles.Owner {
+			newBuildingData.Name = building.Name
+			newBuildingData.Address = building.Address
+			newBuildingData.TotalFloor = building.TotalFloor
+			newBuildingData.TotalRoom = len(building.Rooms) + len(building.NewRooms)
+
+			// newImageNo, err := s.buildingRepository.GetNewImageNo(ctx, building.ID)
+
+			// if err != nil {
+			// 	return err
+			// }
+
+			if err := s.buildingRepository.Update(ctx, newBuildingData); err != nil {
+				return err
+			}
+
+			if len(building.DeletedBuildingImages) > 0 {
+				if err := s.buildingRepository.DeleteImages(ctx, building.DeletedBuildingImages); err != nil {
+					return err
+				}
+			}
+
+			if len(building.DeletedSchedules) > 0 {
+				if err := s.managerScheduleRepository.Delete(ctx, building.DeletedSchedules); err != nil {
+					return err
+				}
+			}
+
+			if len(building.DeletedRooms) > 0 {
+				if err := s.roomRepository.Delete(ctx, building.DeletedRooms); err != nil {
+					return err
+				}
+			}
+
+			newImage := []structs.NewBuildingImage{}
+			for _, image := range building.NewBuildingImages {
+				filePath, err := utils.StoreFile(image, "images/buildings/"+buildingIDStr+"/")
+				if err != nil {
+					return err
+				}
+				deleteImageList = append(deleteImageList, filePath)
+				newImage = append(newImage, structs.NewBuildingImage{
+					BuildingID: building.ID,
+					Title:      filepath.Base(filePath),
+					Path:       filePath,
+					// No:         newImageNo + index,
+				})
+			}
+			if err := s.buildingRepository.AddImage(ctx, &newImage); err != nil {
+				return err
+			}
+
+			schedules := []structs.NewBuildingSchedule{}
+			for _, schedule := range building.NewSchedules {
+				schedules = append(schedules, structs.NewBuildingSchedule{
+					BuildingID: building.ID,
+					ManagerID:  schedule.ManagerID,
+					StartDate:  utils.ParseTime(schedule.StartDate),
+					EndDate:    utils.StringToNullTime(schedule.EndDate),
+				})
+			}
+			if err := s.buildingRepository.AddBuilingSchedule(ctx, &schedules); err != nil {
+				return err
+			}
+
+			rooms := []structs.NewBuildingRoom{}
+			for _, room := range building.NewRooms {
+				images := []structs.NewRoomImage{}
+				roomNoStr := strconv.Itoa(int(room.No))
+				for _, image := range room.Images {
+					filePath, err := utils.StoreFile(image, "images/buildings/"+buildingIDStr+"/"+"rooms/"+roomNoStr+"/")
+					if err != nil {
+						return err
+					}
+					images = append(images, structs.NewRoomImage{
+						// RoomID: newRoomID,
+						Path:  filePath,
+						Title: filepath.Base(filePath),
+					})
+					deleteImageList = append(deleteImageList, filePath)
+				}
+
+				rooms = append(rooms, structs.NewBuildingRoom{
+					No:          room.No,
+					Images:      images,
+					Floor:       room.Floor,
+					Status:      room.Status,
+					Area:        room.Area,
+					Description: room.Description,
+					BuildingID:  building.ID,
+				})
+			}
+			if err := s.roomRepository.CreateRoom(ctx, &rooms); err != nil {
+				return err
+			}
+		}
+
+		if len(building.DeletedServices) > 0 {
+			if err := s.buildingRepository.DeleteServices(ctx, building.DeletedServices); err != nil {
+				return err
+			}
+		}
+
+		if len(building.NewServices) > 0 {
+			services := []structs.NewBuildingService{}
+			for _, service := range building.NewServices {
+				services = append(services, structs.NewBuildingService{
+					Name:       service.Name,
+					Price:      service.Price,
+					BuildingID: building.ID,
+				})
+			}
+			if err := s.buildingRepository.AddBuildingService(ctx, &services); err != nil {
+				return err
+			}
+		}
+
+		return errors.New("fake error")
+		// return nil
+	})
+
+	if err != nil {
+		for _, path := range deleteImageList {
+			utils.RemoveFile(path)
+		}
+		return err
 	}
 
 	return nil
