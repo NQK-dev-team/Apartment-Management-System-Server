@@ -53,13 +53,14 @@ type EditSchedule struct {
 }
 
 type EditRoom struct {
-	ID          int64                   `form:"id" validate:"required"`
-	No          int                     `form:"no" validate:"required,min=1001"`
-	Floor       int                     `form:"floor" validate:"required,min=1"`
-	Status      int                     `form:"status" validate:"required,min=1,max=5"`
-	Area        float64                 `form:"area" validate:"required,gt=0"`
-	Description string                  `form:"description" validate:"required"`
-	Images      []*multipart.FileHeader `validate:"required,min=1"`
+	ID          int64   `form:"id" validate:"required"`
+	No          int     `form:"no" validate:"required,min=1001"`
+	Floor       int     `form:"floor" validate:"required,min=1"`
+	Status      int     `form:"status" validate:"required,min=1,max=5"`
+	Area        float64 `form:"area" validate:"required,gt=0"`
+	Description string  `form:"description" validate:"required"`
+	NewImages   []*multipart.FileHeader
+	TotalImage  int `validate:"required,min=1"`
 }
 
 type EditBuilding struct {
@@ -75,7 +76,9 @@ type EditBuilding struct {
 	NewSchedules          []NewSchedule  `form:"newSchedules[]"`
 	Schedules             []EditSchedule `form:"schedules[]"`
 	DeletedRooms          []int64        `form:"deletedRooms[]"`
+	DeletedRoomImages     []int64        `form:"deletedRoomImages[]"`
 	NewRooms              []NewRoom      `form:"newRooms[]"`
 	Rooms                 []EditRoom     `form:"rooms[]"`
 	TotalFloor            int            `form:"totalFloor"`
+	TotalImage            int            `validate:"required,min=1"`
 }

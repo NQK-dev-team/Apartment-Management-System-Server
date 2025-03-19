@@ -12,5 +12,6 @@ func InitFileRoutes(router *gin.RouterGroup) {
 
 	fileController := controllers.NewFileController()
 
-	imageRoutes.GET("/buildings/:id/:filename", fileController.GetBuildingImage)
+	imageRoutes.GET("/buildings/:buildingID/rooms/:roomNo/:fileName", fileController.GetRoomImage)
+	imageRoutes.GET("/buildings/:buildingID/:fileName", fileController.GetBuildingImage)
 }

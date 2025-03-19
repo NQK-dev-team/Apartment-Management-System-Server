@@ -27,11 +27,11 @@ func (r *BillRepository) GetById(ctx *gin.Context, bill *models.BillModel, id in
 	return nil
 }
 
-func (r *BillRepository) Delete(ctx *gin.Context, id []int64) error {
+func (r *BillRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 	now := time.Now()
 	userID := ctx.GetInt64("userID")
 
-	if err := config.DB.Set("isQuiet", true).Model(&models.BillModel{}).Where("id IN ?", id).UpdateColumns(models.BillModel{
+	if err := tx.Set("isQuiet", true).Model(&models.BillModel{}).Where("id IN ?", id).UpdateColumns(models.BillModel{
 		DefaultModel: models.DefaultModel{
 			DeletedBy: userID,
 			DeletedAt: gorm.DeletedAt{
@@ -43,7 +43,7 @@ func (r *BillRepository) Delete(ctx *gin.Context, id []int64) error {
 		return err
 	}
 
-	if err := config.DB.Set("isQuiet", true).Model(&models.ExtraPaymentModel{}).Where("bill_id IN ?", id).UpdateColumns(models.ExtraPaymentModel{
+	if err := tx.Set("isQuiet", true).Model(&models.ExtraPaymentModel{}).Where("bill_id IN ?", id).UpdateColumns(models.ExtraPaymentModel{
 		DefaultModel: models.DefaultModel{
 			DeletedBy: userID,
 			DeletedAt: gorm.DeletedAt{

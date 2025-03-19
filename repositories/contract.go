@@ -41,11 +41,11 @@ func (r *ContractRepository) GetContractByRoomID(ctx *gin.Context, contract *[]m
 	return nil
 }
 
-func (r *ContractRepository) Delete(ctx *gin.Context, id []int64) error {
+func (r *ContractRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 	now := time.Now()
 	userID := ctx.GetInt64("userID")
 
-	if err := config.DB.Set("isQuiet", true).Model(&models.ContractModel{}).Where("id in ?", id).UpdateColumns(models.ContractModel{
+	if err := tx.Set("isQuiet", true).Model(&models.ContractModel{}).Where("id in ?", id).UpdateColumns(models.ContractModel{
 		DefaultModel: models.DefaultModel{
 			DeletedBy: userID,
 			DeletedAt: gorm.DeletedAt{
@@ -57,7 +57,7 @@ func (r *ContractRepository) Delete(ctx *gin.Context, id []int64) error {
 		return err
 	}
 
-	if err := config.DB.Set("isQuiet", true).Model(&models.ContractFileModel{}).Where("contract_id in ?", id).UpdateColumns(models.ContractFileModel{
+	if err := tx.Set("isQuiet", true).Model(&models.ContractFileModel{}).Where("contract_id in ?", id).UpdateColumns(models.ContractFileModel{
 		DefaultFileModel: models.DefaultFileModel{
 			DeletedBy: userID,
 			DeletedAt: gorm.DeletedAt{

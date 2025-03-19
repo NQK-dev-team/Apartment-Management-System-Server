@@ -27,11 +27,11 @@ func (r *SupportTicketRepository) GetById(ctx *gin.Context, ticket *models.Suppo
 	return nil
 }
 
-func (r *SupportTicketRepository) Delete(ctx *gin.Context, id []int64) error {
+func (r *SupportTicketRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 	now := time.Now()
 	userID := ctx.GetInt64("userID")
 
-	if err := config.DB.Set("isQuiet", true).Model(&models.SupportTicketModel{}).Where("id IN ?", id).UpdateColumns(models.SupportTicketModel{
+	if err := tx.Set("isQuiet", true).Model(&models.SupportTicketModel{}).Where("id IN ?", id).UpdateColumns(models.SupportTicketModel{
 		DefaultModel: models.DefaultModel{
 			DeletedAt: gorm.DeletedAt{
 				Valid: true,
@@ -43,7 +43,7 @@ func (r *SupportTicketRepository) Delete(ctx *gin.Context, id []int64) error {
 		return err
 	}
 
-	if err := config.DB.Set("isQuiet", true).Model(&models.SupportTicketFileModel{}).Where("support_ticket_id IN ?", id).UpdateColumns(models.SupportTicketFileModel{
+	if err := tx.Set("isQuiet", true).Model(&models.SupportTicketFileModel{}).Where("support_ticket_id IN ?", id).UpdateColumns(models.SupportTicketFileModel{
 		DefaultFileModel: models.DefaultFileModel{
 			DeletedAt: gorm.DeletedAt{
 				Valid: true,

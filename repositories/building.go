@@ -41,13 +41,13 @@ func (r *BuildingRepository) GetById(ctx *gin.Context, building *models.Building
 	return nil
 }
 
-// func (r *BuildingRepository) GetNewImageNo(ctx *gin.Context, buildingID int64) (int, error) {
-// 	lastestImage := models.BuildingImageModel{}
-// 	if err := config.DB.Where("building_id = ?", buildingID).Order("no desc").Unscoped().First(&lastestImage).Error; err != nil {
-// 		return 0, err
-// 	}
-// 	return lastestImage.No + 1, nil
-// }
+func (r *BuildingRepository) GetNewImageNo(ctx *gin.Context, buildingID int64) (int, error) {
+	lastestImage := models.BuildingImageModel{}
+	if err := config.DB.Where("building_id = ?", buildingID).Order("no desc").Unscoped().First(&lastestImage).Error; err != nil {
+		return 0, err
+	}
+	return lastestImage.No + 1, nil
+}
 
 func (r *BuildingRepository) Create(ctx *gin.Context, tx *gorm.DB, building *models.BuildingModel) error {
 	userID, exists := ctx.Get("userID")
@@ -60,22 +60,22 @@ func (r *BuildingRepository) Create(ctx *gin.Context, tx *gorm.DB, building *mod
 	return nil
 }
 
-func (r *BuildingRepository) Update(ctx *gin.Context, building *models.BuildingModel) error {
+func (r *BuildingRepository) Update(ctx *gin.Context, tx *gorm.DB, building *models.BuildingModel) error {
 	userID, exists := ctx.Get("userID")
 	if !exists {
 		userID = 0
 	}
-	if err := config.DB.Set("userID", userID).Save(building).Error; err != nil {
+	if err := tx.Set("userID", userID).Save(building).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *BuildingRepository) Delete(ctx *gin.Context, id []int64) error {
+func (r *BuildingRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 	now := time.Now()
 	userID := ctx.GetInt64("userID")
 
-	if err := config.DB.Set("isQuiet", true).Model(&models.BuildingModel{}).Where("id in ?", id).UpdateColumns(models.BuildingModel{
+	if err := tx.Set("isQuiet", true).Model(&models.BuildingModel{}).Where("id in ?", id).UpdateColumns(models.BuildingModel{
 		DefaultModel: models.DefaultModel{
 			DeletedBy: userID,
 			DeletedAt: gorm.DeletedAt{
@@ -87,7 +87,7 @@ func (r *BuildingRepository) Delete(ctx *gin.Context, id []int64) error {
 		return err
 	}
 
-	if err := config.DB.Set("isQuiet", true).Model(&models.BuildingImageModel{}).Where("building_id in ?", id).UpdateColumns(models.BuildingImageModel{
+	if err := tx.Set("isQuiet", true).Model(&models.BuildingImageModel{}).Where("building_id in ?", id).UpdateColumns(models.BuildingImageModel{
 		DefaultFileModel: models.DefaultFileModel{
 			DeletedBy: userID,
 			DeletedAt: gorm.DeletedAt{
@@ -99,7 +99,7 @@ func (r *BuildingRepository) Delete(ctx *gin.Context, id []int64) error {
 		return err
 	}
 
-	if err := config.DB.Set("isQuiet", true).Model(&models.BuildingServiceModel{}).Where("building_id in ?", id).UpdateColumns(models.BuildingServiceModel{
+	if err := tx.Set("isQuiet", true).Model(&models.BuildingServiceModel{}).Where("building_id in ?", id).UpdateColumns(models.BuildingServiceModel{
 		DefaultModel: models.DefaultModel{
 			DeletedBy: userID,
 			DeletedAt: gorm.DeletedAt{
@@ -121,11 +121,11 @@ func (r *BuildingRepository) AddImage(ctx *gin.Context, tx *gorm.DB, image *[]mo
 	return nil
 }
 
-func (r *BuildingRepository) DeleteImages(ctx *gin.Context, id []int64) error {
+func (r *BuildingRepository) DeleteImages(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 	now := time.Now()
 	userID := ctx.GetInt64("userID")
 
-	if err := config.DB.Set("isQuiet", true).Model(&models.BuildingImageModel{}).Where("building_id in ?", id).UpdateColumns(models.BuildingImageModel{
+	if err := tx.Set("isQuiet", true).Model(&models.BuildingImageModel{}).Where("building_id in ?", id).UpdateColumns(models.BuildingImageModel{
 		DefaultFileModel: models.DefaultFileModel{
 			DeletedBy: userID,
 			DeletedAt: gorm.DeletedAt{
@@ -147,11 +147,11 @@ func (r *BuildingRepository) AddServices(ctx *gin.Context, tx *gorm.DB, services
 	return nil
 }
 
-func (r *BuildingRepository) DeleteServices(ctx *gin.Context, id []int64) error {
+func (r *BuildingRepository) DeleteServices(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 	now := time.Now()
 	userID := ctx.GetInt64("userID")
 
-	if err := config.DB.Set("isQuiet", true).Model(&models.BuildingServiceModel{}).Where("id in ?", id).UpdateColumns(models.BuildingServiceModel{
+	if err := tx.Set("isQuiet", true).Model(&models.BuildingServiceModel{}).Where("id in ?", id).UpdateColumns(models.BuildingServiceModel{
 		DefaultModel: models.DefaultModel{
 			DeletedBy: userID,
 			DeletedAt: gorm.DeletedAt{
@@ -189,6 +189,21 @@ func (r *BuildingRepository) GetBuildingSchedule(ctx *gin.Context, buildingID in
 
 func (r *BuildingRepository) GetManagerBuildingSchedule(ctx *gin.Context, buildingID int64, schedule *[]models.ManagerScheduleModel, mangerID int64) error {
 	if err := config.DB.Preload("Manager").Where("building_id = ? AND manager_id = ?", buildingID, mangerID).Find(schedule).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BuildingRepository) GetServicesByIDs(ctx *gin.Context, services *[]models.BuildingServiceModel, IDs []int64) error {
+	if err := config.DB.Where("id in ?", IDs).Find(services).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BuildingRepository) UpdateServices(ctx *gin.Context, tx *gorm.DB, services *[]models.BuildingServiceModel) error {
+	userID := ctx.GetInt64("userID")
+	if err := tx.Set("userID", userID).Save(services).Error; err != nil {
 		return err
 	}
 	return nil

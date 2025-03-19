@@ -3,7 +3,6 @@ package repositories
 import (
 	"api/config"
 	"api/models"
-	"api/structs"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -18,6 +17,13 @@ func NewRoomRepository() *RoomRepository {
 
 func (r *RoomRepository) GetById(ctx *gin.Context, room *models.RoomModel, id int64) error {
 	if err := config.DB.Where("id = ?", id).Preload("Images").Preload("Contracts").First(room).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *RoomRepository) GetByIDs(ctx *gin.Context, rooms *[]models.RoomModel, IDs []int64) error {
+	if err := config.DB.Where("id in ?", IDs).Preload("Images").Preload("Contracts").Find(rooms).Error; err != nil {
 		return err
 	}
 	return nil
@@ -39,11 +45,11 @@ func (r *RoomRepository) GetNewImageID(ctx *gin.Context) (int64, error) {
 	return lastestImage.ID + 1, nil
 }
 
-func (r *RoomRepository) Delete(ctx *gin.Context, id []int64) error {
+func (r *RoomRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 	now := time.Now()
 	userID := ctx.GetInt64("userID")
 
-	if err := config.DB.Set("isQuiet", true).Model(&models.RoomModel{}).Where("id in ?", id).UpdateColumns(models.RoomModel{
+	if err := tx.Set("isQuiet", true).Model(&models.RoomModel{}).Where("id in ?", id).UpdateColumns(models.RoomModel{
 		DefaultModel: models.DefaultModel{
 			DeletedBy: userID,
 			DeletedAt: gorm.DeletedAt{
@@ -55,7 +61,7 @@ func (r *RoomRepository) Delete(ctx *gin.Context, id []int64) error {
 		return err
 	}
 
-	if err := config.DB.Set("isQuiet", true).Model(&models.RoomImageModel{}).Where("room_id in ?", id).UpdateColumns(models.RoomImageModel{
+	if err := tx.Set("isQuiet", true).Model(&models.RoomImageModel{}).Where("room_id in ?", id).UpdateColumns(models.RoomImageModel{
 		DefaultFileModel: models.DefaultFileModel{
 			DeletedBy: userID,
 			DeletedAt: gorm.DeletedAt{
@@ -70,24 +76,55 @@ func (r *RoomRepository) Delete(ctx *gin.Context, id []int64) error {
 	return nil
 }
 
-func (r *RoomRepository) Create(ctx *gin.Context, room *models.RoomModel) error {
+func (r *RoomRepository) Create(ctx *gin.Context, tx *gorm.DB, rooms *[]models.RoomModel) error {
 	userID, exists := ctx.Get("userID")
 	if !exists {
 		userID = 0
 	}
-	if err := config.DB.Set("userID", userID).Create(room).Error; err != nil {
+	if err := tx.Set("userID", userID).Model(&models.RoomModel{}).Omit("ID").Create(rooms).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *RoomRepository) CreateRoom(ctx *gin.Context, room *[]structs.NewBuildingRoom) error {
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		userID = 0
-	}
-	if err := config.DB.Set("userID", userID).Model(&models.RoomModel{}).Select("BuildingID","No","Floor","Description","Area","Images").Create(room).Error; err != nil {
+func (r *RoomRepository) CreateImage(ctx *gin.Context, tx *gorm.DB, images *[]models.RoomImageModel) error {
+	userID := ctx.GetInt64("userID")
+	if err := tx.Set("userID", userID).Model(&models.RoomImageModel{}).Omit("ID").Create(images).Error; err != nil {
 		return err
 	}
 	return nil
+}
+
+func (r *RoomRepository) DeleteImages(ctx *gin.Context, tx *gorm.DB, id []int64) error {
+	now := time.Now()
+	userID := ctx.GetInt64("userID")
+
+	if err := tx.Set("isQuiet", true).Model(&models.RoomImageModel{}).Where("id in ?", id).UpdateColumns(models.RoomImageModel{
+		DefaultFileModel: models.DefaultFileModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *RoomRepository) Update(ctx *gin.Context, tx *gorm.DB, rooms *[]models.RoomModel) error {
+	userID := ctx.GetInt64("userID")
+	if err := tx.Set("userID", userID).Save(rooms).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *RoomRepository) GetNewImageNo(ctx *gin.Context, roomID int64) (int, error) {
+	lastestImage := models.RoomImageModel{}
+	if err := config.DB.Where("room_id = ?", roomID).Order("no desc").Unscoped().First(&lastestImage).Error; err != nil {
+		return 0, err
+	}
+	return lastestImage.No + 1, nil
 }

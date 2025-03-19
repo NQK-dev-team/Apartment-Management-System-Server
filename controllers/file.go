@@ -6,6 +6,7 @@ import (
 	"api/structs"
 	"api/utils"
 	"bytes"
+	"fmt"
 	"io"
 	"path/filepath"
 	"strconv"
@@ -27,10 +28,10 @@ func NewFileController() *FileController {
 func (c *FileController) GetBuildingImage(ctx *gin.Context) {
 	response := config.NewDataResponse(ctx)
 
-	id := ctx.Param("id")
-	filename := ctx.Param("filename")
+	buildingID := ctx.Param("buildingID")
+	filename := ctx.Param("fileName")
 
-	if id == "" || filename == "" {
+	if buildingID == "" || filename == "" {
 		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
 		ctx.JSON(404, response)
 		return
@@ -38,7 +39,40 @@ func (c *FileController) GetBuildingImage(ctx *gin.Context) {
 
 	file := &structs.CustomFileStruct{}
 
-	if err := utils.GetFile(file, "images/buildings/"+id+"/"+filename); err != nil {
+	if err := utils.GetFile(file, "images/buildings/"+buildingID+"/"+filename); err != nil {
+		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
+		ctx.JSON(404, response)
+		return
+	}
+
+	ext := strings.TrimPrefix(filepath.Ext(file.Filename), ".")
+	ctx.Header("Content-Type", "image/"+ext)
+	ctx.Header("Content-Disposition", "inline; filename="+file.Filename)
+	ctx.Header("Content-Length", strconv.FormatInt(file.Size, 10))
+
+	if _, err := io.Copy(ctx.Writer, bytes.NewReader(file.Content)); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+}
+
+func (c *FileController) GetRoomImage(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	buildingID := ctx.Param("buildingID")
+	roomNo := ctx.Param("roomNo")
+	filename := ctx.Param("fileName")
+
+	if buildingID == "" || roomNo == "" || filename == "" {
+		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
+		ctx.JSON(404, response)
+		return
+	}
+
+	file := &structs.CustomFileStruct{}
+	fmt.Println("images/buildings/" + buildingID + "/rooms/" + roomNo + "/" + filename)
+	if err := utils.GetFile(file, "images/buildings/"+buildingID+"/rooms/"+roomNo+"/"+filename); err != nil {
 		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
 		ctx.JSON(404, response)
 		return

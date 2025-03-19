@@ -32,11 +32,11 @@ func (r *ManagerScheduleRepository) Create(ctx *gin.Context, tx *gorm.DB, schedu
 	return nil
 }
 
-func (r *ManagerScheduleRepository) Delete(ctx *gin.Context, id []int64) error {
+func (r *ManagerScheduleRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 	now := time.Now()
 	userID := ctx.GetInt64("userID")
 
-	if err := config.DB.Set("isQuiet", true).Model(&models.ManagerScheduleModel{}).Where("id in ?", id).UpdateColumns(models.ManagerScheduleModel{
+	if err := tx.Set("isQuiet", true).Model(&models.ManagerScheduleModel{}).Where("id in ?", id).UpdateColumns(models.ManagerScheduleModel{
 		DefaultModel: models.DefaultModel{
 			DeletedBy: userID,
 			DeletedAt: gorm.DeletedAt{
@@ -45,6 +45,21 @@ func (r *ManagerScheduleRepository) Delete(ctx *gin.Context, id []int64) error {
 			},
 		},
 	}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ManagerScheduleRepository) GetByIDs(ctx *gin.Context, schedule *[]models.ManagerScheduleModel, IDs []int64) error {
+	if err := config.DB.Where("id in ?", IDs).Find(schedule).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ManagerScheduleRepository) Update(ctx *gin.Context, tx *gorm.DB, schedules *[]models.ManagerScheduleModel) error {
+	userID := ctx.GetInt64("userID")
+	if err := tx.Set("userID", userID).Save(schedules).Error; err != nil {
 		return err
 	}
 	return nil

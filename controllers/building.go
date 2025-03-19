@@ -13,11 +13,13 @@ import (
 
 type BuildingController struct {
 	buildingService *services.BuildingService
+	roomService     *services.RoomService
 }
 
 func NewBuildingController() *BuildingController {
 	return &BuildingController{
 		buildingService: services.NewBuildingService(),
+		roomService:     services.NewRoomService(),
 	}
 }
 
@@ -185,8 +187,36 @@ func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
 	for index, room := range building.Rooms {
 		roomNoStr := strconv.Itoa(room.No)
 		roomImages := form.File["newRoomImages["+roomNoStr+"]"]
-		building.Rooms[index].Images = roomImages
+		building.Rooms[index].NewImages = roomImages
+
+		var oldRoomData models.RoomModel
+		if err := c.roomService.GetRoomDetail(ctx, &oldRoomData, room.ID); err != nil {
+			response.Message = config.GetMessageCode("SYSTEM_ERROR")
+			ctx.JSON(500, response)
+			return
+		}
+
+		deletedImageCounter := 0
+
+		for _, deletedImageID := range building.DeletedRoomImages {
+			for _, oldRoomImage := range oldRoomData.Images {
+				if deletedImageID == oldRoomImage.ID {
+					deletedImageCounter++
+				}
+			}
+		}
+
+		building.Rooms[index].TotalImage = len(oldRoomData.Images) + len(roomImages) - deletedImageCounter
 	}
+
+	var oldBuildingData models.BuildingModel
+	if err := c.buildingService.GetBuildingDetail(ctx, &oldBuildingData, building.ID); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	building.TotalImage = len(oldBuildingData.Images) + len(building.NewBuildingImages) - len(building.DeletedBuildingImages)
 
 	if err := utils.Validate.Struct(building); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
@@ -201,6 +231,5 @@ func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(500, response)
-	// ctx.JSON(200, response)
+	ctx.JSON(200, response)
 }

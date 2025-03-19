@@ -5,6 +5,7 @@ import (
 	"api/repositories"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type ContractService struct {
@@ -21,7 +22,7 @@ func NewContractService() *ContractService {
 	}
 }
 
-func (s *ContractService) DeleteWithoutTransaction(ctx *gin.Context, id []int64) error {
+func (s *ContractService) DeleteWithoutTransaction(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 	contracts := []models.ContractModel{}
 	if err := s.contractRepository.GetContractByIDs(ctx, &contracts, id); err != nil {
 		return err
@@ -40,15 +41,15 @@ func (s *ContractService) DeleteWithoutTransaction(ctx *gin.Context, id []int64)
 		}
 	}
 
-	if err := s.contractRepository.Delete(ctx, id); err != nil {
+	if err := s.contractRepository.Delete(ctx, tx, id); err != nil {
 		return err
 	}
 
-	if err := s.billRepository.Delete(ctx, billIDs); err != nil {
+	if err := s.billRepository.Delete(ctx, tx, billIDs); err != nil {
 		return err
 	}
 
-	if err := s.ticketRepository.Delete(ctx, ticketIDs); err != nil {
+	if err := s.ticketRepository.Delete(ctx, tx, ticketIDs); err != nil {
 		return err
 	}
 
