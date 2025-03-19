@@ -3,7 +3,6 @@ package repositories
 import (
 	"api/config"
 	"api/models"
-	"api/structs"
 	"errors"
 	"time"
 
@@ -50,36 +49,12 @@ func (r *BuildingRepository) GetById(ctx *gin.Context, building *models.Building
 // 	return lastestImage.No + 1, nil
 // }
 
-func (r *BuildingRepository) GetNewID(ctx *gin.Context) (int64, error) {
-	lastestBuilding := models.BuildingModel{}
-	if err := config.DB.Order("id desc").Unscoped().First(&lastestBuilding).Error; err != nil {
-		return 0, err
-	}
-	return lastestBuilding.ID + 1, nil
-}
-
-func (r *BuildingRepository) GetNewImageID(ctx *gin.Context) (int64, error) {
-	lastestImage := models.BuildingImageModel{}
-	if err := config.DB.Order("id desc").Unscoped().First(&lastestImage).Error; err != nil {
-		return 0, err
-	}
-	return lastestImage.ID + 1, nil
-}
-
-func (r *BuildingRepository) GetNewServiceID(ctx *gin.Context) (int64, error) {
-	lastestService := models.BuildingServiceModel{}
-	if err := config.DB.Order("id desc").Unscoped().First(&lastestService).Error; err != nil {
-		return 0, err
-	}
-	return lastestService.ID + 1, nil
-}
-
-func (r *BuildingRepository) Create(ctx *gin.Context, building *models.BuildingModel) error {
+func (r *BuildingRepository) Create(ctx *gin.Context, tx *gorm.DB, building *models.BuildingModel) error {
 	userID, exists := ctx.Get("userID")
 	if !exists {
 		userID = 0
 	}
-	if err := config.DB.Set("userID", userID).Create(building).Error; err != nil {
+	if err := tx.Set("userID", userID).Model(&models.BuildingModel{}).Omit("ID").Create(building).Error; err != nil {
 		return err
 	}
 	return nil
@@ -138,6 +113,14 @@ func (r *BuildingRepository) Delete(ctx *gin.Context, id []int64) error {
 	return nil
 }
 
+func (r *BuildingRepository) AddImage(ctx *gin.Context, tx *gorm.DB, image *[]models.BuildingImageModel) error {
+	userID := ctx.GetInt64("userID")
+	if err := tx.Set("userID", userID).Model(&models.BuildingImageModel{}).Omit("ID").Create(image).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *BuildingRepository) DeleteImages(ctx *gin.Context, id []int64) error {
 	now := time.Now()
 	userID := ctx.GetInt64("userID")
@@ -156,6 +139,14 @@ func (r *BuildingRepository) DeleteImages(ctx *gin.Context, id []int64) error {
 	return nil
 }
 
+func (r *BuildingRepository) AddServices(ctx *gin.Context, tx *gorm.DB, services *[]models.BuildingServiceModel) error {
+	userID := ctx.GetInt64("userID")
+	if err := tx.Set("userID", userID).Model(&models.BuildingServiceModel{}).Omit("ID").Create(services).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *BuildingRepository) DeleteServices(ctx *gin.Context, id []int64) error {
 	now := time.Now()
 	userID := ctx.GetInt64("userID")
@@ -169,29 +160,6 @@ func (r *BuildingRepository) DeleteServices(ctx *gin.Context, id []int64) error 
 			},
 		},
 	}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *BuildingRepository) GetBuildingService(ctx *gin.Context, buildingID int64, service *[]models.BuildingServiceModel) error {
-	if err := config.DB.Where("building_id = ?", buildingID).Find(service).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *BuildingRepository) AddService(ctx *gin.Context, service *models.BuildingServiceModel) error {
-	userID := ctx.GetInt64("userID")
-	if err := config.DB.Set("userID", userID).Create(service).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *BuildingRepository) AddBuildingService(ctx *gin.Context, services *[]structs.NewBuildingService) error {
-	userID := ctx.GetInt64("userID")
-	if err := config.DB.Set("userID", userID).Model(&models.BuildingServiceModel{}).Create(services).Error; err != nil {
 		return err
 	}
 	return nil
@@ -221,22 +189,6 @@ func (r *BuildingRepository) GetBuildingSchedule(ctx *gin.Context, buildingID in
 
 func (r *BuildingRepository) GetManagerBuildingSchedule(ctx *gin.Context, buildingID int64, schedule *[]models.ManagerScheduleModel, mangerID int64) error {
 	if err := config.DB.Preload("Manager").Where("building_id = ? AND manager_id = ?", buildingID, mangerID).Find(schedule).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *BuildingRepository) AddImage(ctx *gin.Context, image *[]structs.NewBuildingImage) error {
-	userID := ctx.GetInt64("userID")
-	if err := config.DB.Set("userID", userID).Model(&models.BuildingImageModel{}).Create(image).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *BuildingRepository) AddBuilingSchedule(ctx *gin.Context, schedule *[]structs.NewBuildingSchedule) error {
-	userID := ctx.GetInt64("userID")
-	if err := config.DB.Set("userID", userID).Model(&models.ManagerScheduleModel{}).Create(schedule).Error; err != nil {
 		return err
 	}
 	return nil

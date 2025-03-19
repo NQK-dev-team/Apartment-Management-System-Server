@@ -101,7 +101,7 @@ func (s *AuthenticationService) CreateRefreshToken(ctx *gin.Context, userID int6
 	}
 
 	err = config.DB.Transaction(func(tx *gorm.DB) error {
-		if err := s.refreshTokenRepository.Create(ctx, &refreshToken); err != nil {
+		if err := s.refreshTokenRepository.Create(ctx, tx, &refreshToken); err != nil {
 			return err
 		}
 		return nil
@@ -250,10 +250,10 @@ func (s *AuthenticationService) VerifyEmail(ctx *gin.Context, verifyEmailToken s
 	user.EmailVerifiedAt = sql.NullTime{Time: time.Now(), Valid: true}
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
-		if err := s.userRepository.Update(ctx, user); err != nil {
+		if err := s.userRepository.Update(ctx, tx, user); err != nil {
 			return err
 		}
-		if err := s.emailVerifyTokenRepository.Delete(ctx, verifyEmailToken.Email); err != nil {
+		if err := s.emailVerifyTokenRepository.Delete(ctx, tx, verifyEmailToken.Email); err != nil {
 			return err
 		}
 		return nil
@@ -264,7 +264,7 @@ func (s *AuthenticationService) VerifyEmail(ctx *gin.Context, verifyEmailToken s
 
 func (s *AuthenticationService) DeleteRefreshToken(ctx *gin.Context, userID int64) error {
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
-		if err := s.refreshTokenRepository.Delete(ctx, userID); err != nil {
+		if err := s.refreshTokenRepository.Delete(ctx, tx, userID); err != nil {
 			return err
 		}
 		return nil
@@ -274,7 +274,7 @@ func (s *AuthenticationService) DeleteRefreshToken(ctx *gin.Context, userID int6
 
 func (s *AuthenticationService) DeletePasswordResetToken(ctx *gin.Context, email string) error {
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
-		if err := s.passwordResetTokenRepository.Delete(ctx, email); err != nil {
+		if err := s.passwordResetTokenRepository.Delete(ctx, tx, email); err != nil {
 			return err
 		}
 		return nil

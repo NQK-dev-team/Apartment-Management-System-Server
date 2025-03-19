@@ -68,32 +68,32 @@ func (r *UserRepository) Get(ctx *gin.Context, user *[]models.UserModel) error {
 	return nil
 }
 
-func (r *UserRepository) Create(ctx *gin.Context, user *models.UserModel) error {
+func (r *UserRepository) Create(ctx *gin.Context, tx *gorm.DB, user *models.UserModel) error {
 	userID, exists := ctx.Get("userID")
 	if !exists {
 		userID = 0
 	}
-	if err := config.DB.Set("userID", userID).Create(user).Error; err != nil {
+	if err := tx.Set("userID", userID).Create(user).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *UserRepository) Update(ctx *gin.Context, user *models.UserModel) error {
+func (r *UserRepository) Update(ctx *gin.Context, tx *gorm.DB, user *models.UserModel) error {
 	userID, exists := ctx.Get("userID")
 	if !exists {
 		userID = 0
 	}
-	if err := config.DB.Set("userID", userID).Save(user).Error; err != nil {
+	if err := tx.Set("userID", userID).Save(user).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *UserRepository) Delete(ctx *gin.Context, users *models.UserModel) error {
-	if err := config.DB.Model(&models.UserModel{}).Delete(users).Error; err != nil {
+func (r *UserRepository) Delete(ctx *gin.Context, tx *gorm.DB, users *models.UserModel) error {
+	if err := tx.Model(&models.UserModel{}).Delete(users).Error; err != nil {
 		return err
 	}
 	return nil

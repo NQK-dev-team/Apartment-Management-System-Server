@@ -50,7 +50,7 @@ func (s *UserService) CreateUser(ctx *gin.Context, user *models.UserModel) error
 			return err
 		}
 		user.Password = hashedPassword
-		if err := s.UserRepository.Create(ctx, user); err != nil {
+		if err := s.UserRepository.Create(ctx, tx, user); err != nil {
 			return err
 		}
 		return nil
@@ -71,7 +71,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context, user *models.UserModel) error
 			}
 			user.Password = hashedPassword
 		}
-		if err := s.UserRepository.Update(ctx, user); err != nil {
+		if err := s.UserRepository.Update(ctx, tx, user); err != nil {
 			return err
 		}
 		return nil
@@ -81,7 +81,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context, user *models.UserModel) error
 
 func (s *UserService) DeleteUser(ctx *gin.Context, user *models.UserModel) error {
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
-		if err := s.UserRepository.Delete(ctx, user); err != nil {
+		if err := s.UserRepository.Delete(ctx, tx, user); err != nil {
 			return err
 		}
 		return nil

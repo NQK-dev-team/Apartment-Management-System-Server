@@ -24,9 +24,9 @@ func (r *ManagerScheduleRepository) GetNewScheduleID(ctx *gin.Context) (int64, e
 	return lastestSchedule.ID + 1, nil
 }
 
-func (r *ManagerScheduleRepository) Create(ctx *gin.Context, schedule *[]models.ManagerScheduleModel) error {
+func (r *ManagerScheduleRepository) Create(ctx *gin.Context, tx *gorm.DB, schedules *[]models.ManagerScheduleModel) error {
 	userID := ctx.GetInt64("userID")
-	if err := config.DB.Set("userID", userID).Create(schedule).Error; err != nil {
+	if err := tx.Set("userID", userID).Model(&models.ManagerScheduleModel{}).Omit("ID").Create(schedules).Error; err != nil {
 		return err
 	}
 	return nil

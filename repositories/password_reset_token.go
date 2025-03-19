@@ -35,8 +35,8 @@ func (r *PasswordResetTokenRepository) GetByEmail(ctx *gin.Context, email string
 	return nil
 }
 
-func (r *PasswordResetTokenRepository) Delete(ctx *gin.Context, email string) error {
-	if err := config.DB.Where("email = ?", email).Delete(&models.PasswordResetTokenModel{}).Error; err != nil {
+func (r *PasswordResetTokenRepository) Delete(ctx *gin.Context, tx *gorm.DB, email string) error {
+	if err := tx.Where("email = ?", email).Delete(&models.PasswordResetTokenModel{}).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}

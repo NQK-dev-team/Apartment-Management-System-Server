@@ -16,13 +16,6 @@ func NewRoomRepository() *RoomRepository {
 	return &RoomRepository{}
 }
 
-func (r *RoomRepository) GetBuildingRoom(ctx *gin.Context, buildingID int64, room *[]models.RoomModel) error {
-	if err := config.DB.Where("building_id = ?", buildingID).Find(room).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
 func (r *RoomRepository) GetById(ctx *gin.Context, room *models.RoomModel, id int64) error {
 	if err := config.DB.Where("id = ?", id).Preload("Images").Preload("Contracts").First(room).Error; err != nil {
 		return err
@@ -93,7 +86,7 @@ func (r *RoomRepository) CreateRoom(ctx *gin.Context, room *[]structs.NewBuildin
 	if !exists {
 		userID = 0
 	}
-	if err := config.DB.Set("userID", userID).Model(&models.RoomModel{}).Create(room).Error; err != nil {
+	if err := config.DB.Set("userID", userID).Model(&models.RoomModel{}).Select("BuildingID","No","Floor","Description","Area","Images").Create(room).Error; err != nil {
 		return err
 	}
 	return nil
