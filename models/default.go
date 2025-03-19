@@ -1,8 +1,6 @@
 package models
 
 import (
-	"api/config"
-	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -31,9 +29,9 @@ func (u *DefaultModel) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (u *DefaultModel) BeforeUpdate(tx *gorm.DB) error {
-	if tx.Statement.Changed("updated_at", "updated_by") {
-		return errors.New(config.GetMessageCode("CONCURRENCY_ERROR"))
-	}
+	// if tx.Statement.Changed("UpdatedAt", "UpdatedBy") {
+	// 	return errors.New(config.GetMessageCode("CONCURRENCY_ERROR"))
+	// }
 
 	isQuiet, _ := tx.Get("isQuiet")
 	if isQuiet != nil && isQuiet.(bool) {
