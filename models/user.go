@@ -13,6 +13,7 @@ type UserModel struct {
 	FirstName        string       `json:"firstName" gorm:"column:first_name;type:varchar(255);not null;"`
 	MiddleName       string       `json:"middleName" gorm:"column:middle_name;type:varchar(255);"`
 	LastName         string       `json:"lastName" gorm:"column:last_name;type:varchar(255);not null;"`
+	Gender 					int 					`json:"gender" gorm:"column:gender;type:int;not null;"` // 1: Male, 2: Female, 3: Other
 	SSN              string       `json:"ssn" gorm:"column:ssn;type:varchar(12);not null;uniqueIndex:idx_ssn;"`
 	OldSSN           string       `json:"oldSSN" gorm:"column:old_ssn;type:varchar(9);"`
 	DOB              string       `json:"dob" gorm:"column:dob;type:date;not null;"`
