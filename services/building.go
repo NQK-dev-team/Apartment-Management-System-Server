@@ -214,9 +214,9 @@ func (s *BuildingService) DeleteBuilding(ctx *gin.Context, id int64) error {
 			roomIDs = append(roomIDs, room.ID)
 		}
 
-		if err := s.roomService.DeleteWithoutTransaction(ctx, tx, roomIDs); err != nil {
-			return err
-		}
+		// if err := s.roomService.DeleteWithoutTransaction(ctx, tx, roomIDs); err != nil {
+		// 	return err
+		// }
 
 		return nil
 	})

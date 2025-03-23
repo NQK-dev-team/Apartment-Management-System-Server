@@ -87,29 +87,29 @@ func (r *BuildingRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int64) e
 		return err
 	}
 
-	if err := tx.Set("isQuiet", true).Model(&models.BuildingImageModel{}).Where("building_id in ?", id).UpdateColumns(models.BuildingImageModel{
-		DefaultFileModel: models.DefaultFileModel{
-			DeletedBy: userID,
-			DeletedAt: gorm.DeletedAt{
-				Valid: true,
-				Time:  now,
-			},
-		},
-	}).Error; err != nil {
-		return err
-	}
+	// if err := tx.Set("isQuiet", true).Model(&models.BuildingImageModel{}).Where("building_id in ?", id).UpdateColumns(models.BuildingImageModel{
+	// 	DefaultFileModel: models.DefaultFileModel{
+	// 		DeletedBy: userID,
+	// 		DeletedAt: gorm.DeletedAt{
+	// 			Valid: true,
+	// 			Time:  now,
+	// 		},
+	// 	},
+	// }).Error; err != nil {
+	// 	return err
+	// }
 
-	if err := tx.Set("isQuiet", true).Model(&models.BuildingServiceModel{}).Where("building_id in ?", id).UpdateColumns(models.BuildingServiceModel{
-		DefaultModel: models.DefaultModel{
-			DeletedBy: userID,
-			DeletedAt: gorm.DeletedAt{
-				Valid: true,
-				Time:  now,
-			},
-		},
-	}).Error; err != nil {
-		return err
-	}
+	// if err := tx.Set("isQuiet", true).Model(&models.BuildingServiceModel{}).Where("building_id in ?", id).UpdateColumns(models.BuildingServiceModel{
+	// 	DefaultModel: models.DefaultModel{
+	// 		DeletedBy: userID,
+	// 		DeletedAt: gorm.DeletedAt{
+	// 			Valid: true,
+	// 			Time:  now,
+	// 		},
+	// 	},
+	// }).Error; err != nil {
+	// 	return err
+	// }
 	return nil
 }
 

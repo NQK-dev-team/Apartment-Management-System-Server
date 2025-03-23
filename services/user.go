@@ -79,9 +79,9 @@ func (s *UserService) UpdateUser(ctx *gin.Context, user *models.UserModel) error
 	return err
 }
 
-func (s *UserService) DeleteUser(ctx *gin.Context, user *models.UserModel) error {
+func (s *UserService) DeleteUsers(ctx *gin.Context, IDs []int64) error {
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
-		if err := s.UserRepository.Delete(ctx, tx, user); err != nil {
+		if err := s.UserRepository.DeleteByIDs(ctx, tx, IDs); err != nil {
 			return err
 		}
 		return nil

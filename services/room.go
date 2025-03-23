@@ -5,7 +5,6 @@ import (
 	"api/repositories"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 type RoomService struct {
@@ -22,27 +21,27 @@ func NewRoomService() *RoomService {
 	}
 }
 
-func (s *RoomService) DeleteWithoutTransaction(ctx *gin.Context, tx *gorm.DB, id []int64) error {
-	contractIDs := []int64{}
-	contracts := []models.ContractModel{}
-	if err := s.contractRepository.GetContractByRoomID(ctx, &contracts, id); err != nil {
-		return err
-	}
+// func (s *RoomService) DeleteWithoutTransaction(ctx *gin.Context, tx *gorm.DB, id []int64) error {
+// 	contractIDs := []int64{}
+// 	contracts := []models.ContractModel{}
+// 	if err := s.contractRepository.GetContractByRoomID(ctx, &contracts, id); err != nil {
+// 		return err
+// 	}
 
-	for _, contract := range contracts {
-		contractIDs = append(contractIDs, contract.ID)
-	}
+// 	for _, contract := range contracts {
+// 		contractIDs = append(contractIDs, contract.ID)
+// 	}
 
-	if err := s.roomRepository.Delete(ctx, tx, id); err != nil {
-		return err
-	}
+// 	if err := s.roomRepository.Delete(ctx, tx, id); err != nil {
+// 		return err
+// 	}
 
-	if err := s.contractService.DeleteWithoutTransaction(ctx, tx, contractIDs); err != nil {
-		return err
-	}
+// 	if err := s.contractService.DeleteWithoutTransaction(ctx, tx, contractIDs); err != nil {
+// 		return err
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func (s *RoomService) GetRoomDetail(ctx *gin.Context, room *models.RoomModel, id int64) error {
 	if err := s.roomRepository.GetById(ctx, room, id); err != nil {
