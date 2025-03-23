@@ -25,7 +25,10 @@ func (r *BuildingRepository) Get(ctx *gin.Context, building *[]models.BuildingMo
 }
 
 func (r *BuildingRepository) GetBuildingBaseOnSchedule(ctx *gin.Context, building *[]models.BuildingModel, userID int64) error {
-	if err := config.DB.Model(&models.BuildingModel{}).Preload("Images").Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id").Where("manager_schedule.start_date <= now() AND manager_schedule.end_date >= now() AND manager_schedule.manager_id = ?", userID).Find(building).Order("id asc").Error; err != nil {
+	if err := config.DB.Model(&models.BuildingModel{}).Preload("Images").
+		Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id").
+		Where("manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ?", userID).
+		Find(building).Order("id asc").Error; err != nil {
 		return err
 	}
 	return nil
@@ -181,14 +184,18 @@ func (r *BuildingRepository) GetServiceByID(ctx *gin.Context, service *models.Bu
 }
 
 func (r *BuildingRepository) GetBuildingSchedule(ctx *gin.Context, buildingID int64, schedule *[]models.ManagerScheduleModel) error {
-	if err := config.DB.Preload("Manager").Where("building_id = ?", buildingID).Find(schedule).Error; err != nil {
+	if err := config.DB.Preload("Manager").Preload("Building").
+		Joins("JOIN building on building.id = manager_schedule.building_id").
+		Where("building_id = ? AND building.deleted_at IS NULL", buildingID).Find(schedule).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r *BuildingRepository) GetManagerBuildingSchedule(ctx *gin.Context, buildingID int64, schedule *[]models.ManagerScheduleModel, mangerID int64) error {
-	if err := config.DB.Preload("Manager").Where("building_id = ? AND manager_id = ?", buildingID, mangerID).Find(schedule).Error; err != nil {
+	if err := config.DB.Preload("Manager").Preload("Building").
+		Joins("JOIN building on building.id = manager_schedule.building_id").
+		Where("building_id = ? AND manager_id = ? AND building.deleted_at IS NULL", buildingID, mangerID).Find(schedule).Error; err != nil {
 		return err
 	}
 	return nil
