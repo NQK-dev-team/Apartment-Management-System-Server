@@ -4,6 +4,7 @@ import (
 	"api/config"
 	"api/models"
 	"errors"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -92,10 +93,22 @@ func (r *UserRepository) Update(ctx *gin.Context, tx *gorm.DB, user *models.User
 	return nil
 }
 
-func (r *UserRepository) Delete(ctx *gin.Context, tx *gorm.DB, users *models.UserModel) error {
-	if err := tx.Model(&models.UserModel{}).Delete(users).Error; err != nil {
+func (r *UserRepository) DeleteByIDs(ctx *gin.Context, tx *gorm.DB, ids []int64) error {
+	now := time.Now()
+	userID := ctx.GetInt64("userID")
+
+	if err := tx.Set("isQuiet", true).Model(&models.UserModel{}).Where("id in ?", ids).UpdateColumns(models.UserModel{
+		DefaultModel: models.DefaultModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
 		return err
 	}
+
 	return nil
 }
 

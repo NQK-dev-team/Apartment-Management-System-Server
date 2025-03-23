@@ -14,4 +14,5 @@ func InitUserRoutes(router *gin.RouterGroup) {
 	// authorizationMiddle := middlewares.NewAuthorizationMiddleware()
 
 	staffRoutes.GET("/", userController.GetStaffList)
+	staffRoutes.POST("/delete-many", userController.DeleteStaffs)
 }
