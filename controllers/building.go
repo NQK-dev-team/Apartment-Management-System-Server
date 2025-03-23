@@ -41,6 +41,7 @@ func (c *BuildingController) GetBuilding(ctx *gin.Context) {
 	}
 
 	response.Data = building
+	response.Message = config.GetMessageCode("GET_SUCCESS")
 	ctx.JSON(200, response)
 }
 
@@ -77,6 +78,7 @@ func (c *BuildingController) CreateBuilding(ctx *gin.Context) {
 		return
 	}
 
+	response.Message = config.GetMessageCode("CREATE_SUCCESS")
 	ctx.JSON(200, response)
 }
 
@@ -103,6 +105,7 @@ func (c *BuildingController) GetBuildingDetail(ctx *gin.Context) {
 	}
 
 	response.Data = building
+	response.Message = config.GetMessageCode("GET_SUCCESS")
 	ctx.JSON(200, response)
 }
 
@@ -120,6 +123,7 @@ func (c *BuildingController) DeleteBuilding(ctx *gin.Context) {
 		return
 	}
 
+	response.Message = config.GetMessageCode("DELETE_SUCCESS")
 	ctx.JSON(200, response)
 }
 
@@ -150,6 +154,7 @@ func (c *BuildingController) GetBuildingSchedule(ctx *gin.Context) {
 	}
 
 	response.Data = schedule
+	response.Message = config.GetMessageCode("GET_SUCCESS")
 	ctx.JSON(200, response)
 }
 
@@ -231,5 +236,6 @@ func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
 		return
 	}
 
+	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
 	ctx.JSON(200, response)
 }

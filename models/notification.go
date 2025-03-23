@@ -2,8 +2,6 @@ package models
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type NotificationModel struct {
@@ -20,14 +18,14 @@ func (u *NotificationModel) TableName() string {
 	return "notification"
 }
 
-func (u *NotificationModel) BeforeDelete(tx *gorm.DB) error {
-	userID, _ := tx.Get("userID")
+// func (u *NotificationModel) BeforeDelete(tx *gorm.DB) error {
+// 	userID, _ := tx.Get("userID")
 
-	return tx.Transaction(func(tx1 *gorm.DB) error {
-		if err := tx1.Set("userID", userID).Model(&NotificationFileModel{}).Where("notification_id = ?", u.ID).Delete(&NotificationFileModel{}).Error; err != nil {
-			return err
-		}
+// 	return tx.Transaction(func(tx1 *gorm.DB) error {
+// 		if err := tx1.Set("userID", userID).Model(&NotificationFileModel{}).Where("notification_id = ?", u.ID).Delete(&NotificationFileModel{}).Error; err != nil {
+// 			return err
+// 		}
 
-		return nil
-	})
-}
+// 		return nil
+// 	})
+// }

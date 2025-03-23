@@ -16,14 +16,6 @@ func NewManagerScheduleRepository() *ManagerScheduleRepository {
 	return &ManagerScheduleRepository{}
 }
 
-func (r *ManagerScheduleRepository) GetNewScheduleID(ctx *gin.Context) (int64, error) {
-	lastestSchedule := models.ManagerScheduleModel{}
-	if err := config.DB.Order("id desc").Unscoped().First(&lastestSchedule).Error; err != nil {
-		return 0, err
-	}
-	return lastestSchedule.ID + 1, nil
-}
-
 func (r *ManagerScheduleRepository) Create(ctx *gin.Context, tx *gorm.DB, schedules *[]models.ManagerScheduleModel) error {
 	userID := ctx.GetInt64("userID")
 	if err := tx.Set("userID", userID).Model(&models.ManagerScheduleModel{}).Omit("ID").Create(schedules).Error; err != nil {

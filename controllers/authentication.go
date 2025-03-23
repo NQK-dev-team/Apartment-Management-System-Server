@@ -94,7 +94,7 @@ func (c *AuthenticationController) VerifyToken(ctx *gin.Context) {
 		return
 	}
 
-	response.Message = config.GetMessageCode("TOKEN_VERIFY_SUCCESS")
+	response.Message = config.GetMessageCode("VERIFY_SUCCESS")
 	response.Data = isValid
 
 	ctx.JSON(200, response)
@@ -125,7 +125,7 @@ func (c *AuthenticationController) RefreshToken(ctx *gin.Context) {
 		return
 	}
 
-	response.Message = config.GetMessageCode("TOKEN_REFRESH_SUCCESS")
+	response.Message = config.GetMessageCode("VERIFY_SUCCESS")
 	response.JWTToken = jwtToken
 
 	ctx.JSON(200, response)
@@ -212,7 +212,7 @@ func (c *AuthenticationController) CheckResetPasswordToken(ctx *gin.Context) {
 		return
 	}
 
-	response.Message = config.GetMessageCode("TOKEN_VERIFY_SUCCESS")
+	response.Message = config.GetMessageCode("VERIFY_SUCCESS")
 	ctx.JSON(200, response)
 }
 
@@ -336,7 +336,7 @@ func (c *AuthenticationController) VerifyEmail(ctx *gin.Context) {
 		return
 	}
 
-	response.Message = config.GetMessageCode("TOKEN_VERIFY_SUCCESS")
+	response.Message = config.GetMessageCode("VERIFY_SUCCESS")
 	ctx.JSON(200, response)
 }
 
@@ -434,5 +434,6 @@ func (c *AuthenticationController) VerifyPassword(ctx *gin.Context) {
 	}
 
 	response.Data = true
+	response.Message = config.GetMessageCode("VERIFY_SUCCESS")
 	ctx.JSON(200, response)
 }

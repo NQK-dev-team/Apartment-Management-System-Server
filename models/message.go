@@ -2,8 +2,6 @@ package models
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type MessageModel struct {
@@ -22,14 +20,14 @@ func (u *MessageModel) TableName() string {
 	return "message"
 }
 
-func (u *MessageModel) BeforeDelete(tx *gorm.DB) error {
-	userID, _ := tx.Get("userID")
+// func (u *MessageModel) BeforeDelete(tx *gorm.DB) error {
+// 	userID, _ := tx.Get("userID")
 
-	return tx.Transaction(func(tx1 *gorm.DB) error {
-		if err := tx1.Set("userID", userID).Model(&MessageFileModel{}).Where("message_id = ?", u.ID).Delete(&MessageFileModel{}).Error; err != nil {
-			return err
-		}
+// 	return tx.Transaction(func(tx1 *gorm.DB) error {
+// 		if err := tx1.Set("userID", userID).Model(&MessageFileModel{}).Where("message_id = ?", u.ID).Delete(&MessageFileModel{}).Error; err != nil {
+// 			return err
+// 		}
 
-		return nil
-	})
-}
+// 		return nil
+// 	})
+// }
