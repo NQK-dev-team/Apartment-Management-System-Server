@@ -84,8 +84,8 @@ func main() {
 	app = &http.Server{
 		Addr:           ":" + port,
 		Handler:        router,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
+		ReadTimeout:    1 * time.Minute,
+		WriteTimeout:   1 * time.Minute,
 		MaxHeaderBytes: 1 << 20,
 	}
 
