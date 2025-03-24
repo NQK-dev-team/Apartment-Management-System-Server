@@ -123,3 +123,10 @@ func (s *UserService) GetStaffList(ctx *gin.Context, users *[]models.UserModel) 
 	}
 	return nil
 }
+
+func (s *UserService) GetStaffDetail(ctx *gin.Context, user *models.UserModel, id int64) error {
+	if err := s.UserRepository.GetStaffDetail(ctx, user, id); err != nil {
+		return err
+	}
+	return nil
+}

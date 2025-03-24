@@ -5,6 +5,7 @@ import (
 	"api/models"
 	"api/services"
 	"api/utils"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,6 +29,28 @@ func (c *UserController) GetStaffList(ctx *gin.Context) {
 	}
 
 	response.Data = users
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(200, response)
+}
+
+func (c *UserController) GetStaffDetail(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+
+	if err != nil {
+		id = 0
+	}
+
+	user := &models.UserModel{}
+
+	if err := c.userService.GetStaffDetail(ctx, user, id); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	response.Data = user
 	response.Message = config.GetMessageCode("GET_SUCCESS")
 	ctx.JSON(200, response)
 }
