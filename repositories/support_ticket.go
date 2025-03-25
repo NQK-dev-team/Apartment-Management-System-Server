@@ -3,6 +3,7 @@ package repositories
 import (
 	"api/config"
 	"api/models"
+	"api/structs"
 	"errors"
 	"time"
 
@@ -22,6 +23,14 @@ func (r *SupportTicketRepository) GetById(ctx *gin.Context, ticket *models.Suppo
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
+		return err
+	}
+	return nil
+}
+
+func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, tickets *[]structs.SupportTicket, managerID int64) error {
+	if err := config.DB.Model(&models.SupportTicketModel{}).Model(&models.ManagerResolveSupportTicketModel{}).
+		Preload("Files").Where("manager_id = ?", managerID).Find(tickets).Error; err != nil {
 		return err
 	}
 	return nil

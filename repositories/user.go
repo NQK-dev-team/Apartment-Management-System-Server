@@ -128,3 +128,10 @@ func (r *UserRepository) GetStaffDetail(ctx *gin.Context, user *models.UserModel
 	}
 	return nil
 }
+
+func (r *UserRepository) GetStaffSchedule(ctx *gin.Context, schedules *[]models.ManagerScheduleModel, staffID int64) error {
+	if err := config.DB.Preload("Building").Preload("Manager").Where("manager_id = ?", staffID).Find(schedules).Error; err != nil {
+		return err
+	}
+	return nil
+}
