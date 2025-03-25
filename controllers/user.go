@@ -4,7 +4,6 @@ import (
 	"api/config"
 	"api/models"
 	"api/services"
-	"api/structs"
 	"api/utils"
 	"strconv"
 
@@ -109,9 +108,24 @@ func (c *UserController) GetStaffRelatedTicket(ctx *gin.Context) {
 		id = 0
 	}
 
-	tickets := []structs.SupportTicket{}
+	limitStr := ctx.DefaultQuery("limit", "500")
+	offsetStr := ctx.DefaultQuery("offset", "0")
 
-	if err := c.userService.GetStaffRelatedTicket(ctx, &tickets, id); err != nil {
+	limit, err := strconv.ParseInt(limitStr, 10, 64)
+
+	if err != nil {
+		limit = 500
+	}
+
+	offset, err := strconv.ParseInt(offsetStr, 10, 64)
+
+	if err != nil {
+		offset = 0
+	}
+
+	tickets := []models.ManagerResolveSupportTicketModel{}
+
+	if err := c.userService.GetStaffRelatedTicket(ctx, &tickets, id, limit, offset); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(500, response)
 		return
