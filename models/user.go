@@ -18,7 +18,7 @@ type UserModel struct {
 	DOB              string       `json:"dob" gorm:"column:dob;type:date;not null;"`
 	POB              string       `json:"pob" gorm:"column:pob;type:varchar(255);"`
 	Email            string       `json:"email" gorm:"column:email;type:varchar(255);not null;uniqueIndex:idx_email;"`
-	Password         string       `json:"password" gorm:"column:password;type:varchar(255);not null;"`
+	Password         string       `json:"-" gorm:"column:password;type:varchar(255);not null;"`
 	Phone            string       `json:"phone" gorm:"column:phone;type:varchar(10);not null;"`
 	SSNFrontFilePath string       `json:"ssnFrontFilePath" gorm:"column:ssn_front_file_path;type:varchar(255);not null;"`
 	SSNBackFilePath  string       `json:"ssnBackFilePath" gorm:"column:ssn_back_file_path;type:varchar(255);not null;"`
