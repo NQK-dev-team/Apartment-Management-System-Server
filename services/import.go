@@ -164,14 +164,14 @@ func (s *ImportService) ImportFile(ctx *gin.Context, table int) error {
 						} else {
 							user.Password = findUser.Password
 						}
-						if err := s.userRepository.Update(nil, &user); err != nil {
+						if err := s.userRepository.Update(nil, tx, &user); err != nil {
 							return err
 						}
 					} else {
 						if user.Password, err = utils.HashPassword(user.Password); err != nil {
 							return err
 						}
-						if err := s.userRepository.Create(nil, &user); err != nil {
+						if err := s.userRepository.Create(nil, tx, &user); err != nil {
 							return err
 						}
 					}

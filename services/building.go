@@ -7,6 +7,8 @@ import (
 	"api/repositories"
 	"api/structs"
 	"api/utils"
+	"errors"
+	"path/filepath"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -59,140 +61,120 @@ func (s *BuildingService) GetBuilding(ctx *gin.Context, building *[]models.Build
 	return true, s.buildingRepository.Get(ctx, building)
 }
 
-func (s *BuildingService) GetBuildingRoom(ctx *gin.Context, buildingID int64, room *[]models.RoomModel) error {
-	return s.roomRepository.GetBuildingRoom(ctx, buildingID, room)
-}
-
-func (s *BuildingService) GetBuildingService(ctx *gin.Context, buildingID int64, service *[]models.BuildingServiceModel) error {
-	return s.buildingRepository.GetBuildingService(ctx, buildingID, service)
-}
-
 func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.NewBuilding) error {
 	deleteImageList := []string{}
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
-		newBuildingID, err := s.buildingRepository.GetNewID(ctx)
-		if err != nil {
-			return err
-		}
-
-		newBuildingImageIDStart, err := s.buildingRepository.GetNewImageID(ctx)
-		if err != nil {
-			return err
-		}
-
-		newBuildingServiceIDStart, err := s.buildingRepository.GetNewServiceID(ctx)
-		if err != nil {
-			return err
-		}
-
-		newRoomID, err := s.roomRepository.GetNewID(ctx)
-		if err != nil {
-			return err
-		}
-
-		newRoomImageIDStart, err := s.roomRepository.GetNewImageID(ctx)
-		if err != nil {
-			return err
-		}
-
-		newBuildingIDStr := strconv.Itoa(int(newBuildingID))
-
 		newBuilding := &models.BuildingModel{}
 		newBuilding.Name = building.Name
-		newBuilding.ID = newBuildingID
 		newBuilding.Address = building.Address
 		newBuilding.TotalFloor = building.TotalFloor
 		newBuilding.TotalRoom = building.TotalRoom
 
+		if err := s.buildingRepository.Create(ctx, tx, newBuilding); err != nil {
+			return err
+		}
+
+		newBuildingIDStr := strconv.Itoa(int(newBuilding.ID))
+		newImages := []models.BuildingImageModel{}
 		for index, image := range building.Images {
 			filePath, err := utils.StoreFile(image, "images/buildings/"+newBuildingIDStr+"/")
 			if err != nil {
 				return err
 			}
-			newBuilding.Images = append(newBuilding.Images, models.BuildingImageModel{
-				BuildingID: newBuildingID,
+			newImages = append(newImages, models.BuildingImageModel{
+				BuildingID: newBuilding.ID,
 				DefaultFileModel: models.DefaultFileModel{
-					Path: filePath,
-					No:   index + 1,
-					ID:   newBuildingImageIDStart + int64(index),
+					Path:  filePath,
+					No:    index + 1,
+					Title: filepath.Base(filePath),
 				},
 			})
 			deleteImageList = append(deleteImageList, filePath)
 		}
 
-		for index, val := range building.Services {
-			newBuilding.Services = append(newBuilding.Services, models.BuildingServiceModel{
+		if err := s.buildingRepository.AddImage(ctx, tx, &newImages); err != nil {
+			return err
+		}
+
+		services := []models.BuildingServiceModel{}
+		for _, val := range building.Services {
+			services = append(services, models.BuildingServiceModel{
 				Name:       val.Name,
 				Price:      val.Price,
-				BuildingID: newBuildingID,
-				DefaultModel: models.DefaultModel{
-					ID: newBuildingServiceIDStart + int64(index),
-				},
+				BuildingID: newBuilding.ID,
 			})
 		}
 
-		for roomLoopIndex, val := range building.Rooms {
-			newRoom := models.RoomModel{
-				No:          val.No,
-				Floor:       val.Floor,
-				Status:      val.Status,
-				Area:        val.Area,
-				Description: val.Description,
-				BuildingID:  newBuildingID,
-				DefaultModel: models.DefaultModel{
-					ID: newRoomID + int64(roomLoopIndex),
-				},
+		if len(services) > 0 {
+			if err := s.buildingRepository.AddServices(ctx, tx, &services); err != nil {
+				return err
 			}
-
-			roomNoStr := strconv.Itoa(int(val.No))
-
-			for roomImageLoopIndex, image := range val.Images {
-				filePath, err := utils.StoreFile(image, "images/buildings/"+newBuildingIDStr+"/"+"rooms/"+roomNoStr+"/")
-				if err != nil {
-					return err
-				}
-				newRoom.Images = append(newRoom.Images, models.RoomImageModel{
-					RoomID: newRoomID,
-					DefaultFileModel: models.DefaultFileModel{
-						Path: filePath,
-						No:   roomImageLoopIndex + 1,
-						ID:   newRoomImageIDStart + int64(roomLoopIndex*(len(building.Rooms)-1)) + int64(roomImageLoopIndex),
-					},
-				})
-				deleteImageList = append(deleteImageList, filePath)
-			}
-			newBuilding.Rooms = append(newBuilding.Rooms, newRoom)
 		}
-
-		if err := s.buildingRepository.Create(ctx, newBuilding); err != nil {
-			return err
-		}
-
-		newScheduleIDStart, err := s.managerScheduleRepository.GetNewScheduleID(ctx)
-
-		if err != nil {
-			return err
-		}
-
 		schedules := []models.ManagerScheduleModel{}
-
-		for index, val := range building.Schedules {
+		for _, val := range building.Schedules {
 			startDate := utils.ParseTime(val.StartDate)
 			endDate := utils.StringToNullTime(val.EndDate)
 			schedules = append(schedules, models.ManagerScheduleModel{
-				BuildingID: newBuildingID,
+				BuildingID: newBuilding.ID,
 				ManagerID:  val.ManagerID,
 				StartDate:  startDate,
 				EndDate:    endDate,
-				DefaultModel: models.DefaultModel{
-					ID: newScheduleIDStart + int64(index),
-				},
+			})
+		}
+		if len(schedules) > 0 {
+			if err := s.managerScheduleRepository.Create(ctx, tx, &schedules); err != nil {
+				return err
+			}
+		}
+
+		rooms := []models.RoomModel{}
+		for _, room := range building.Rooms {
+			rooms = append(rooms, models.RoomModel{
+				No:          room.No,
+				Floor:       room.Floor,
+				Status:      room.Status,
+				Area:        room.Area,
+				Description: room.Description,
+				BuildingID:  newBuilding.ID,
 			})
 		}
 
-		if err := s.managerScheduleRepository.Create(ctx, &schedules); err != nil {
-			return err
+		if len(rooms) > 0 {
+			if err := s.roomRepository.Create(ctx, tx, &rooms); err != nil {
+				return err
+			}
+
+			roomImages := []models.RoomImageModel{}
+			for _, room := range building.Rooms {
+				var targetRoom models.RoomModel
+				for _, val := range rooms {
+					if val.No == room.No {
+						targetRoom = val
+					}
+				}
+				roomNoStr := strconv.Itoa(int(targetRoom.No))
+
+				for index, image := range room.Images {
+					filePath, err := utils.StoreFile(image, "images/buildings/"+newBuildingIDStr+"/"+"rooms/"+roomNoStr+"/")
+					if err != nil {
+						return err
+					}
+					roomImages = append(roomImages, models.RoomImageModel{
+						RoomID: targetRoom.ID,
+						DefaultFileModel: models.DefaultFileModel{
+							Path:  filePath,
+							No:    index + 1,
+							Title: filepath.Base(filePath),
+						},
+					})
+					deleteImageList = append(deleteImageList, filePath)
+				}
+			}
+
+			if err := s.roomRepository.CreateImage(ctx, tx, &roomImages); err != nil {
+				return err
+			}
 		}
 
 		return nil
@@ -223,7 +205,7 @@ func (s *BuildingService) DeleteBuilding(ctx *gin.Context, id int64) error {
 	}
 
 	return config.DB.Transaction(func(tx *gorm.DB) error {
-		if err := s.buildingRepository.Delete(ctx, []int64{deletedBuilding.ID}); err != nil {
+		if err := s.buildingRepository.Delete(ctx, tx, []int64{deletedBuilding.ID}); err != nil {
 			return err
 		}
 
@@ -232,121 +214,317 @@ func (s *BuildingService) DeleteBuilding(ctx *gin.Context, id int64) error {
 			roomIDs = append(roomIDs, room.ID)
 		}
 
-		if err := s.roomService.DeleteWithoutTransaction(ctx, roomIDs); err != nil {
-			return err
-		}
+		// if err := s.roomService.DeleteWithoutTransaction(ctx, tx, roomIDs); err != nil {
+		// 	return err
+		// }
 
 		return nil
 	})
 }
 
-func (s *BuildingService) DeleteRooms(ctx *gin.Context, buildingID int64, roomIDs []int64) error {
-	return config.DB.Transaction(func(tx *gorm.DB) error {
-		if err := s.roomService.DeleteWithoutTransaction(ctx, roomIDs); err != nil {
-			return err
-		}
+func (s *BuildingService) GetBuildingSchedule(ctx *gin.Context, buildingID int64, schedules *[]models.ManagerScheduleModel) (bool, error) {
+	role, exists := ctx.Get("role")
 
-		building := &models.BuildingModel{}
-		if err := s.buildingRepository.GetById(ctx, building, buildingID); err != nil {
-			return err
-		}
-
-		building.TotalRoom = building.TotalRoom - len(roomIDs)
-
-		if err := s.buildingRepository.Update(ctx, building); err != nil {
-			return err
-		}
-
-		return nil
-	})
-}
-
-func (s *BuildingService) DeleteServices(ctx *gin.Context, serviceIDs []int64) error {
-	return config.DB.Transaction(func(tx *gorm.DB) error {
-		return s.buildingRepository.DeleteServices(ctx, serviceIDs)
-	})
-}
-
-func (s *BuildingService) AddService(ctx *gin.Context, service *models.BuildingServiceModel) error {
-	return config.DB.Transaction(func(tx *gorm.DB) error {
-		newID, err := s.buildingRepository.GetNewServiceID(ctx)
-		if err != nil {
-			return err
-		}
-
-		service.ID = newID
-
-		return s.buildingRepository.AddService(ctx, service)
-	})
-}
-
-func (s *BuildingService) EditService(ctx *gin.Context, newServiceData *models.BuildingServiceModel) error {
-	return config.DB.Transaction(func(tx *gorm.DB) error {
-		service := &models.BuildingServiceModel{}
-		if err := s.buildingRepository.GetServiceByID(ctx, service, newServiceData.ID); err != nil {
-			return err
-		}
-
-		service.Name = newServiceData.Name
-		service.Price = newServiceData.Price
-
-		return s.buildingRepository.EditService(ctx, service)
-	})
-}
-
-func (s *BuildingService) AddRoom(ctx *gin.Context, buildingID int64, room *structs.NewRoom) error {
-	deleteImageList := []string{}
-	newRoom := &models.RoomModel{
-		No:          room.No,
-		Floor:       room.Floor,
-		Status:      room.Status,
-		Area:        room.Area,
-		Description: room.Description,
-		BuildingID:  buildingID,
+	if !exists {
+		return false, nil
 	}
 
+	if role.(string) == constants.Roles.Manager {
+		jwt, exists := ctx.Get("jwt")
+
+		if !exists {
+			return false, nil
+		}
+
+		token, err := utils.ValidateJWTToken(jwt.(string))
+
+		if err != nil {
+			return true, err
+		}
+
+		claim := &structs.JTWClaim{}
+
+		utils.ExtractJWTClaim(token, claim)
+
+		return true, s.buildingRepository.GetManagerBuildingSchedule(ctx, buildingID, schedules, claim.UserID)
+	}
+
+	return true, s.buildingRepository.GetBuildingSchedule(ctx, buildingID, schedules)
+}
+
+func (s *BuildingService) UpdateBuilding(ctx *gin.Context, building *structs.EditBuilding) error {
+	role, exists := ctx.Get("role")
+
+	if !exists {
+		return errors.New("role not found")
+	}
+
+	buildingIDStr := strconv.Itoa(int(building.ID))
+
+	deleteImageList := []string{}
+
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
-		newRoomID, err := s.roomRepository.GetNewID(ctx)
-		if err != nil {
+		newBuildingData := &models.BuildingModel{}
+
+		if err := s.buildingRepository.GetById(ctx, newBuildingData, building.ID); err != nil {
 			return err
 		}
 
-		newRoom.ID = newRoomID
+		if role.(string) == constants.Roles.Owner {
+			newBuildingData.Name = building.Name
+			newBuildingData.Address = building.Address
+			newBuildingData.TotalFloor = building.TotalFloor
+			newBuildingData.TotalRoom = len(building.Rooms) + len(building.NewRooms)
 
-		newRoomImageIDStart, err := s.roomRepository.GetNewImageID(ctx)
-		if err != nil {
-			return err
-		}
-
-		for index, image := range room.Images {
-			filePath, err := utils.StoreFile(image, "images/buildings/"+strconv.Itoa(int(buildingID))+"/"+"rooms/"+strconv.Itoa(int(room.No))+"/")
-			if err != nil {
+			if err := s.buildingRepository.Update(ctx, tx, newBuildingData); err != nil {
 				return err
 			}
-			newRoom.Images = append(newRoom.Images, models.RoomImageModel{
-				RoomID: newRoomID,
-				DefaultFileModel: models.DefaultFileModel{
-					Path: filePath,
-					No:   index + 1,
-					ID:   newRoomImageIDStart + int64(index),
-				},
-			})
-			deleteImageList = append(deleteImageList, filePath)
+
+			if len(building.DeletedBuildingImages) > 0 {
+				if err := s.buildingRepository.DeleteImages(ctx, tx, building.DeletedBuildingImages); err != nil {
+					return err
+				}
+			}
+
+			if len(building.DeletedSchedules) > 0 {
+				if err := s.managerScheduleRepository.Delete(ctx, tx, building.DeletedSchedules); err != nil {
+					return err
+				}
+			}
+
+			if len(building.DeletedRooms) > 0 {
+				if err := s.roomRepository.Delete(ctx, tx, building.DeletedRooms); err != nil {
+					return err
+				}
+			}
+
+			if len(building.NewBuildingImages) > 0 {
+				newImageNo, err := s.buildingRepository.GetNewImageNo(ctx, building.ID)
+				if err != nil {
+					return err
+				}
+				newImage := []models.BuildingImageModel{}
+				for index, image := range building.NewBuildingImages {
+					filePath, err := utils.StoreFile(image, "images/buildings/"+buildingIDStr+"/")
+					if err != nil {
+						return err
+					}
+					deleteImageList = append(deleteImageList, filePath)
+					newImage = append(newImage, models.BuildingImageModel{
+						BuildingID: building.ID,
+						DefaultFileModel: models.DefaultFileModel{
+							Title: filepath.Base(filePath),
+							Path:  filePath,
+							No:    newImageNo + index,
+						},
+					})
+				}
+				if err := s.buildingRepository.AddImage(ctx, tx, &newImage); err != nil {
+					return err
+				}
+			}
+
+			if len(building.NewSchedules) > 0 {
+				schedules := []models.ManagerScheduleModel{}
+				for _, schedule := range building.NewSchedules {
+					schedules = append(schedules, models.ManagerScheduleModel{
+						BuildingID: building.ID,
+						ManagerID:  schedule.ManagerID,
+						StartDate:  utils.ParseTime(schedule.StartDate),
+						EndDate:    utils.StringToNullTime(schedule.EndDate),
+					})
+				}
+				if err := s.managerScheduleRepository.Create(ctx, tx, &schedules); err != nil {
+					return err
+				}
+			}
+
+			if len(building.NewRooms) > 0 {
+				rooms := []models.RoomModel{}
+				for _, room := range building.NewRooms {
+					rooms = append(rooms, models.RoomModel{
+						No:          room.No,
+						Floor:       room.Floor,
+						Status:      room.Status,
+						Area:        room.Area,
+						Description: room.Description,
+						BuildingID:  building.ID,
+					})
+				}
+				if err := s.roomRepository.Create(ctx, tx, &rooms); err != nil {
+					return err
+				}
+
+				roomImages := []models.RoomImageModel{}
+				for _, room := range building.NewRooms {
+					var targetRoom models.RoomModel
+					for _, val := range rooms {
+						if val.No == room.No {
+							targetRoom = val
+						}
+					}
+					roomNoStr := strconv.Itoa(int(targetRoom.No))
+
+					for index, image := range room.Images {
+						filePath, err := utils.StoreFile(image, "images/buildings/"+buildingIDStr+"/"+"rooms/"+roomNoStr+"/")
+						if err != nil {
+							return err
+						}
+						roomImages = append(roomImages, models.RoomImageModel{
+							RoomID: targetRoom.ID,
+							DefaultFileModel: models.DefaultFileModel{
+								Path:  filePath,
+								No:    index + 1,
+								Title: filepath.Base(filePath),
+							},
+						})
+						deleteImageList = append(deleteImageList, filePath)
+					}
+				}
+
+				if err := s.roomRepository.CreateImage(ctx, tx, &roomImages); err != nil {
+					return err
+				}
+			}
+
+			{
+				scheduleIDs := []int64{}
+				for _, schedule := range building.Schedules {
+					scheduleIDs = append(scheduleIDs, schedule.ID)
+				}
+				schedules := []models.ManagerScheduleModel{}
+				if err := s.managerScheduleRepository.GetByIDs(ctx, &schedules, scheduleIDs); err != nil {
+					return err
+				}
+				for index, schedule := range schedules {
+					for _, val := range building.Schedules {
+						if val.ID == schedule.ID {
+							schedules[index].ManagerID = val.ManagerID
+							schedules[index].StartDate = utils.ParseTime(val.StartDate)
+							schedules[index].EndDate = utils.StringToNullTime(val.EndDate)
+							break
+						}
+					}
+				}
+				if err := s.managerScheduleRepository.Update(ctx, tx, &schedules); err != nil {
+					return err
+				}
+			}
 		}
 
-		if err := s.roomRepository.Create(ctx, newRoom); err != nil {
-			return err
+		if len(building.DeletedServices) > 0 {
+			if err := s.buildingRepository.DeleteServices(ctx, tx, building.DeletedServices); err != nil {
+				return err
+			}
 		}
 
-		building := &models.BuildingModel{}
-		if err := s.buildingRepository.GetById(ctx, building, buildingID); err != nil {
-			return err
+		if len(building.NewServices) > 0 {
+			services := []models.BuildingServiceModel{}
+			for _, service := range building.NewServices {
+				services = append(services, models.BuildingServiceModel{
+					Name:       service.Name,
+					Price:      service.Price,
+					BuildingID: building.ID,
+				})
+			}
+			if err := s.buildingRepository.AddServices(ctx, tx, &services); err != nil {
+				return err
+			}
 		}
 
-		building.TotalRoom = building.TotalRoom + 1
+		{
+			serviceIDs := []int64{}
+			for _, service := range building.Services {
+				serviceIDs = append(serviceIDs, service.ID)
+			}
+			services := []models.BuildingServiceModel{}
+			if err := s.buildingRepository.GetServicesByIDs(ctx, &services, serviceIDs); err != nil {
+				return err
+			}
+			for index, service := range services {
+				for _, val := range building.Services {
+					if val.ID == service.ID {
+						services[index].Name = val.Name
+						services[index].Price = val.Price
+						break
+					}
+				}
+			}
+			if err := s.buildingRepository.UpdateServices(ctx, tx, &services); err != nil {
+				return err
+			}
+		}
 
-		if err := s.buildingRepository.Update(ctx, building); err != nil {
-			return err
+		if len(building.DeletedRoomImages) > 0 {
+			if err := s.roomRepository.DeleteImages(ctx, tx, building.DeletedRoomImages); err != nil {
+				return err
+			}
+		}
+
+		{
+			roomIDs := []int64{}
+			for _, room := range building.Rooms {
+				roomIDs = append(roomIDs, room.ID)
+			}
+			rooms := []models.RoomModel{}
+			if err := s.roomRepository.GetByIDs(ctx, &rooms, roomIDs); err != nil {
+				return err
+			}
+			for index, room := range rooms {
+				for _, val := range building.Rooms {
+					if val.ID == room.ID {
+						rooms[index].No = val.No
+						rooms[index].Floor = val.Floor
+						rooms[index].Status = val.Status
+						rooms[index].Area = val.Area
+						rooms[index].Description = val.Description
+						rooms[index].Contracts = []models.ContractModel{}
+						break
+					}
+				}
+			}
+			if err := s.roomRepository.Update(ctx, tx, &rooms); err != nil {
+				return err
+			}
+
+			roomImages := []models.RoomImageModel{}
+			for _, room := range building.Rooms {
+				var targetRoom models.RoomModel
+				for _, val := range rooms {
+					if val.ID == room.ID {
+						targetRoom = val
+						break
+					}
+				}
+				roomNoStr := strconv.Itoa(int(targetRoom.No))
+
+				lastestImageNo, err := s.roomRepository.GetNewImageNo(ctx, targetRoom.ID)
+				if err != nil {
+					return err
+				}
+
+				for index, image := range room.NewImages {
+					filePath, err := utils.StoreFile(image, "images/buildings/"+buildingIDStr+"/"+"rooms/"+roomNoStr+"/")
+					if err != nil {
+						return err
+					}
+					roomImages = append(roomImages, models.RoomImageModel{
+						RoomID: targetRoom.ID,
+						DefaultFileModel: models.DefaultFileModel{
+							Path:  filePath,
+							No:    lastestImageNo + index,
+							Title: filepath.Base(filePath),
+						},
+					})
+					deleteImageList = append(deleteImageList, filePath)
+				}
+			}
+
+			if len(roomImages) > 0 {
+				if err := s.roomRepository.CreateImage(ctx, tx, &roomImages); err != nil {
+					return err
+				}
+			}
 		}
 
 		return nil
@@ -356,11 +534,8 @@ func (s *BuildingService) AddRoom(ctx *gin.Context, buildingID int64, room *stru
 		for _, path := range deleteImageList {
 			utils.RemoveFile(path)
 		}
+		return err
 	}
 
 	return nil
-}
-
-func (s *BuildingService) GetBuildingSchedule(ctx *gin.Context, buildingID int64, schedules *[]models.ManagerScheduleModel) error {
-	return s.buildingRepository.GetBuildingSchedule(ctx, buildingID, schedules)
 }

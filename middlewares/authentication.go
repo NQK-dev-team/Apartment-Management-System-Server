@@ -45,8 +45,8 @@ func (m *AuthenticationMiddleware) AuthMiddleware(ctx *gin.Context) {
 			response.JWTToken = newJwt
 		}
 	} else {
-		_, err := m.authenticationService.VerifyToken(ctx, jwt)
-		if err != nil {
+		isValid, err := m.authenticationService.VerifyToken(ctx, jwt)
+		if err != nil || !isValid {
 			if refreshToken != "" {
 				newJwt, err := m.authenticationService.GetNewToken(ctx, refreshToken)
 

@@ -3,8 +3,10 @@ package repositories
 import (
 	"api/config"
 	"api/models"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type ManagerScheduleRepository struct {
@@ -14,17 +16,42 @@ func NewManagerScheduleRepository() *ManagerScheduleRepository {
 	return &ManagerScheduleRepository{}
 }
 
-func (r *ManagerScheduleRepository) GetNewScheduleID(ctx *gin.Context) (int64, error) {
-	lastestSchedule := models.ManagerScheduleModel{}
-	if err := config.DB.Order("id desc").Unscoped().First(&lastestSchedule).Error; err != nil {
-		return 0, err
+func (r *ManagerScheduleRepository) Create(ctx *gin.Context, tx *gorm.DB, schedules *[]models.ManagerScheduleModel) error {
+	userID := ctx.GetInt64("userID")
+	if err := tx.Set("userID", userID).Model(&models.ManagerScheduleModel{}).Omit("ID").Create(schedules).Error; err != nil {
+		return err
 	}
-	return lastestSchedule.ID + 1, nil
+	return nil
 }
 
-func (r *ManagerScheduleRepository) Create(ctx *gin.Context, schedule *[]models.ManagerScheduleModel) error {
+func (r *ManagerScheduleRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int64) error {
+	now := time.Now()
 	userID := ctx.GetInt64("userID")
-	if err := config.DB.Set("userID", userID).Create(schedule).Error; err != nil {
+
+	if err := tx.Set("isQuiet", true).Model(&models.ManagerScheduleModel{}).Where("id in ?", id).UpdateColumns(models.ManagerScheduleModel{
+		DefaultModel: models.DefaultModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ManagerScheduleRepository) GetByIDs(ctx *gin.Context, schedule *[]models.ManagerScheduleModel, IDs []int64) error {
+	if err := config.DB.Where("id in ?", IDs).Find(schedule).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ManagerScheduleRepository) Update(ctx *gin.Context, tx *gorm.DB, schedules *[]models.ManagerScheduleModel) error {
+	userID := ctx.GetInt64("userID")
+	if err := tx.Set("userID", userID).Save(schedules).Error; err != nil {
 		return err
 	}
 	return nil

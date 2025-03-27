@@ -2,9 +2,12 @@ package services
 
 import (
 	"api/config"
+	"api/constants"
 	"api/models"
 	"api/repositories"
+	"api/structs"
 	"api/utils"
+	"errors"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -47,7 +50,7 @@ func (s *UserService) CreateUser(ctx *gin.Context, user *models.UserModel) error
 			return err
 		}
 		user.Password = hashedPassword
-		if err := s.UserRepository.Create(ctx, user); err != nil {
+		if err := s.UserRepository.Create(ctx, tx, user); err != nil {
 			return err
 		}
 		return nil
@@ -68,7 +71,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context, user *models.UserModel) error
 			}
 			user.Password = hashedPassword
 		}
-		if err := s.UserRepository.Update(ctx, user); err != nil {
+		if err := s.UserRepository.Update(ctx, tx, user); err != nil {
 			return err
 		}
 		return nil
@@ -76,9 +79,9 @@ func (s *UserService) UpdateUser(ctx *gin.Context, user *models.UserModel) error
 	return err
 }
 
-func (s *UserService) DeleteUser(ctx *gin.Context, user *models.UserModel) error {
+func (s *UserService) DeleteUsers(ctx *gin.Context, IDs []int64) error {
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
-		if err := s.UserRepository.Delete(ctx, user); err != nil {
+		if err := s.UserRepository.DeleteByIDs(ctx, tx, IDs); err != nil {
 			return err
 		}
 		return nil
@@ -86,7 +89,35 @@ func (s *UserService) DeleteUser(ctx *gin.Context, user *models.UserModel) error
 	return err
 }
 
-func(s *UserService) GetStaffList(ctx *gin.Context, users *[]models.UserModel) error {
+func (s *UserService) GetStaffList(ctx *gin.Context, users *[]models.UserModel) error {
+	role, exists := ctx.Get("role")
+
+	if !exists {
+		return errors.New("role not found")
+	}
+
+	if role.(string) == constants.Roles.Manager {
+		jwt, exists := ctx.Get("jwt")
+
+		if !exists {
+			return errors.New("jwt not found")
+		}
+
+		token, err := utils.ValidateJWTToken(jwt.(string))
+
+		if err != nil {
+			return errors.New("jwt not valid")
+		}
+
+		claim := &structs.JTWClaim{}
+
+		utils.ExtractJWTClaim(token, claim)
+
+		if err := s.UserRepository.GetByIDs(ctx, users, []int64{claim.UserID}); err != nil {
+			return err
+		}
+	}
+
 	if err := s.UserRepository.GetStaffList(ctx, users); err != nil {
 		return err
 	}

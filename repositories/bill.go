@@ -4,6 +4,7 @@ import (
 	"api/config"
 	"api/models"
 	"errors"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -16,22 +17,8 @@ func NewBillRepository() *BillRepository {
 	return &BillRepository{}
 }
 
-func (r *BillRepository) Get(ctx *gin.Context, bill *[]models.BillModel) error {
-	if err := config.DB.Find(bill).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *BillRepository) GetBillBaseOnSchedule(ctx *gin.Context, bill *[]models.BillModel, userID int64) error {
-	if err := config.DB.Model(&models.BillModel{}).Select("bill.*").Joins("JOIN manager_schedule ON manager_schedule.bill_id = bill.id").Where("manager_schedule.start_date <= now() AND manager_schedule.end_date >= now() AND manager_schedule.manager_id = ?", userID).Scan(bill).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
 func (r *BillRepository) GetById(ctx *gin.Context, bill *models.BillModel, id int64) error {
-	if err := config.DB.Where("id = ?", id).First(bill).Error; err != nil {
+	if err := config.DB.Where("id = ?", id).Preload("ExtraPayments").First(bill).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -40,35 +27,33 @@ func (r *BillRepository) GetById(ctx *gin.Context, bill *models.BillModel, id in
 	return nil
 }
 
-func (r *BillRepository) Create(ctx *gin.Context, bill *models.BillModel) error {
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		userID = 0
-	}
-	if err := config.DB.Set("userID", userID).Create(bill).Error; err != nil {
-		return err
-	}
-	return nil
-}
+func (r *BillRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int64) error {
+	now := time.Now()
+	userID := ctx.GetInt64("userID")
 
-func (r *BillRepository) Update(ctx *gin.Context, bill *models.BillModel) error {
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		userID = 0
-	}
-	if err := config.DB.Set("userID", userID).Save(bill).Error; err != nil {
+	if err := tx.Set("isQuiet", true).Model(&models.BillModel{}).Where("id IN ?", id).UpdateColumns(models.BillModel{
+		DefaultModel: models.DefaultModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
 		return err
 	}
-	return nil
-}
 
-func (r *BillRepository) Delete(ctx *gin.Context, bill *models.BillModel) error {
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		userID = 0
-	}
-	if err := config.DB.Set("userID", userID).Delete(bill).Error; err != nil {
+	if err := tx.Set("isQuiet", true).Model(&models.ExtraPaymentModel{}).Where("bill_id IN ?", id).UpdateColumns(models.ExtraPaymentModel{
+		DefaultModel: models.DefaultModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
 		return err
 	}
+
 	return nil
 }

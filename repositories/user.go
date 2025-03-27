@@ -4,6 +4,7 @@ import (
 	"api/config"
 	"api/models"
 	"errors"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -18,6 +19,17 @@ func NewUserRepository() *UserRepository {
 
 func (r *UserRepository) GetByID(ctx *gin.Context, user *models.UserModel, id int64) error {
 	if err := config.DB.Where("id = ?", id).First(user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (r *UserRepository) GetByIDs(ctx *gin.Context, user *[]models.UserModel, id []int64) error {
+	if err := config.DB.Where("id = ?", id).Find(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -57,38 +69,46 @@ func (r *UserRepository) Get(ctx *gin.Context, user *[]models.UserModel) error {
 	return nil
 }
 
-func (r *UserRepository) Create(ctx *gin.Context, user *models.UserModel) error {
+func (r *UserRepository) Create(ctx *gin.Context, tx *gorm.DB, user *models.UserModel) error {
 	userID, exists := ctx.Get("userID")
 	if !exists {
 		userID = 0
 	}
-	if err := config.DB.Set("userID", userID).Create(user).Error; err != nil {
+	if err := tx.Set("userID", userID).Create(user).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *UserRepository) Update(ctx *gin.Context, user *models.UserModel) error {
+func (r *UserRepository) Update(ctx *gin.Context, tx *gorm.DB, user *models.UserModel) error {
 	userID, exists := ctx.Get("userID")
 	if !exists {
 		userID = 0
 	}
-	if err := config.DB.Set("userID", userID).Save(user).Error; err != nil {
+	if err := tx.Set("userID", userID).Save(user).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *UserRepository) Delete(ctx *gin.Context, users *models.UserModel) error {
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		userID = 0
-	}
-	if err := config.DB.Set("userID", userID).Model(&models.UserModel{}).Delete(users).Error; err != nil {
+func (r *UserRepository) DeleteByIDs(ctx *gin.Context, tx *gorm.DB, ids []int64) error {
+	now := time.Now()
+	userID := ctx.GetInt64("userID")
+
+	if err := tx.Set("isQuiet", true).Model(&models.UserModel{}).Where("id in ?", ids).UpdateColumns(models.UserModel{
+		DefaultModel: models.DefaultModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
 		return err
 	}
+
 	return nil
 }
 

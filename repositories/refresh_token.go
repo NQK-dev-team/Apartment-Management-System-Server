@@ -16,8 +16,8 @@ func NewRefreshTokenRepository() *RefreshTokenRepository {
 	return &RefreshTokenRepository{}
 }
 
-func (r *RefreshTokenRepository) Create(ctx *gin.Context, refreshToken *models.RefreshTokenModel) error {
-	if err := config.DB.Create(refreshToken).Error; err != nil {
+func (r *RefreshTokenRepository) Create(ctx *gin.Context, tx *gorm.DB, refreshToken *models.RefreshTokenModel) error {
+	if err := tx.Create(refreshToken).Error; err != nil {
 		return err
 	}
 
@@ -35,8 +35,8 @@ func (r *RefreshTokenRepository) GetByUserID(ctx *gin.Context, refreshToken *mod
 	return nil
 }
 
-func (r *RefreshTokenRepository) Delete(ctx *gin.Context, userID int64) error {
-	if err := config.DB.Where("user_id = ?", userID).Delete(&models.RefreshTokenModel{}).Error; err != nil {
+func (r *RefreshTokenRepository) Delete(ctx *gin.Context, tx *gorm.DB, userID int64) error {
+	if err := tx.Where("user_id = ?", userID).Delete(&models.RefreshTokenModel{}).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
