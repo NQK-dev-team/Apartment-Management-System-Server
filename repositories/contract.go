@@ -41,6 +41,13 @@ func (r *ContractRepository) GetContractByRoomID(ctx *gin.Context, contract *[]m
 	return nil
 }
 
+func(r*ContractRepository) GetContractsByManagerID(ctx *gin.Context, contracts *[]models.ContractModel, managerID int64) error {
+	if err := config.DB.Preload("Creator").Preload("Householder").Preload("Files").Where("creator_id = ?", managerID).Find(contracts).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *ContractRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 	now := time.Now()
 	userID := ctx.GetInt64("userID")

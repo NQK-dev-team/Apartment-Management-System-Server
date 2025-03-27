@@ -14,30 +14,35 @@ import (
 )
 
 type UserService struct {
-	UserRepository *repositories.UserRepository
+	userRepository          *repositories.UserRepository
+	contractRepository      *repositories.ContractRepository
+	supportTicketRepository *repositories.SupportTicketRepository
 }
 
 func NewUserService() *UserService {
-	userRepository := repositories.NewUserRepository()
-	return &UserService{UserRepository: userRepository}
+	return &UserService{
+		userRepository:          repositories.NewUserRepository(),
+		contractRepository:      repositories.NewContractRepository(),
+		supportTicketRepository: repositories.NewSupportTicketRepository(),
+	}
 }
 
 func (s *UserService) GetUsers(ctx *gin.Context, users *[]models.UserModel) error {
-	if err := s.UserRepository.Get(ctx, users); err != nil {
+	if err := s.userRepository.Get(ctx, users); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (s *UserService) GetUserByEmail(ctx *gin.Context, email string, user *models.UserModel) error {
-	if err := s.UserRepository.GetByEmail(ctx, user, email); err != nil {
+	if err := s.userRepository.GetByEmail(ctx, user, email); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (s *UserService) GetUserByID(ctx *gin.Context, id int64, user *models.UserModel) error {
-	if err := s.UserRepository.GetByID(ctx, user, id); err != nil {
+	if err := s.userRepository.GetByID(ctx, user, id); err != nil {
 		return err
 	}
 	return nil
@@ -50,7 +55,7 @@ func (s *UserService) CreateUser(ctx *gin.Context, user *models.UserModel) error
 			return err
 		}
 		user.Password = hashedPassword
-		if err := s.UserRepository.Create(ctx, tx, user); err != nil {
+		if err := s.userRepository.Create(ctx, tx, user); err != nil {
 			return err
 		}
 		return nil
@@ -61,7 +66,7 @@ func (s *UserService) CreateUser(ctx *gin.Context, user *models.UserModel) error
 func (s *UserService) UpdateUser(ctx *gin.Context, user *models.UserModel) error {
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
 		oldData := models.UserModel{}
-		if err := s.UserRepository.GetByID(ctx, &oldData, user.ID); err != nil {
+		if err := s.userRepository.GetByID(ctx, &oldData, user.ID); err != nil {
 			return err
 		}
 		if oldData.Password != user.Password && !utils.CompareHashPassword(oldData.Password, user.Password) {
@@ -71,7 +76,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context, user *models.UserModel) error
 			}
 			user.Password = hashedPassword
 		}
-		if err := s.UserRepository.Update(ctx, tx, user); err != nil {
+		if err := s.userRepository.Update(ctx, tx, user); err != nil {
 			return err
 		}
 		return nil
@@ -81,7 +86,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context, user *models.UserModel) error
 
 func (s *UserService) DeleteUsers(ctx *gin.Context, IDs []int64) error {
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
-		if err := s.UserRepository.DeleteByIDs(ctx, tx, IDs); err != nil {
+		if err := s.userRepository.DeleteByIDs(ctx, tx, IDs); err != nil {
 			return err
 		}
 		return nil
@@ -113,12 +118,41 @@ func (s *UserService) GetStaffList(ctx *gin.Context, users *[]models.UserModel) 
 
 		utils.ExtractJWTClaim(token, claim)
 
-		if err := s.UserRepository.GetByIDs(ctx, users, []int64{claim.UserID}); err != nil {
+		if err := s.userRepository.GetByIDs(ctx, users, []int64{claim.UserID}); err != nil {
 			return err
 		}
+		return nil
 	}
 
-	if err := s.UserRepository.GetStaffList(ctx, users); err != nil {
+	if err := s.userRepository.GetStaffList(ctx, users); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *UserService) GetStaffDetail(ctx *gin.Context, user *models.UserModel, id int64) error {
+	if err := s.userRepository.GetStaffDetail(ctx, user, id); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *UserService) GetStaffSchedule(ctx *gin.Context, schedules *[]models.ManagerScheduleModel, staffID int64) error {
+	if err := s.userRepository.GetStaffSchedule(ctx, schedules, staffID); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *UserService) GetStaffRelatedContract(ctx *gin.Context, contracts *[]models.ContractModel, staffID int64) error {
+	if err := s.contractRepository.GetContractsByManagerID(ctx, contracts, staffID); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *UserService) GetStaffRelatedTicket(ctx *gin.Context, tickets *[]models.ManagerResolveSupportTicketModel, staffID int64, limit int64, offset int64) error {
+	if err := s.supportTicketRepository.GetTicketsByManagerID(ctx, tickets, staffID, limit, offset); err != nil {
 		return err
 	}
 	return nil

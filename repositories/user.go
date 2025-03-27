@@ -118,3 +118,20 @@ func (r *UserRepository) GetStaffList(ctx *gin.Context, users *[]models.UserMode
 	}
 	return nil
 }
+
+func (r *UserRepository) GetStaffDetail(ctx *gin.Context, user *models.UserModel, id int64) error {
+	if err := config.DB.Where("id = ? AND is_owner = false AND is_manager = true AND is_customer = false", id).First(user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+func (r *UserRepository) GetStaffSchedule(ctx *gin.Context, schedules *[]models.ManagerScheduleModel, staffID int64) error {
+	if err := config.DB.Preload("Building").Preload("Manager").Where("manager_id = ?", staffID).Find(schedules).Error; err != nil {
+		return err
+	}
+	return nil
+}
