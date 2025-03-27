@@ -13,6 +13,10 @@ import (
 type BillRepository struct {
 }
 
+func (r *BillRepository) Get(ctx *gin.Context, bill *[]models.BillModel) error {
+	panic("unimplemented")
+}
+
 func NewBillRepository() *BillRepository {
 	return &BillRepository{}
 }
