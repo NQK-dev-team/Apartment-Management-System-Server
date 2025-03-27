@@ -41,8 +41,10 @@ func (r *ContractRepository) GetContractByRoomID(ctx *gin.Context, contract *[]m
 	return nil
 }
 
-func(r*ContractRepository) GetContractsByManagerID(ctx *gin.Context, contracts *[]models.ContractModel, managerID int64) error {
-	if err := config.DB.Preload("Creator").Preload("Householder").Preload("Files").Where("creator_id = ?", managerID).Find(contracts).Error; err != nil {
+func (r *ContractRepository) GetContractsByManagerID(ctx *gin.Context, contracts *[]models.ContractModel, managerID int64) error {
+	if err := config.DB.Preload("Creator").Preload("Householder").Preload("Files").
+		Where("creator_id = ?", managerID).Order("start_date DESC, end_date DESC, sign_date DESC").
+		Find(contracts).Error; err != nil {
 		return err
 	}
 	return nil
