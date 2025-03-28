@@ -179,7 +179,7 @@ func removeFileFromLocal(filePath string) error {
 func RemoveFile(filePath string) {
 	filePath = strings.Replace(filePath, "/api/", "", -1)
 
-	if checkS3Connection() {
+	if checkS3Connection() && fileExistsInS3(filePath) {
 		if err := removeFileFromS3(filePath); err != nil {
 			removeFileFromLocal(filePath)
 		}
