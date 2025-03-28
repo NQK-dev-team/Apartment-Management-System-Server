@@ -6,7 +6,7 @@ type SupportTicketModel struct {
 	Title      string `json:"title" gorm:"column:title;type:varchar(255);not null;"`
 	Content    string `json:"content" gorm:"column:content;type:text;not null;"`
 	ContractID int64  `json:"contractID" gorm:"column:contract_id;not null;"`
-	// Contract   ContractModel            `json:"contract" gorm:"foreignKey:contract_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Contract   ContractModel            `json:"contract" gorm:"foreignKey:contract_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	CustomerID int64                    `json:"customerID" gorm:"column:customer_id;not null;"`
 	Customer   UserModel                `json:"customer" gorm:"foreignKey:customer_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Files      []SupportTicketFileModel `json:"files" gorm:"foreignKey:support_ticket_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`

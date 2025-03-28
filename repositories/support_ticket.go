@@ -3,6 +3,7 @@ package repositories
 import (
 	"api/config"
 	"api/models"
+	"api/structs"
 	"errors"
 	"time"
 
@@ -27,13 +28,44 @@ func (r *SupportTicketRepository) GetById(ctx *gin.Context, ticket *models.Suppo
 	return nil
 }
 
-func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, tickets *[]models.ManagerResolveSupportTicketModel, managerID int64, limit int64, offset int64) error {
-	if err := config.DB.Model(&models.ManagerResolveSupportTicketModel{}).Preload("SupportTicket").Preload("SupportTicket.Files").Preload("SupportTicket.Customer").
+func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, tickets *[]structs.ResolveTicket, managerID int64, limit int64, offset int64) error {
+	if err := config.DB.Model(&models.ManagerResolveSupportTicketModel{}).Preload("SupportTicket").
 		Joins("JOIN support_ticket ON support_ticket.id = manager_resolve_support_ticket.support_ticket_id").
 		Where("manager_id = ?", managerID).Limit(int(limit)).Offset(int(offset)).Order("support_ticket.created_at desc, resolve_time desc").
 		Find(tickets).Error; err != nil {
 		return err
 	}
+
+	for i := range *tickets {
+		if err := config.DB.Raw("SELECT id FROM \"user\" JOIN manager_resolve_support_ticket ON manager_resolve_support_ticket.manager_id=\"user\".id WHERE NOT manager_id = ? AND support_ticket_id = ?", managerID, (*tickets)[i].SupportTicket.ID).Scan(&(*tickets)[i].OwnerID).Error; err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+		} else if (*tickets)[i].OwnerID != 0 {
+			if err := config.DB.Model(&models.UserModel{}).Where("id = ?", (*tickets)[i].OwnerID).First(&(*tickets)[i].Owner).Error; err != nil {
+				return err
+			}
+		}
+
+		if err := config.DB.Model(&models.SupportTicketFileModel{}).Where("support_ticket_id = ?", (*tickets)[i].SupportTicket.ID).First(&(*tickets)[i].SupportTicket.Files).Error; err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+		}
+
+		if err := config.DB.Model(&models.UserModel{}).Where("id = ?", (*tickets)[i].SupportTicket.CustomerID).First(&(*tickets)[i].SupportTicket.Customer).Error; err != nil {
+			return err
+		}
+
+		if err := config.DB.Raw("SELECT room.no AS room_no FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].SupportTicket.ContractID).Scan(&(*tickets)[i].SupportTicket.RoomNo).Error; err != nil {
+			return err
+		}
+
+		if err := config.DB.Raw("SELECT building.name AS building_name FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].SupportTicket.ContractID).Scan(&(*tickets)[i].SupportTicket.BuildingName).Error; err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

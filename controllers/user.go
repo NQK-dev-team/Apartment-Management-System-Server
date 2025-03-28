@@ -4,6 +4,7 @@ import (
 	"api/config"
 	"api/models"
 	"api/services"
+	"api/structs"
 	"api/utils"
 	"strconv"
 
@@ -123,7 +124,7 @@ func (c *UserController) GetStaffRelatedTicket(ctx *gin.Context) {
 		offset = 0
 	}
 
-	tickets := []models.ManagerResolveSupportTicketModel{}
+	tickets := []structs.ResolveTicket{}
 
 	if err := c.userService.GetStaffRelatedTicket(ctx, &tickets, id, limit, offset); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")

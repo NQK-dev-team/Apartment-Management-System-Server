@@ -16,7 +16,7 @@ type BillModel struct {
 	Payer         UserModel           `json:"payer" gorm:"foreignKey:payer_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	ContractID    int64               `json:"contractID" gorm:"column:contract_id;not null;"`
 	ExtraPayments []ExtraPaymentModel `json:"extraPayments" gorm:"foreignKey:bill_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	// Contract      ContractModel       `json:"contract" gorm:"foreignKey:contract_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	Contract      ContractModel       `json:"contract" gorm:"foreignKey:contract_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 	// ExtraPayments []ExtraPaymentModel `json:"extraPayments" gorm:"foreignKey:bill_id,contract_id;references:id,contract_id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 

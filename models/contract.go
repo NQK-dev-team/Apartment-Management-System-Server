@@ -18,9 +18,9 @@ type ContractModel struct {
 	HouseholderID  int64                `json:"householderID" gorm:"column:householder_id;not null;"`
 	Householder    UserModel            `json:"householder" gorm:"foreignKey:householder_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	RoomID         int64                `json:"roomID" gorm:"column:room_id;not null;"`
-	Bills          []BillModel          `json:"bills" gorm:"foreignKey:contract_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	// Bills          []BillModel          `json:"bills" gorm:"foreignKey:contract_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 	Files          []ContractFileModel  `json:"files" gorm:"foreignKey:contract_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	SupportTickets []SupportTicketModel `json:"supportTickets" gorm:"foreignKey:contract_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	// SupportTickets []SupportTicketModel `json:"supportTickets" gorm:"foreignKey:contract_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	// BuildingID    int64     `json:"buildingID" gorm:"column:building_id;not null;"`
 	// Room          RoomModel           `json:"room" gorm:"foreignKey:room_id,building_id;references:id,building_id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
