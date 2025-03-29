@@ -151,7 +151,7 @@ func (s *UserService) GetStaffRelatedContract(ctx *gin.Context, contracts *[]mod
 	return nil
 }
 
-func (s *UserService) GetStaffRelatedTicket(ctx *gin.Context, tickets *[]structs.ResolveTicket, staffID int64, limit int64, offset int64) error {
+func (s *UserService) GetStaffRelatedTicket(ctx *gin.Context, tickets *[]structs.SupportTicket, staffID int64, limit int64, offset int64) error {
 	if err := s.supportTicketRepository.GetTicketsByManagerID(ctx, tickets, staffID, limit, offset); err != nil {
 		return err
 	}

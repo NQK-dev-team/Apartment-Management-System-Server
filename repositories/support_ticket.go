@@ -28,40 +28,52 @@ func (r *SupportTicketRepository) GetById(ctx *gin.Context, ticket *models.Suppo
 	return nil
 }
 
-func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, tickets *[]structs.ResolveTicket, managerID int64, limit int64, offset int64) error {
-	if err := config.DB.Model(&models.ManagerResolveSupportTicketModel{}).Preload("SupportTicket").
-		Joins("JOIN support_ticket ON support_ticket.id = manager_resolve_support_ticket.support_ticket_id").
-		Where("manager_id = ?", managerID).Limit(int(limit)).Offset(int(offset)).Order("support_ticket.created_at desc, resolve_time desc").
+func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, tickets *[]structs.SupportTicket, managerID int64, limit int64, offset int64) error {
+	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
+		// Joins("JOIN support_ticket ON support_ticket.id = manager_resolve_support_ticket.support_ticket_id").
+		Where("manager_id = ?", managerID).Limit(int(limit)).Offset(int(offset)).Order("created_at desc, owner_resolve_time desc, manager_resolve_time desc").
 		Find(tickets).Error; err != nil {
 		return err
 	}
 
 	for i := range *tickets {
-		if err := config.DB.Raw("SELECT id FROM \"user\" JOIN manager_resolve_support_ticket ON manager_resolve_support_ticket.manager_id=\"user\".id WHERE NOT manager_id = ? AND support_ticket_id = ?", managerID, (*tickets)[i].SupportTicket.ID).Scan(&(*tickets)[i].OwnerID).Error; err != nil {
-			if !errors.Is(err, gorm.ErrRecordNotFound) {
-				return err
-			}
-		} else if (*tickets)[i].OwnerID != 0 {
-			if err := config.DB.Model(&models.UserModel{}).Where("id = ?", (*tickets)[i].OwnerID).First(&(*tickets)[i].Owner).Error; err != nil {
-				return err
-			}
-		}
+		// if err := config.DB.Raw("SELECT id FROM \"user\" JOIN manager_resolve_support_ticket ON manager_resolve_support_ticket.manager_id=\"user\".id WHERE NOT manager_id = ? AND support_ticket_id = ?", managerID, (*tickets)[i].SupportTicket.ID).Scan(&(*tickets)[i].OwnerID).Error; err != nil {
+		// 	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		// 		return err
+		// 	}
+		// } else if (*tickets)[i].OwnerID != 0 {
+		// 	if err := config.DB.Model(&models.UserModel{}).Where("id = ?", (*tickets)[i].OwnerID).First(&(*tickets)[i].Owner).Error; err != nil {
+		// 		return err
+		// 	}
 
-		if err := config.DB.Model(&models.SupportTicketFileModel{}).Where("support_ticket_id = ?", (*tickets)[i].SupportTicket.ID).First(&(*tickets)[i].SupportTicket.Files).Error; err != nil {
-			if !errors.Is(err, gorm.ErrRecordNotFound) {
-				return err
-			}
-		}
+		// 	if err := config.DB.Raw("SELECT result FROM manager_resolve_support_ticket WHERE manager_id = ? AND support_ticket_id = ?", (*tickets)[i].OwnerID, (*tickets)[i].SupportTicket.ID).Scan(&(*tickets)[i].OwnerResult).Error; err != nil {
+		// 		return err
+		// 	}
 
-		if err := config.DB.Model(&models.UserModel{}).Where("id = ?", (*tickets)[i].SupportTicket.CustomerID).First(&(*tickets)[i].SupportTicket.Customer).Error; err != nil {
+		// 	if err := config.DB.Raw("SELECT resolve_time FROM manager_resolve_support_ticket WHERE manager_id = ? AND support_ticket_id = ?", (*tickets)[i].OwnerID, (*tickets)[i].SupportTicket.ID).Scan(&(*tickets)[i].OwnerResolveTime).Error; err != nil {
+		// 		return err
+		// 	}
+		// }
+
+		// if err := config.DB.Model(&models.SupportTicketFileModel{}).Where("support_ticket_id = ?", (*tickets)[i].SupportTicket.ID).First(&(*tickets)[i].SupportTicket.Files).Error; err != nil {
+		// 	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		// 		return err
+		// 	}
+		// }
+
+		// if err := config.DB.Model(&models.UserModel{}).Where("id = ?", (*tickets)[i].SupportTicket.CustomerID).First(&(*tickets)[i].SupportTicket.Customer).Error; err != nil {
+		// 	return err
+		// }
+
+		if err := config.DB.Raw("SELECT room.no AS room_no FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ID).Scan(&(*tickets)[i].RoomNo).Error; err != nil {
 			return err
 		}
 
-		if err := config.DB.Raw("SELECT room.no AS room_no FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].SupportTicket.ContractID).Scan(&(*tickets)[i].SupportTicket.RoomNo).Error; err != nil {
+		if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ID).Scan(&(*tickets)[i].RoomFloor).Error; err != nil {
 			return err
 		}
 
-		if err := config.DB.Raw("SELECT building.name AS building_name FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].SupportTicket.ContractID).Scan(&(*tickets)[i].SupportTicket.BuildingName).Error; err != nil {
+		if err := config.DB.Raw("SELECT building.name AS building_name FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ID).Scan(&(*tickets)[i].BuildingName).Error; err != nil {
 			return err
 		}
 	}
@@ -97,5 +109,19 @@ func (r *SupportTicketRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int
 		return err
 	}
 
+	return nil
+}
+
+func (r *SupportTicketRepository) Update(ctx *gin.Context, tx *gorm.DB, ticket *models.SupportTicketModel, id int64) error {
+	userID := ctx.GetInt64("userID")
+	if ticket.OwnerID != 0 {
+		if err := tx.Set("userID", userID).Model(&models.SupportTicketModel{}).Where("id = ?", id).Save(ticket).Error; err != nil {
+			return err
+		}
+	} else {
+		if err := tx.Set("userID", userID).Model(&models.SupportTicketModel{}).Omit("OwnerID").Where("id = ?", id).Save(ticket).Error; err != nil {
+			return err
+		}
+	}
 	return nil
 }

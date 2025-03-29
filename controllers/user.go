@@ -40,7 +40,9 @@ func (c *UserController) GetStaffDetail(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 
 	if err != nil {
-		id = 0
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
 	}
 
 	user := &models.UserModel{}
@@ -62,7 +64,9 @@ func (c *UserController) GetStaffSchedule(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 
 	if err != nil {
-		id = 0
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
 	}
 
 	schedules := []models.ManagerScheduleModel{}
@@ -84,7 +88,9 @@ func (c *UserController) GetStaffRelatedContract(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 
 	if err != nil {
-		id = 0
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
 	}
 
 	contracts := []models.ContractModel{}
@@ -106,7 +112,9 @@ func (c *UserController) GetStaffRelatedTicket(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 
 	if err != nil {
-		id = 0
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
 	}
 
 	limitStr := ctx.DefaultQuery("limit", "500")
@@ -124,7 +132,7 @@ func (c *UserController) GetStaffRelatedTicket(ctx *gin.Context) {
 		offset = 0
 	}
 
-	tickets := []structs.ResolveTicket{}
+	tickets := []structs.SupportTicket{}
 
 	if err := c.userService.GetStaffRelatedTicket(ctx, &tickets, id, limit, offset); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")

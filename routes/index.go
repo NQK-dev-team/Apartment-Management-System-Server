@@ -22,5 +22,6 @@ func InitRoutes(router *gin.RouterGroup) {
 		// Init other sub-routes
 		InitBuildingRoutes(r)
 		InitUserRoutes(r)
+		InitSupportTicketRoutes(r)
 	}
 }
