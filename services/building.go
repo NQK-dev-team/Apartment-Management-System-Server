@@ -31,14 +31,14 @@ func NewBuildingService() *BuildingService {
 	}
 }
 
-func (s *BuildingService) GetBuilding(ctx *gin.Context, building *[]models.BuildingModel) (bool, error) {
+func (s *BuildingService) GetBuilding(ctx *gin.Context, building *[]models.BuildingModel, getAll bool) (bool, error) {
 	role, exists := ctx.Get("role")
 
 	if !exists {
 		return false, nil
 	}
 
-	if role.(string) == constants.Roles.Manager {
+	if role.(string) == constants.Roles.Manager && !getAll {
 		jwt, exists := ctx.Get("jwt")
 
 		if !exists {

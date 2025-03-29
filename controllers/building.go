@@ -27,7 +27,9 @@ func (c *BuildingController) GetBuilding(ctx *gin.Context) {
 	response := config.NewDataResponse(ctx)
 	var building = &[]models.BuildingModel{}
 
-	isAuthenticated, err := c.buildingService.GetBuilding(ctx, building)
+	getAll := ctx.Query("getAll") == "true"
+
+	isAuthenticated, err := c.buildingService.GetBuilding(ctx, building, getAll)
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(500, response)
