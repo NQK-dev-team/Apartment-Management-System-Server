@@ -7,6 +7,7 @@ import (
 	"api/structs"
 	"api/utils"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -57,11 +58,20 @@ func (c *BuildingController) CreateBuilding(ctx *gin.Context) {
 		return
 	}
 
+	building.Name = strings.TrimSpace(building.Name)
+	building.Address = strings.TrimSpace(building.Address)
+
 	form, _ := ctx.MultipartForm()
 	buildingImages := form.File["images[]"]
 	building.Images = buildingImages
 
+	for index, service := range building.Services {
+		building.Services[index].Name = strings.TrimSpace(service.Name)
+	}
+
 	for index, room := range building.Rooms {
+		building.Rooms[index].Description = strings.TrimSpace(room.Description)
+
 		roomNoStr := strconv.Itoa(room.No)
 		roomImages := form.File["roomImages["+roomNoStr+"]"]
 		building.Rooms[index].Images = roomImages
@@ -182,16 +192,31 @@ func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
 		building.ID = buildingID
 	}
 
+	building.Name = strings.TrimSpace(building.Name)
+	building.Address = strings.TrimSpace(building.Address)
+
+	for index, service := range building.Services {
+		building.Services[index].Name = strings.TrimSpace(service.Name)
+	}
+
+	for index, service := range building.NewServices {
+		building.NewServices[index].Name = strings.TrimSpace(service.Name)
+	}
+
 	form, _ := ctx.MultipartForm()
 	building.NewBuildingImages = form.File["newBuildingImages[]"]
 
 	for index, room := range building.NewRooms {
+		building.NewRooms[index].Description = strings.TrimSpace(room.Description)
+
 		roomNoStr := strconv.Itoa(room.No)
 		roomImages := form.File["newRoomImages["+roomNoStr+"]"]
 		building.NewRooms[index].Images = roomImages
 	}
 
 	for index, room := range building.Rooms {
+		building.Rooms[index].Description = strings.TrimSpace(room.Description)
+
 		roomNoStr := strconv.Itoa(room.No)
 		roomImages := form.File["newRoomImages["+roomNoStr+"]"]
 		building.Rooms[index].NewImages = roomImages
