@@ -539,3 +539,52 @@ func (s *BuildingService) UpdateBuilding(ctx *gin.Context, building *structs.Edi
 
 	return nil
 }
+
+func (s *BuildingService) CheckManagerPermission(ctx *gin.Context, buildingID int64) bool {
+	role, exists := ctx.Get("role")
+
+	if !exists {
+		return false
+	}
+
+	if role.(string) == constants.Roles.Manager {
+		jwt, exists := ctx.Get("jwt")
+
+		if !exists {
+			return false
+		}
+
+		token, err := utils.ValidateJWTToken(jwt.(string))
+
+		if err != nil {
+			return false
+		}
+
+		claim := &structs.JTWClaim{}
+
+		utils.ExtractJWTClaim(token, claim)
+
+		buildings := []models.BuildingModel{}
+
+		if err := s.buildingRepository.GetBuildingBaseOnSchedule(ctx, &buildings, claim.UserID); err != nil {
+			return false
+		}
+
+		if len(buildings) == 0 {
+			return false
+		}
+
+		var result = false
+
+		for _, building := range buildings {
+			if building.ID == buildingID {
+				result = true
+				break
+			}
+		}
+
+		return result
+	}
+
+	return true
+}

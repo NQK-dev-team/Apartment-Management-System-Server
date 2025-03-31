@@ -104,6 +104,13 @@ func (c *BuildingController) GetBuildingDetail(ctx *gin.Context) {
 		id = 0
 	}
 
+	if permission := c.buildingService.CheckManagerPermission(ctx, id); !permission {
+		response.Data = building
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(403, response)
+		return
+	}
+
 	if err := c.buildingService.GetBuildingDetail(ctx, building, id); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(500, response)
@@ -190,6 +197,12 @@ func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
 		}
 
 		building.ID = buildingID
+	}
+
+	if permission := c.buildingService.CheckManagerPermission(ctx, building.ID); !permission {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(403, response)
+		return
 	}
 
 	building.Name = strings.TrimSpace(building.Name)
