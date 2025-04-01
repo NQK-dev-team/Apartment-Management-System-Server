@@ -60,8 +60,8 @@ func (s *AuthenticationService) Login(ctx *gin.Context, email string, password s
 	jwtPayload.IsManager = user.IsManager
 	jwtPayload.IsOwner = user.IsOwner
 
-	if user.MiddleName != "" {
-		jwtPayload.FullName = user.FirstName + " " + user.MiddleName + " " + user.LastName
+	if user.MiddleName.Valid {
+		jwtPayload.FullName = user.FirstName + " " + user.MiddleName.String + " " + user.LastName
 	} else {
 		jwtPayload.FullName = user.FirstName + " " + user.LastName
 	}
@@ -149,8 +149,8 @@ func (s *AuthenticationService) GetNewToken(ctx *gin.Context, refreshToken strin
 	jwtPayload.IsManager = user.IsManager
 	jwtPayload.IsOwner = user.IsOwner
 
-	if user.MiddleName != "" {
-		jwtPayload.FullName = user.FirstName + " " + user.MiddleName + " " + user.LastName
+	if user.MiddleName.Valid {
+		jwtPayload.FullName = user.FirstName + " " + user.MiddleName.String + " " + user.LastName
 	} else {
 		jwtPayload.FullName = user.FirstName + " " + user.LastName
 	}

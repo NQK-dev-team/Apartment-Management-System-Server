@@ -25,6 +25,7 @@ func (m *UserMigration) Up() {
 	// Add role check constraint
 	config.DB.Exec(m.generateRoleCheckRule())
 	config.DB.Exec("ALTER TABLE \"user\" ADD CONSTRAINT gender_check CHECK (gender>=1 AND gender<=3)")
+	config.DB.Exec("CREATE UNIQUE INDEX idx_old_ssn_not_null ON \"user\" (old_ssn) WHERE old_ssn IS NOT NULL;")
 }
 
 func (m *UserMigration) Down() {

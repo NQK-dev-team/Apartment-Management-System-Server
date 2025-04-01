@@ -7,6 +7,7 @@ import (
 	"api/repositories"
 	"api/structs"
 	"api/utils"
+	"database/sql"
 	"errors"
 	"strconv"
 
@@ -105,14 +106,20 @@ func (s *UserService) CreateStaff(ctx *gin.Context, newStaff *structs.NewStaff) 
 	}
 
 	newUser := &models.UserModel{
-		LastName:         newStaff.LastName,
-		FirstName:        newStaff.FirstName,
-		MiddleName:       newStaff.MiddleName,
-		DOB:              newStaff.Dob,
-		POB:              newStaff.Pob,
-		Gender:           newStaff.Gender,
-		SSN:              newStaff.SSN,
-		OldSSN:           newStaff.OldSSN,
+		LastName:  newStaff.LastName,
+		FirstName: newStaff.FirstName,
+		MiddleName: sql.NullString{
+			String: newStaff.MiddleName,
+			Valid:  newStaff.MiddleName != "",
+		},
+		DOB:    newStaff.Dob,
+		POB:    newStaff.Pob,
+		Gender: newStaff.Gender,
+		SSN:    newStaff.SSN,
+		OldSSN: sql.NullString{
+			String: newStaff.OldSSN,
+			Valid:  newStaff.OldSSN != "",
+		},
 		Email:            newStaff.Email,
 		Phone:            newStaff.Phone,
 		PermanentAddress: newStaff.PermanentAddress,
@@ -150,8 +157,8 @@ func (s *UserService) CreateStaff(ctx *gin.Context, newStaff *structs.NewStaff) 
 
 		fullName := ""
 
-		if newUser.MiddleName != "" {
-			fullName = newUser.LastName + " " + newUser.MiddleName + " " + newUser.FirstName
+		if newUser.MiddleName.Valid {
+			fullName = newUser.LastName + " " + newUser.MiddleName.String + " " + newUser.FirstName
 		} else {
 			fullName = newUser.LastName + " " + newUser.FirstName
 		}
