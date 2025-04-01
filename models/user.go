@@ -15,13 +15,14 @@ type UserModel struct {
 	LastName         string       `json:"lastName" gorm:"column:last_name;type:varchar(255);not null;"`
 	Gender           int          `json:"gender" gorm:"column:gender;type:int;not null;"` // 1: Male, 2: Female, 3: Other
 	SSN              string       `json:"ssn" gorm:"column:ssn;type:varchar(12);not null;uniqueIndex:idx_ssn;"`
-	OldSSN           string       `json:"oldSSN" gorm:"column:old_ssn;type:varchar(9);"`
+	OldSSN           string       `json:"oldSSN" gorm:"column:old_ssn;type:varchar(9);uniqueIndex:idx_old_ssn;"`
 	DOB              string       `json:"dob" gorm:"column:dob;type:date;not null;"`
 	POB              string       `json:"pob" gorm:"column:pob;type:varchar(255);"`
 	Email            string       `json:"email" gorm:"column:email;type:varchar(255);not null;uniqueIndex:idx_email;"`
 	Password         string       `json:"-" gorm:"column:password;type:varchar(255);not null;"`
-	Phone            string       `json:"phone" gorm:"column:phone;type:varchar(10);not null;"`
-	Address          string       `json:"address" gorm:"column:address;type:varchar(255);not null;"`
+	Phone            string       `json:"phone" gorm:"column:phone;type:varchar(10);not null;uniqueIndex:idx_phone;"`
+	PermanentAddress string       `json:"permanentAddress" gorm:"column:permanent_address;type:varchar(255);not null;"`
+	TemporaryAddress string       `json:"temporaryAddress" gorm:"column:temporary_address;type:varchar(255);not null;"`
 	SSNFrontFilePath string       `json:"ssnFrontFilePath" gorm:"column:ssn_front_file_path;type:varchar(255);not null;"`
 	SSNBackFilePath  string       `json:"ssnBackFilePath" gorm:"column:ssn_back_file_path;type:varchar(255);not null;"`
 	ProfileFilePath  string       `json:"profileFilePath" gorm:"column:profile_file_path;type:varchar(255);not null;"`
