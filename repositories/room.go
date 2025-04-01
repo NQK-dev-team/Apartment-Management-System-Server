@@ -115,9 +115,16 @@ func (r *RoomRepository) DeleteImages(ctx *gin.Context, tx *gorm.DB, id []int64)
 
 func (r *RoomRepository) Update(ctx *gin.Context, tx *gorm.DB, rooms *[]models.RoomModel) error {
 	userID := ctx.GetInt64("userID")
-	if err := tx.Set("userID", userID).Save(rooms).Error; err != nil {
-		return err
+	// if err := tx.Set("userID", userID).Save(rooms).Error; err != nil {
+	// 	return err
+	// }
+
+	for _, room := range *rooms {
+		if err := tx.Set("userID", userID).Model(&models.RoomModel{}).Where("id = ?", room.ID).Updates(room).Error; err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
 

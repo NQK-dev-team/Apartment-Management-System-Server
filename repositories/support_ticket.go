@@ -115,11 +115,11 @@ func (r *SupportTicketRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int
 func (r *SupportTicketRepository) Update(ctx *gin.Context, tx *gorm.DB, ticket *models.SupportTicketModel, id int64) error {
 	userID := ctx.GetInt64("userID")
 	if ticket.OwnerID != 0 {
-		if err := tx.Set("userID", userID).Model(&models.SupportTicketModel{}).Where("id = ?", id).Save(ticket).Error; err != nil {
+		if err := tx.Set("userID", userID).Model(&models.SupportTicketModel{}).Where("id = ?", id).Updates(ticket).Error; err != nil {
 			return err
 		}
 	} else {
-		if err := tx.Set("userID", userID).Model(&models.SupportTicketModel{}).Omit("OwnerID").Where("id = ?", id).Save(ticket).Error; err != nil {
+		if err := tx.Set("userID", userID).Model(&models.SupportTicketModel{}).Omit("OwnerID").Where("id = ?", id).Updates(ticket).Error; err != nil {
 			return err
 		}
 	}

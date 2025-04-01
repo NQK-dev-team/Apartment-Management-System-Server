@@ -51,8 +51,15 @@ func (r *ManagerScheduleRepository) GetByIDs(ctx *gin.Context, schedule *[]model
 
 func (r *ManagerScheduleRepository) Update(ctx *gin.Context, tx *gorm.DB, schedules *[]models.ManagerScheduleModel) error {
 	userID := ctx.GetInt64("userID")
-	if err := tx.Set("userID", userID).Save(schedules).Error; err != nil {
-		return err
+	// if err := tx.Set("userID", userID).Updates(schedules).Error; err != nil {
+	// 	return err
+	// }
+
+	for _, schedule := range *schedules {
+		if err := tx.Set("userID", userID).Model(&models.ManagerScheduleModel{}).Where("id = ?", schedule.ID).Updates(schedule).Error; err != nil {
+			return err
+		}
 	}
+
 	return nil
 }

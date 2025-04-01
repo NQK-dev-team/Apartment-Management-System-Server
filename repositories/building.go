@@ -68,7 +68,7 @@ func (r *BuildingRepository) Update(ctx *gin.Context, tx *gorm.DB, building *mod
 	if !exists {
 		userID = 0
 	}
-	if err := tx.Set("userID", userID).Save(building).Error; err != nil {
+	if err := tx.Set("userID", userID).Updates(building).Error; err != nil {
 		return err
 	}
 	return nil
@@ -170,7 +170,7 @@ func (r *BuildingRepository) DeleteServices(ctx *gin.Context, tx *gorm.DB, id []
 
 func (r *BuildingRepository) EditService(ctx *gin.Context, service *models.BuildingServiceModel) error {
 	userID := ctx.GetInt64("userID")
-	if err := config.DB.Set("userID", userID).Save(service).Error; err != nil {
+	if err := config.DB.Set("userID", userID).Updates(service).Error; err != nil {
 		return err
 	}
 	return nil
@@ -210,8 +210,15 @@ func (r *BuildingRepository) GetServicesByIDs(ctx *gin.Context, services *[]mode
 
 func (r *BuildingRepository) UpdateServices(ctx *gin.Context, tx *gorm.DB, services *[]models.BuildingServiceModel) error {
 	userID := ctx.GetInt64("userID")
-	if err := tx.Set("userID", userID).Save(services).Error; err != nil {
-		return err
+	// if err := tx.Set("userID", userID).Save(services).Error; err != nil {
+	// 	return err
+	// }
+
+	for _, service := range *services {
+		if err := tx.Set("userID", userID).Model(&models.BuildingServiceModel{}).Where("id = ?", service.ID).Updates(service).Error; err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
