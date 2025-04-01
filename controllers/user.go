@@ -175,3 +175,67 @@ func (c *UserController) DeleteStaffs(ctx *gin.Context) {
 	response.Message = config.GetMessageCode("DELETE_SUCCESS")
 	ctx.JSON(200, response)
 }
+
+func (c *UserController) AddStaff(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	newStaff := &structs.NewStaff{}
+
+	if err := ctx.ShouldBind(newStaff); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
+	}
+
+	var err error
+	newStaff.ProfileImage, err = ctx.FormFile("profileImage")
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
+	}
+
+	newStaff.FrontSSNImage, err = ctx.FormFile("frontSSNImage")
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
+	}
+
+	newStaff.BackSSNImage, err = ctx.FormFile("backSSNImage")
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
+	}
+
+	if err := utils.Validate.Struct(newStaff); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = err.Error()
+		ctx.JSON(400, response)
+		return
+	}
+
+	response.Message = config.GetMessageCode("CREATE_SUCCESS")
+	ctx.JSON(200, response)
+}
+
+func (c *UserController) UpdateStaff(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	editStaff := &structs.EditStaff{}
+
+	if err := ctx.ShouldBind(editStaff); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
+	}
+
+	if err := utils.Validate.Struct(editStaff); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = err.Error()
+		ctx.JSON(400, response)
+		return
+	}
+
+	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
+	ctx.JSON(200, response)
+}

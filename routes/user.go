@@ -26,5 +26,7 @@ func InitUserRoutes(router *gin.RouterGroup) {
 		staffRoutes.GET("/:id/contract", userController.GetStaffRelatedContract)
 		staffRoutes.GET("/:id/ticket", userController.GetStaffRelatedTicket)
 		staffRoutes.POST("/delete-many", userController.DeleteStaffs)
+		staffRoutes.POST("/add", userController.AddStaff)
+		staffRoutes.POST("/:id/update", userController.UpdateStaff)
 	}
 }
