@@ -17,6 +17,14 @@ func NewUserRepository() *UserRepository {
 	return &UserRepository{}
 }
 
+func (r *UserRepository) GetNewID(ctx *gin.Context) (int64, error) {
+	lastestUser := models.UserModel{}
+	if err := config.DB.Order("id desc").Unscoped().First(&lastestUser).Error; err != nil {
+		return 0, err
+	}
+	return lastestUser.ID + 1, nil
+}
+
 func (r *UserRepository) GetByID(ctx *gin.Context, user *models.UserModel, id int64) error {
 	if err := config.DB.Where("id = ?", id).First(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -29,7 +37,7 @@ func (r *UserRepository) GetByID(ctx *gin.Context, user *models.UserModel, id in
 }
 
 func (r *UserRepository) GetByIDs(ctx *gin.Context, user *[]models.UserModel, id []int64) error {
-	if err := config.DB.Where("id = ?", id).Find(user).Error; err != nil {
+	if err := config.DB.Where("id IN ?", id).Find(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -41,6 +49,28 @@ func (r *UserRepository) GetByIDs(ctx *gin.Context, user *[]models.UserModel, id
 
 func (r *UserRepository) GetBySSN(ctx *gin.Context, user *models.UserModel, ssn string) error {
 	if err := config.DB.Where("ssn = ?", ssn).First(user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (r *UserRepository) GetByOldSSN(ctx *gin.Context, user *models.UserModel, ssn string) error {
+	if err := config.DB.Where("old_ssn = ?", ssn).First(user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (r *UserRepository) GetByPhone(ctx *gin.Context, user *models.UserModel, phone string) error {
+	if err := config.DB.Where("phone = ?", phone).First(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -74,7 +104,7 @@ func (r *UserRepository) Create(ctx *gin.Context, tx *gorm.DB, user *models.User
 	if !exists {
 		userID = 0
 	}
-	if err := tx.Set("userID", userID).Create(user).Error; err != nil {
+	if err := tx.Set("userID", userID).Omit("ID").Create(user).Error; err != nil {
 		return err
 	}
 

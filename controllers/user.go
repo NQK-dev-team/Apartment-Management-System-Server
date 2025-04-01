@@ -215,6 +215,22 @@ func (c *UserController) AddStaff(ctx *gin.Context) {
 		return
 	}
 
+	if messageCode, err := c.userService.CheckDuplicateData(ctx, newStaff.Email, newStaff.SSN, newStaff.Phone, newStaff.OldSSN); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	} else if messageCode != "" {
+		response.Message = messageCode
+		ctx.JSON(400, response)
+		return
+	}
+
+	if err := c.userService.CreateStaff(ctx, newStaff); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
 	response.Message = config.GetMessageCode("CREATE_SUCCESS")
 	ctx.JSON(200, response)
 }
@@ -223,16 +239,32 @@ func (c *UserController) UpdateStaff(ctx *gin.Context) {
 	response := config.NewDataResponse(ctx)
 	editStaff := &structs.EditStaff{}
 
+	staffID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
+	}
+
 	if err := ctx.ShouldBind(editStaff); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
 		ctx.JSON(400, response)
 		return
 	}
 
+	editStaff.ID = staffID
+
 	if err := utils.Validate.Struct(editStaff); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
 		ctx.JSON(400, response)
+		return
+	}
+
+	if err := c.userService.UpdateStaff(ctx, editStaff); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
 		return
 	}
 

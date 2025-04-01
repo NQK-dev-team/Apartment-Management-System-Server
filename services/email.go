@@ -207,3 +207,37 @@ func (s *EmailService) SendEmailVerificationEmail(ctx *gin.Context, email string
 
 	return false, nil
 }
+
+func (s *EmailService) SendAccountCreationEmail(ctx *gin.Context, email string, name string, password string) error {
+	// Get the current working directory
+	cwd, _ := os.Getwd()
+	emailNewAccountTemplate := filepath.Join(cwd, "mails", "new_account.html")
+	template, err := template.ParseFiles(emailNewAccountTemplate)
+	if err != nil {
+		return err
+	}
+
+	var body bytes.Buffer
+	data := structs.NewAccountTemplateData{
+		Name:      name,
+		LoginLink: ctx.GetHeader("Origin") + "/login",
+		Password:  password,
+		Email:     email,
+	}
+
+	err = template.Execute(&body, data)
+
+	if err != nil {
+		return err
+	}
+
+	if err := s.emailQueueRepository.Create(&models.EmailQueueModel{
+		ReceiverEmail: email,
+		Subject:       "Tài khoản tạo thành công - New account created",
+		Body:          body.String(),
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}

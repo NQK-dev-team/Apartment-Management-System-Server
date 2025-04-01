@@ -40,7 +40,7 @@ func (u *UserModel) BeforeCreate(tx *gorm.DB) error {
 	lastUser := UserModel{}
 
 	// Get the last room of the building floor
-	tx.Raw("SELECT * FROM user ORDER BY no::integer DESC LIMIT 1").Scan(&lastUser)
+	tx.Raw("SELECT * FROM \"user\" ORDER BY no::integer DESC LIMIT 1").Scan(&lastUser)
 
 	if lastUser.No == "" {
 		u.No = "00000001"

@@ -14,4 +14,5 @@ func InitFileRoutes(router *gin.RouterGroup) {
 
 	imageRoutes.GET("/buildings/:buildingID/rooms/:roomNo/:fileName", fileController.GetRoomImage)
 	imageRoutes.GET("/buildings/:buildingID/:fileName", fileController.GetBuildingImage)
+	imageRoutes.GET("/users/:userID/:fileName", fileController.GetUserImage)
 }
