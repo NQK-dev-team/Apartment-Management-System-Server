@@ -80,7 +80,7 @@ func (s *EmailService) SendResetPasswordEmail(ctx *gin.Context, email string) (b
 
 	var body bytes.Buffer
 	data := structs.ResetPasswordTemplateData{
-		Name:              user.LastName,
+		Name:              user.FirstName,
 		ResetPasswordLink: ctx.GetHeader("Origin") + "/new-password?email=" + email + "&token=" + tokenString,
 	}
 
@@ -169,7 +169,7 @@ func (s *EmailService) SendEmailVerificationEmail(ctx *gin.Context, email string
 
 	var body bytes.Buffer
 	data := structs.VerificationTemplateData{
-		Name:             user.LastName,
+		Name:             user.FirstName,
 		VerificationLink: ctx.GetHeader("Origin") + "/verify-email?email=" + email + "&token=" + tokenString,
 	}
 
