@@ -17,12 +17,12 @@ type DefaultFileModel struct {
 	DeletedBy interface{}    `json:"-" gorm:"column:deleted_by;type:bigint;"`
 }
 
-func (u *DefaultFileModel) BeforeCreate(tx *gorm.DB) error {
-	userID, _ := tx.Get("userID")
-	if userID != nil {
-		u.CreatedBy = userID.(int64)
-	}
-	u.CreatedAt = time.Now()
+// func (u *DefaultFileModel) BeforeCreate(tx *gorm.DB) error {
+// 	userID, _ := tx.Get("userID")
+// 	if userID != nil {
+// 		u.CreatedBy = userID.(int64)
+// 	}
+// 	u.CreatedAt = time.Now()
 
-	return nil
-}
+// 	return nil
+// }

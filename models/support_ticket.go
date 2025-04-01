@@ -2,6 +2,9 @@ package models
 
 import (
 	"database/sql"
+	"time"
+
+	"gorm.io/gorm"
 )
 
 type SupportTicketModel struct {
@@ -39,3 +42,34 @@ func (u *SupportTicketModel) TableName() string {
 // 		return nil
 // 	})
 // }
+
+func (u *SupportTicketModel) BeforeCreate(tx *gorm.DB) error {
+	userID, _ := tx.Get("userID")
+	if userID != nil {
+		u.CreatedBy = userID.(int64)
+		u.UpdatedBy = userID.(int64)
+	}
+	// u.CreatedAt = time.Now()
+	// u.UpdatedAt = time.Now()
+
+	return nil
+}
+
+func (u *SupportTicketModel) BeforeUpdate(tx *gorm.DB) error {
+	// if tx.Statement.Changed("UpdatedAt", "UpdatedBy") {
+	// 	return errors.New(config.GetMessageCode("CONCURRENCY_ERROR"))
+	// }
+
+	isQuiet, _ := tx.Get("isQuiet")
+	if isQuiet != nil && isQuiet.(bool) {
+		return nil
+	}
+
+	userID, _ := tx.Get("userID")
+	if userID != nil {
+		tx.Statement.SetColumn("updated_by", userID.(int64))
+	}
+	tx.Statement.SetColumn("updated_at", time.Now())
+
+	return nil
+}

@@ -1,5 +1,11 @@
 package models
 
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
+
 type RoomImageModel struct {
 	DefaultFileModel
 	RoomID int64 `json:"roomID" gorm:"column:room_id;not null;"`
@@ -9,4 +15,14 @@ type RoomImageModel struct {
 
 func (u *RoomImageModel) TableName() string {
 	return "room_image"
+}
+
+func (u *RoomImageModel) BeforeCreate(tx *gorm.DB) error {
+	userID, _ := tx.Get("userID")
+	if userID != nil {
+		u.CreatedBy = userID.(int64)
+	}
+	u.CreatedAt = time.Now()
+
+	return nil
 }

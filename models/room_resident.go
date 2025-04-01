@@ -1,5 +1,11 @@
 package models
 
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
+
 type RoomResidentModel struct {
 	DefaultModel
 	FirstName               string    `json:"firstName" gorm:"column:first_name;type:varchar(255);not null;"`
@@ -18,4 +24,35 @@ type RoomResidentModel struct {
 
 func (u *RoomResidentModel) TableName() string {
 	return "room_resident"
+}
+
+func (u *RoomResidentModel) BeforeCreate(tx *gorm.DB) error {
+	userID, _ := tx.Get("userID")
+	if userID != nil {
+		u.CreatedBy = userID.(int64)
+		u.UpdatedBy = userID.(int64)
+	}
+	// u.CreatedAt = time.Now()
+	// u.UpdatedAt = time.Now()
+
+	return nil
+}
+
+func (u *RoomResidentModel) BeforeUpdate(tx *gorm.DB) error {
+	// if tx.Statement.Changed("UpdatedAt", "UpdatedBy") {
+	// 	return errors.New(config.GetMessageCode("CONCURRENCY_ERROR"))
+	// }
+
+	isQuiet, _ := tx.Get("isQuiet")
+	if isQuiet != nil && isQuiet.(bool) {
+		return nil
+	}
+
+	userID, _ := tx.Get("userID")
+	if userID != nil {
+		tx.Statement.SetColumn("updated_by", userID.(int64))
+	}
+	tx.Statement.SetColumn("updated_at", time.Now())
+
+	return nil
 }
