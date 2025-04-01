@@ -29,9 +29,16 @@ func (c *SupportTicketController) ApproveSupportTicket(ctx *gin.Context) {
 		return
 	}
 
-	if err := c.supportTicketService.ApproveSupportTicket(ctx, ticketID); err != nil {
+	isAllowed, err := c.supportTicketService.ApproveSupportTicket(ctx, ticketID)
+	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(500, response)
+		return
+	}
+
+	if !isAllowed {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(403, response)
 		return
 	}
 
@@ -50,9 +57,16 @@ func (c *SupportTicketController) DenySupportTicket(ctx *gin.Context) {
 		return
 	}
 
-	if err := c.supportTicketService.DenySupportTicket(ctx, ticketID); err != nil {
+	isAllowed, err := c.supportTicketService.DenySupportTicket(ctx, ticketID)
+	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(500, response)
+		return
+	}
+
+	if !isAllowed {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(403, response)
 		return
 	}
 

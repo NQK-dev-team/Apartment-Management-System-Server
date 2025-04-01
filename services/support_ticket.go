@@ -25,23 +25,23 @@ func NewSupportTicketService() *SupportTicketService {
 	}
 }
 
-func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID int64) error {
+func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID int64) (bool, error) {
 	role, exists := ctx.Get("role")
 
 	if !exists {
-		return errors.New("role not found")
+		return false, errors.New("role not found")
 	}
 
 	jwt, exists := ctx.Get("jwt")
 
 	if !exists {
-		return errors.New("jwt not found")
+		return false, errors.New("jwt not found")
 	}
 
 	token, err := utils.ValidateJWTToken(jwt.(string))
 
 	if err != nil {
-		return errors.New("jwt not valid")
+		return false, errors.New("jwt not valid")
 	}
 
 	claim := &structs.JTWClaim{}
@@ -51,10 +51,14 @@ func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID i
 	ticket := &models.SupportTicketModel{}
 
 	if err := s.supportTicketRepository.GetById(ctx, ticket, ticketID); err != nil {
-		return err
+		return false, err
 	}
 
 	if role.(string) == constants.Roles.Manager {
+		if ticket.ManagerID != 0 {
+			return false, nil
+		}
+
 		ticket.ManagerResolveTime = sql.NullTime{
 			Time:  time.Now(),
 			Valid: true,
@@ -66,6 +70,10 @@ func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID i
 		}
 		ticket.Status = 1
 	} else {
+		if ticket.OwnerID != 0 {
+			return false, nil
+		}
+
 		ticket.OwnerResolveTime = sql.NullTime{
 			Time:  time.Now(),
 			Valid: true,
@@ -78,32 +86,38 @@ func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID i
 		ticket.Status = 2
 	}
 
-	return config.DB.Transaction(func(tx *gorm.DB) error {
+	err = config.DB.Transaction(func(tx *gorm.DB) error {
 		if err := s.supportTicketRepository.Update(ctx, tx, ticket, ticketID); err != nil {
 			return err
 		}
 
 		return nil
 	})
+
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
-func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int64) error {
+func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int64) (bool, error) {
 	role, exists := ctx.Get("role")
 
 	if !exists {
-		return errors.New("role not found")
+		return false, errors.New("role not found")
 	}
 
 	jwt, exists := ctx.Get("jwt")
 
 	if !exists {
-		return errors.New("jwt not found")
+		return false, errors.New("jwt not found")
 	}
 
 	token, err := utils.ValidateJWTToken(jwt.(string))
 
 	if err != nil {
-		return errors.New("jwt not valid")
+		return false, errors.New("jwt not valid")
 	}
 
 	claim := &structs.JTWClaim{}
@@ -113,10 +127,14 @@ func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int6
 	ticket := &models.SupportTicketModel{}
 
 	if err := s.supportTicketRepository.GetById(ctx, ticket, ticketID); err != nil {
-		return err
+		return false, err
 	}
 
 	if role.(string) == constants.Roles.Manager {
+		if ticket.ManagerID != 0 {
+			return false, nil
+		}
+
 		ticket.ManagerResolveTime = sql.NullTime{
 			Time:  time.Now(),
 			Valid: true,
@@ -127,6 +145,10 @@ func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int6
 			Valid: true,
 		}
 	} else {
+		if ticket.OwnerID != 0 {
+			return false, nil
+		}
+
 		ticket.OwnerResolveTime = sql.NullTime{
 			Time:  time.Now(),
 			Valid: true,
@@ -139,11 +161,17 @@ func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int6
 	}
 	ticket.Status = 3
 
-	return config.DB.Transaction(func(tx *gorm.DB) error {
+	err = config.DB.Transaction(func(tx *gorm.DB) error {
 		if err := s.supportTicketRepository.Update(ctx, tx, ticket, ticketID); err != nil {
 			return err
 		}
 
 		return nil
 	})
+
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
