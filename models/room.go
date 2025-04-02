@@ -25,22 +25,6 @@ func (u *RoomModel) TableName() string {
 	return "room"
 }
 
-// func (u *RoomModel) BeforeDelete(tx *gorm.DB) error {
-// 	userID, _ := tx.Get("userID")
-
-// 	return tx.Transaction(func(tx1 *gorm.DB) error {
-// 		if err := tx1.Set("userID", userID).Where("room_id = ?", u.ID).Delete(&ContractModel{}).Error; err != nil {
-// 			return err
-// 		}
-
-// 		if err := tx1.Set("userID", userID).Where("room_id = ?", u.ID).Delete(&RoomImageModel{}).Error; err != nil {
-// 			return err
-// 		}
-
-// 		return nil
-// 	})
-// }
-
 // func (u *RoomModel) BeforeCreate(tx *gorm.DB) error {
 // 	lastRoom := RoomModel{}
 // 	// Get the last room of the building floor

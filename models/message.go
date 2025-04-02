@@ -22,18 +22,6 @@ func (u *MessageModel) TableName() string {
 	return "message"
 }
 
-// func (u *MessageModel) BeforeDelete(tx *gorm.DB) error {
-// 	userID, _ := tx.Get("userID")
-
-// 	return tx.Transaction(func(tx1 *gorm.DB) error {
-// 		if err := tx1.Set("userID", userID).Model(&MessageFileModel{}).Where("message_id = ?", u.ID).Delete(&MessageFileModel{}).Error; err != nil {
-// 			return err
-// 		}
-
-// 		return nil
-// 	})
-// }
-
 func (u *MessageModel) BeforeCreate(tx *gorm.DB) error {
 	userID, _ := tx.Get("userID")
 	if userID != nil {

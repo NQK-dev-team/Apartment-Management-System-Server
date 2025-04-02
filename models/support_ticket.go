@@ -31,18 +31,6 @@ func (u *SupportTicketModel) TableName() string {
 	return "support_ticket"
 }
 
-// func (u *SupportTicketModel) BeforeDelete(tx *gorm.DB) error {
-// 	userID, _ := tx.Get("userID")
-
-// 	return tx.Transaction(func(tx1 *gorm.DB) error {
-// 		if err := tx1.Set("userID", userID).Model(&SupportTicketFileModel{}).Where("support_ticket_id = ?", u.ID).Delete(&SupportTicketFileModel{}).Error; err != nil {
-// 			return err
-// 		}
-
-// 		return nil
-// 	})
-// }
-
 func (u *SupportTicketModel) BeforeCreate(tx *gorm.DB) error {
 	userID, _ := tx.Get("userID")
 	if userID != nil {

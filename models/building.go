@@ -21,26 +21,6 @@ func (u *BuildingModel) TableName() string {
 	return "building"
 }
 
-// func (u *BuildingModel) BeforeDelete(tx *gorm.DB) error {
-// 	userID, _ := tx.Get("userID")
-
-// 	return tx.Transaction(func(tx1 *gorm.DB) error {
-// 		if err := tx1.Set("userID", userID).Where("building_id = ?", u.ID).Delete(&BuildingImageModel{}).Error; err != nil {
-// 			return err
-// 		}
-
-// 		if err := tx1.Set("userID", userID).Where("building_id = ?", u.ID).Delete(&BuildingServiceModel{}).Error; err != nil {
-// 			return err
-// 		}
-
-// 		if err := tx1.Set("userID", userID).Where("building_id = ?", u.ID).Delete(&RoomModel{}).Error; err != nil {
-// 			return err
-// 		}
-
-// 		return nil
-// 	})
-// }
-
 func (u *BuildingModel) BeforeCreate(tx *gorm.DB) error {
 	userID, _ := tx.Get("userID")
 	if userID != nil {

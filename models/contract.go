@@ -31,29 +31,6 @@ func (u *ContractModel) TableName() string {
 	return "contract"
 }
 
-// func (u *ContractModel) BeforeDelete(tx *gorm.DB) (err error) {
-// 	userID, _ := tx.Get("userID")
-
-// 	return tx.Transaction(func(tx1 *gorm.DB) error {
-// 		if err := tx1.Set("userID", userID).Model(&ContractFileModel{}).Where("contract_id = ?", u.ID).Delete(&ContractFileModel{}).Error; err != nil {
-// 			return err
-// 		}
-
-// 		if err := tx1.Set("userID", userID).Model(&BillModel{}).Where("contract_id = ?", u.ID).Delete(&BillModel{}).Error; err != nil {
-// 			return err
-// 		}
-
-// 		if err := tx1.Set("userID", userID).Model(&RoomResidentModel{}).Model(&RoomResidentListModel{}).
-// 			Joins("JOIN room_resident_list ON room_resident.id = room_resident_list.resident_id").
-// 			Where("room_resident_list.contract_id = ?", u.ID).
-// 			Delete(&RoomResidentModel{}).Error; err != nil {
-// 			return err
-// 		}
-
-// 		return nil
-// 	})
-// }
-
 func (u *ContractModel) BeforeCreate(tx *gorm.DB) error {
 	userID, _ := tx.Get("userID")
 	if userID != nil {

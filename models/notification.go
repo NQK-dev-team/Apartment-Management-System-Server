@@ -20,18 +20,6 @@ func (u *NotificationModel) TableName() string {
 	return "notification"
 }
 
-// func (u *NotificationModel) BeforeDelete(tx *gorm.DB) error {
-// 	userID, _ := tx.Get("userID")
-
-// 	return tx.Transaction(func(tx1 *gorm.DB) error {
-// 		if err := tx1.Set("userID", userID).Model(&NotificationFileModel{}).Where("notification_id = ?", u.ID).Delete(&NotificationFileModel{}).Error; err != nil {
-// 			return err
-// 		}
-
-// 		return nil
-// 	})
-// }
-
 func (u *NotificationModel) BeforeCreate(tx *gorm.DB) error {
 	userID, _ := tx.Get("userID")
 	if userID != nil {

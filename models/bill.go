@@ -26,18 +26,6 @@ func (u *BillModel) TableName() string {
 	return "bill"
 }
 
-// func (u *BillModel) BeforeDelete(tx *gorm.DB) error {
-// 	userID, _ := tx.Get("userID")
-
-// 	return tx.Transaction(func(tx1 *gorm.DB) error {
-// 		if err := tx1.Set("userID", userID).Model(&ExtraPaymentModel{}).Where("bill_id = ?", u.ID).Delete(&ExtraPaymentModel{}).Error; err != nil {
-// 			return err
-// 		}
-
-// 		return nil
-// 	})
-// }
-
 func (u *BillModel) BeforeCreate(tx *gorm.DB) error {
 	userID, _ := tx.Get("userID")
 	if userID != nil {
