@@ -2,10 +2,10 @@ package controllers
 
 import (
 	"api/config"
+	"api/constants"
 	"api/models"
 	"api/services"
 	"api/structs"
-	"api/utils"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -159,7 +159,7 @@ func (c *UserController) DeleteStaffs(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(input); err != nil {
+	if err := constants.Validate.Struct(input); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
 		ctx.JSON(400, response)
@@ -208,7 +208,7 @@ func (c *UserController) AddStaff(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(newStaff); err != nil {
+	if err := constants.Validate.Struct(newStaff); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
 		ctx.JSON(400, response)
@@ -255,7 +255,7 @@ func (c *UserController) UpdateStaff(ctx *gin.Context) {
 
 	editStaff.ID = staffID
 
-	if err := utils.Validate.Struct(editStaff); err != nil {
+	if err := constants.Validate.Struct(editStaff); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
 		ctx.JSON(400, response)

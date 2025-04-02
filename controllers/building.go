@@ -2,10 +2,10 @@ package controllers
 
 import (
 	"api/config"
+	"api/constants"
 	"api/models"
 	"api/services"
 	"api/structs"
-	"api/utils"
 	"strconv"
 	"strings"
 
@@ -78,7 +78,7 @@ func (c *BuildingController) CreateBuilding(ctx *gin.Context) {
 		building.Rooms[index].Images = roomImages
 	}
 
-	if err := utils.Validate.Struct(building); err != nil {
+	if err := constants.Validate.Struct(building); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
 		ctx.JSON(400, response)
@@ -264,7 +264,7 @@ func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
 
 	building.TotalImage = len(oldBuildingData.Images) + len(building.NewBuildingImages) - len(building.DeletedBuildingImages)
 
-	if err := utils.Validate.Struct(building); err != nil {
+	if err := constants.Validate.Struct(building); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
 		ctx.JSON(400, response)

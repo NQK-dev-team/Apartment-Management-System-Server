@@ -2,10 +2,10 @@ package controllers
 
 import (
 	"api/config"
+	"api/constants"
 	"api/models"
 	"api/services"
 	"api/structs"
-	"api/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -34,7 +34,7 @@ func (c *AuthenticationController) Login(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(&account); err != nil {
+	if err := constants.Validate.Struct(&account); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
 		ctx.JSON(400, response)
@@ -79,7 +79,7 @@ func (c *AuthenticationController) VerifyToken(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(&token); err != nil {
+	if err := constants.Validate.Struct(&token); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
 		ctx.JSON(400, response)
@@ -110,7 +110,7 @@ func (c *AuthenticationController) RefreshToken(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(&token); err != nil {
+	if err := constants.Validate.Struct(&token); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
 		ctx.JSON(400, response)
@@ -141,7 +141,7 @@ func (c *AuthenticationController) Recovery(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(&email); err != nil {
+	if err := constants.Validate.Struct(&email); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
 		ctx.JSON(400, response)
@@ -191,7 +191,7 @@ func (c *AuthenticationController) CheckResetPasswordToken(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(&token); err != nil {
+	if err := constants.Validate.Struct(&token); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
 		ctx.JSON(400, response)
@@ -226,7 +226,7 @@ func (c *AuthenticationController) ResetPassword(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(&resetPassword); err != nil {
+	if err := constants.Validate.Struct(&resetPassword); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
 		ctx.JSON(400, response)
@@ -290,7 +290,7 @@ func (c *AuthenticationController) VerifyEmail(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(&token); err != nil {
+	if err := constants.Validate.Struct(&token); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
 		ctx.JSON(400, response)
@@ -385,7 +385,7 @@ func (c *AuthenticationController) VerifyPassword(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(&verifyPasswordStruct); err != nil {
+	if err := constants.Validate.Struct(&verifyPasswordStruct); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
 		ctx.JSON(400, response)

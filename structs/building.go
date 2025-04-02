@@ -19,7 +19,7 @@ type NewRoom struct {
 
 type NewSchedule struct {
 	ManagerID int64  `form:"managerID" validate:"required"`
-	StartDate string `form:"startDate" validate:"required"`
+	StartDate string `form:"startDate" validate:"required,datetime=2006-01-02"`
 	EndDate   string `form:"endDate" validate:"required"`
 }
 
@@ -48,7 +48,7 @@ type EditService struct {
 type EditSchedule struct {
 	ID        int64  `form:"id" validate:"required"`
 	ManagerID int64  `form:"managerID" validate:"required"`
-	StartDate string `form:"startDate" validate:"required"`
+	StartDate string `form:"startDate" validate:"required,datetime=2006-01-02"`
 	EndDate   string `form:"endDate" validate:"required"`
 }
 

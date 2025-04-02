@@ -2,6 +2,7 @@ package main
 
 import (
 	"api/config"
+	"api/constants"
 	"api/routes"
 	"api/utils"
 	"fmt"
@@ -67,7 +68,7 @@ func main() {
 	routes.InitRoutes(r)
 
 	// Init custom validation rules
-	utils.InitCustomValidationRules()
+	constants.InitCustomValidationRules()
 
 	// Start server
 	var app *http.Server

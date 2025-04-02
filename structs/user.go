@@ -8,7 +8,7 @@ type NewStaff struct {
 	MiddleName       string `form:"middleName"`
 	SSN              string `form:"ssn" validate:"required,alphanum,len=12"`
 	OldSSN           string `form:"oldSSN" validate:"omitempty,alphanum,len=9"`
-	Dob              string `form:"dob" validate:"required"`
+	Dob              string `form:"dob" validate:"required,datetime=2006-01-02,dob_18"`
 	Pob              string `form:"pob" validate:"required"`
 	Phone            string `form:"phone" validate:"required,alphanum,len=10"`
 	PermanentAddress string `form:"permanentAddress" validate:"required"`
@@ -30,12 +30,12 @@ type EditStaff struct {
 	Schedules []struct {
 		ID         int64  `form:"id" validate:"required"`
 		BuildingID int64  `form:"buildingID"  validate:"required"`
-		StartDate  string `form:"startDate"  validate:"required"`
+		StartDate  string `form:"startDate"  validate:"required,datetime=2006-01-02"`
 		EndDate    string `form:"endDate"`
 	} `form:"schedules[]"`
 	NewSchedules []struct {
 		BuildingID int64  `form:"buildingID"  validate:"required"`
-		StartDate  string `form:"startDate"  validate:"required"`
+		StartDate  string `form:"startDate"  validate:"required,datetime=2006-01-02"`
 		EndDate    string `form:"endDate"`
 	} `form:"newSchedules[]"`
 	DeletedSchedules []int64 `form:"deletedSchedules[]"`
