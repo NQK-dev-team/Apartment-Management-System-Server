@@ -6,7 +6,9 @@ import (
 	"api/models"
 	"api/services"
 	"api/structs"
+	"api/utils"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -119,6 +121,11 @@ func (c *UserController) GetStaffRelatedTicket(ctx *gin.Context) {
 
 	limitStr := ctx.DefaultQuery("limit", "500")
 	offsetStr := ctx.DefaultQuery("offset", "0")
+	quartersStr := ctx.Query("quarters")
+	var quarters []struct {
+		Year     int
+		Quarters []int
+	}
 
 	limit, err := strconv.ParseInt(limitStr, 10, 64)
 
@@ -132,9 +139,58 @@ func (c *UserController) GetStaffRelatedTicket(ctx *gin.Context) {
 		offset = 0
 	}
 
+	if quartersStr != "" {
+		quartersArray := strings.Split(quartersStr, ",")
+		for _, quarter := range quartersArray {
+			quarterParts := strings.Split(quarter, "-")
+			if len(quarterParts) == 2 {
+				year, err := strconv.Atoi(quarterParts[0])
+				if err != nil {
+					response.Message = config.GetMessageCode("INVALID_PARAMETER")
+					ctx.JSON(400, response)
+					return
+				}
+				yearExists := false
+				for _, q := range quarters {
+					if q.Year == year {
+						yearExists = true
+						break
+					}
+				}
+
+				if !yearExists {
+					quarters = append(quarters, struct {
+						Year     int
+						Quarters []int
+					}{Year: year})
+				}
+				quarterNum, err := strconv.Atoi(quarterParts[1])
+				if err != nil {
+					response.Message = config.GetMessageCode("INVALID_PARAMETER")
+					ctx.JSON(400, response)
+					return
+				}
+				for i := range quarters {
+					if quarters[i].Year == year {
+						quarters[i].Quarters = append(quarters[i].Quarters, quarterNum)
+						break
+					}
+				}
+			}
+		}
+	} else {
+		currentYear := utils.GetCurrentYear()
+		currentQuarter := utils.GetCurrentQuarter()
+
+		quarters = append(quarters, struct {
+			Year     int
+			Quarters []int
+		}{Year: currentYear, Quarters: []int{currentQuarter}})
+	}
+
 	tickets := []structs.SupportTicket{}
 
-	if err := c.userService.GetStaffRelatedTicket(ctx, &tickets, id, limit, offset); err != nil {
+	if err := c.userService.GetStaffRelatedTicket(ctx, &tickets, id, limit, offset, quarters); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(500, response)
 		return
