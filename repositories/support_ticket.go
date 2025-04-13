@@ -28,29 +28,12 @@ func (r *SupportTicketRepository) GetById(ctx *gin.Context, ticket *models.Suppo
 	return nil
 }
 
-func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, tickets *[]structs.SupportTicket, managerID int64, limit int64, offset int64, quarters []struct {
-	Year     int
-	Quarters []int
-}) error {
-	// if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
-	// 	// Joins("JOIN support_ticket ON support_ticket.id = manager_resolve_support_ticket.support_ticket_id").
-	// 	Where("manager_id = ?", managerID).Limit(int(limit)).Offset(int(offset)).Order("created_at desc, owner_resolve_time desc, manager_resolve_time desc").
-	// 	Find(tickets).Error; err != nil {
-	// 	return err
-	// }
-
-	query := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
+func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, tickets *[]structs.SupportTicket, managerID int64, limit int64, offset int64, startDate string, endDate string) error {
+	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
 		// Joins("JOIN support_ticket ON support_ticket.id = manager_resolve_support_ticket.support_ticket_id").
-		Where("manager_id = ?", managerID).Limit(int(limit)).Offset(int(offset)).Order("created_at desc, owner_resolve_time desc, manager_resolve_time desc")
-
-	for _, quarter := range quarters {
-		if len(quarter.Quarters) == 0 {
-			continue
-		}
-		query = query.Where("EXTRACT(YEAR FROM created_at) = ? AND EXTRACT(QUARTER FROM created_at) IN ?", quarter.Year, quarter.Quarters)
-	}
-
-	if err := query.Find(tickets).Error; err != nil {
+		Where("manager_id = ? AND created_at::timestamp::date >= ? AND created_at::timestamp::date <= ?", managerID, startDate, endDate).
+		Limit(int(limit)).Offset(int(offset)).Order("created_at desc, owner_resolve_time desc, manager_resolve_time desc").
+		Find(tickets).Error; err != nil {
 		return err
 	}
 

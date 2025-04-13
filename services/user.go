@@ -318,11 +318,8 @@ func (s *UserService) GetStaffRelatedContract(ctx *gin.Context, contracts *[]mod
 	return nil
 }
 
-func (s *UserService) GetStaffRelatedTicket(ctx *gin.Context, tickets *[]structs.SupportTicket, staffID int64, limit int64, offset int64, quarters []struct {
-	Year     int
-	Quarters []int
-}) error {
-	if err := s.supportTicketRepository.GetTicketsByManagerID(ctx, tickets, staffID, limit, offset, quarters); err != nil {
+func (s *UserService) GetStaffRelatedTicket(ctx *gin.Context, tickets *[]structs.SupportTicket, staffID int64, limit int64, offset int64, startDate string, endDate string) error {
+	if err := s.supportTicketRepository.GetTicketsByManagerID(ctx, tickets, staffID, limit, offset, startDate, endDate); err != nil {
 		return err
 	}
 	return nil

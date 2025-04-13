@@ -2,22 +2,12 @@ package utils
 
 import "time"
 
-func GetCurrentYear() int {
-	return time.Now().Year()
+func GetCurrentDate() string {
+	return time.Now().Format("2006-01-02")
 }
 
-func GetCurrentQuarter() int {
-	month := time.Now().Month()
-	switch {
-	case month >= 1 && month <= 3:
-		return 1
-	case month >= 4 && month <= 6:
-		return 2
-	case month >= 7 && month <= 9:
-		return 3
-	case month >= 10 && month <= 12:
-		return 4
-	default:
-		return 0 // Invalid month
-	}
+func GetFirstDayOfMonth() string {
+	now := time.Now()
+	firstDay := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	return firstDay.Format("2006-01-02")
 }
