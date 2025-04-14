@@ -364,3 +364,10 @@ func (s *UserService) CheckDuplicateData(ctx *gin.Context, email string, ssn str
 
 	return "", nil
 }
+
+func (s *UserService) GetCustomerList(ctx *gin.Context, users *[]models.UserModel, limit int64, offset int64) error {
+	if err := s.userRepository.GetCustomerList(ctx, users, limit, offset); err != nil {
+		return err
+	}
+	return nil
+}

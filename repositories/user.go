@@ -165,3 +165,10 @@ func (r *UserRepository) GetStaffSchedule(ctx *gin.Context, schedules *[]models.
 	}
 	return nil
 }
+
+func (r *UserRepository) GetCustomerList(ctx *gin.Context, users *[]models.UserModel, limit int64, offset int64) error {
+	if err := config.DB.Model(&models.UserModel{}).Where("is_owner = false AND is_manager = false AND is_customer = true").Limit(int(limit)).Offset(int(offset)).Find(users).Error; err != nil {
+		return err
+	}
+	return nil
+}

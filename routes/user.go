@@ -9,7 +9,7 @@ import (
 
 func InitUserRoutes(router *gin.RouterGroup) {
 	staffRoutes := router.Group("/staff")
-	// customerRoutes := router.Group("/customer")
+	customerRoutes := router.Group("/customer")
 	userController := controllers.NewUserController()
 
 	authorizationMiddle := middlewares.NewAuthorizationMiddleware()
@@ -28,5 +28,11 @@ func InitUserRoutes(router *gin.RouterGroup) {
 		staffRoutes.POST("/delete-many", userController.DeleteStaffs)
 		staffRoutes.POST("/add", userController.AddStaff)
 		staffRoutes.POST("/:id/update", userController.UpdateStaff)
+	}
+
+	customerRoutes.Use(authorizationMiddle.AuthManagerMiddleware)
+	{
+		customerRoutes.GET("/", userController.GetCustomerList)
+		customerRoutes.POST("/delete-many", userController.DeleteCustomers)
 	}
 }
