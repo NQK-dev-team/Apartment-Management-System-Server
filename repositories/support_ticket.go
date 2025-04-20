@@ -82,6 +82,31 @@ func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, ticket
 	return nil
 }
 
+func (r *SupportTicketRepository) GetTicketsByCustomerID(ctx *gin.Context, tickets *[]structs.SupportTicket, customerID int64) error {
+	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
+		Where("customer_id = ?", customerID).
+		Order("created_at desc, owner_resolve_time desc, manager_resolve_time desc").
+		Find(tickets).Error; err != nil {
+		return err
+	}
+
+	for i := range *tickets {
+		if err := config.DB.Raw("SELECT room.no AS room_no FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ID).Scan(&(*tickets)[i].RoomNo).Error; err != nil {
+			return err
+		}
+
+		if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ID).Scan(&(*tickets)[i].RoomFloor).Error; err != nil {
+			return err
+		}
+
+		if err := config.DB.Raw("SELECT building.name AS building_name FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ID).Scan(&(*tickets)[i].BuildingName).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (r *SupportTicketRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 	now := time.Now()
 	userID := ctx.GetInt64("userID")

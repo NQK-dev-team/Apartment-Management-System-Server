@@ -172,3 +172,13 @@ func (r *UserRepository) GetCustomerList(ctx *gin.Context, users *[]models.UserM
 	}
 	return nil
 }
+
+func (r *UserRepository) GetCustomerDetail(ctx *gin.Context, user *models.UserModel, id int64) error {
+	if err := config.DB.Where("id = ? AND is_owner = false AND is_manager = false AND is_customer = true", id).First(user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+	return nil
+}

@@ -28,8 +28,8 @@ func (c *BuildingController) GetBuilding(ctx *gin.Context) {
 	response := config.NewDataResponse(ctx)
 	var building = &[]models.BuildingModel{}
 
-	// getAll := ctx.Query("getAll") == "true"
-	getAll := false
+	getAll := ctx.Query("getAll") == "true"
+	// getAll := false
 
 	isAuthenticated, err := c.buildingService.GetBuilding(ctx, building, getAll)
 	if err != nil {

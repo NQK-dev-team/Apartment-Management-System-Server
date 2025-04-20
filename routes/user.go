@@ -34,5 +34,8 @@ func InitUserRoutes(router *gin.RouterGroup) {
 	{
 		customerRoutes.GET("/", userController.GetCustomerList)
 		customerRoutes.POST("/delete-many", userController.DeleteCustomers)
+		customerRoutes.GET("/:id", userController.GetCustomerDetail)
+		customerRoutes.GET("/:id/contract", userController.GetCustomerContract)
+		customerRoutes.GET("/:id/ticket", userController.GetCustomerTicket)
 	}
 }

@@ -371,3 +371,24 @@ func (s *UserService) GetCustomerList(ctx *gin.Context, users *[]models.UserMode
 	}
 	return nil
 }
+
+func (s *UserService) GetCustomerDetail(ctx *gin.Context, user *models.UserModel, id int64) error {
+	if err := s.userRepository.GetCustomerDetail(ctx, user, id); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *UserService) GetCustomerContract(ctx *gin.Context, contracts *[]structs.Contract, customerID int64) error {
+	if err := s.contractRepository.GetContractsByCustomerID(ctx, contracts, customerID); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *UserService) GetCustomerTicket(ctx *gin.Context, tickets *[]structs.SupportTicket, customerID int64) error {
+	if err := s.supportTicketRepository.GetTicketsByCustomerID(ctx, tickets, customerID); err != nil {
+		return err
+	}
+	return nil
+}

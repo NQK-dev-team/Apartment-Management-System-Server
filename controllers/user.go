@@ -343,3 +343,71 @@ func (c *UserController) DeleteCustomers(ctx *gin.Context) {
 	response.Message = config.GetMessageCode("DELETE_SUCCESS")
 	ctx.JSON(200, response)
 }
+
+func (c *UserController) GetCustomerDetail(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
+	}
+
+	user := &models.UserModel{}
+
+	if err := c.userService.GetCustomerDetail(ctx, user, id); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	response.Data = user
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(200, response)
+}
+
+func (c *UserController) GetCustomerContract(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
+	}
+
+	contracts := []structs.Contract{}
+	if err := c.userService.GetCustomerContract(ctx, &contracts, id); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	response.Data = contracts
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(200, response)
+}
+
+func (c *UserController) GetCustomerTicket(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
+	}
+
+	tickets := []structs.SupportTicket{}
+	if err := c.userService.GetCustomerTicket(ctx, &tickets, id); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	response.Data = tickets
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(200, response)
+}

@@ -3,6 +3,7 @@ package repositories
 import (
 	"api/config"
 	"api/models"
+	"api/structs"
 	"errors"
 	"time"
 
@@ -47,6 +48,30 @@ func (r *ContractRepository) GetContractsByManagerID(ctx *gin.Context, contracts
 		Find(contracts).Error; err != nil {
 		return err
 	}
+	return nil
+}
+
+func (r *ContractRepository) GetContractsByCustomerID(ctx *gin.Context, contracts *[]structs.Contract, customerID int64) error {
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").Preload("Files").
+		Where("householder_id = ?", customerID).Order("start_date DESC, end_date DESC, sign_date DESC").
+		Find(contracts).Error; err != nil {
+		return err
+	}
+
+	for i := range *contracts {
+		if err := config.DB.Raw("SELECT room.no AS room_no FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*contracts)[i].ID).Scan(&(*contracts)[i].RoomNo).Error; err != nil {
+			return err
+		}
+
+		if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*contracts)[i].ID).Scan(&(*contracts)[i].RoomFloor).Error; err != nil {
+			return err
+		}
+
+		if err := config.DB.Raw("SELECT building.name AS building_name FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*contracts)[i].ID).Scan(&(*contracts)[i].BuildingName).Error; err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
