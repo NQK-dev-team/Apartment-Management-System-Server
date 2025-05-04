@@ -37,5 +37,6 @@ func InitUserRoutes(router *gin.RouterGroup) {
 		customerRoutes.GET("/:id", userController.GetCustomerDetail)
 		customerRoutes.GET("/:id/contract", userController.GetCustomerContract)
 		customerRoutes.GET("/:id/ticket", userController.GetCustomerTicket)
+		customerRoutes.POST("/add", userController.AddCustomer)
 	}
 }

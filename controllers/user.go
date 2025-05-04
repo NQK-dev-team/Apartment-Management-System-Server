@@ -411,3 +411,62 @@ func (c *UserController) GetCustomerTicket(ctx *gin.Context) {
 	response.Message = config.GetMessageCode("GET_SUCCESS")
 	ctx.JSON(200, response)
 }
+
+func (c *UserController) AddCustomer(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	newCustomer := &structs.NewCustomer{}
+
+	if err := ctx.ShouldBind(newCustomer); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
+	}
+
+	var err error
+	newCustomer.ProfileImage, err = ctx.FormFile("profileImage")
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
+	}
+
+	newCustomer.FrontSSNImage, err = ctx.FormFile("frontSSNImage")
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
+	}
+
+	newCustomer.BackSSNImage, err = ctx.FormFile("backSSNImage")
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
+	}
+
+	if err := constants.Validate.Struct(newCustomer); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = err.Error()
+		ctx.JSON(400, response)
+		return
+	}
+
+	if messageCode, err := c.userService.CheckDuplicateData(ctx, newCustomer.Email, newCustomer.SSN, newCustomer.Phone, newCustomer.OldSSN); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	} else if messageCode != "" {
+		response.Message = messageCode
+		ctx.JSON(400, response)
+		return
+	}
+
+	if err := c.userService.CreateCustomer(ctx, newCustomer); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	response.Message = config.GetMessageCode("CREATE_SUCCESS")
+	ctx.JSON(200, response)
+}

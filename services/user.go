@@ -392,3 +392,96 @@ func (s *UserService) GetCustomerTicket(ctx *gin.Context, tickets *[]structs.Sup
 	}
 	return nil
 }
+
+func (s *UserService) CreateCustomer(ctx *gin.Context, newCustomer *structs.NewCustomer) error {
+	newPassword, err := utils.GeneratePassword(8)
+	if err != nil {
+		return err
+	}
+
+	hashedPassword, err := utils.HashPassword(newPassword)
+
+	if err != nil {
+		return err
+	}
+
+	newID, err := s.userRepository.GetNewID(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	newIDStr := strconv.FormatInt(newID, 10)
+
+	profilePath, err := utils.StoreFile(newCustomer.ProfileImage, "images/users/"+newIDStr+"/")
+	if err != nil {
+		return err
+	}
+
+	frontSSNPath, err := utils.StoreFile(newCustomer.FrontSSNImage, "images/users/"+newIDStr+"/")
+	if err != nil {
+		return err
+	}
+
+	backSSNPath, err := utils.StoreFile(newCustomer.BackSSNImage, "images/users/"+newIDStr+"/")
+	if err != nil {
+		return err
+	}
+
+	newUser := &models.UserModel{
+		LastName:  newCustomer.LastName,
+		FirstName: newCustomer.FirstName,
+		MiddleName: sql.NullString{
+			String: newCustomer.MiddleName,
+			Valid:  newCustomer.MiddleName != "",
+		},
+		DOB:    newCustomer.Dob,
+		POB:    newCustomer.Pob,
+		Gender: newCustomer.Gender,
+		SSN:    newCustomer.SSN,
+		OldSSN: sql.NullString{
+			String: newCustomer.OldSSN,
+			Valid:  newCustomer.OldSSN != "",
+		},
+		Email:            newCustomer.Email,
+		Phone:            newCustomer.Phone,
+		PermanentAddress: newCustomer.PermanentAddress,
+		TemporaryAddress: newCustomer.TemporaryAddress,
+		Password:         hashedPassword,
+		IsOwner:          false,
+		IsManager:        false,
+		IsCustomer:       true,
+		ProfileFilePath:  profilePath,
+		SSNFrontFilePath: frontSSNPath,
+		SSNBackFilePath:  backSSNPath,
+	}
+
+	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		if err := s.userRepository.Create(ctx, tx, newUser); err != nil {
+			return err
+		}
+
+		fullName := ""
+
+		if newUser.MiddleName.Valid {
+			fullName = newUser.LastName + " " + newUser.MiddleName.String + " " + newUser.FirstName
+		} else {
+			fullName = newUser.LastName + " " + newUser.FirstName
+		}
+
+		if err := s.emailService.SendAccountCreationEmail(ctx, newUser.Email, fullName, newPassword); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		utils.RemoveFile(profilePath)
+		utils.RemoveFile(frontSSNPath)
+		utils.RemoveFile(backSSNPath)
+		return err
+	}
+
+	return nil
+}
