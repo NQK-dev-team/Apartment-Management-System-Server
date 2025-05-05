@@ -14,6 +14,7 @@ func InitSupportTicketRoutes(router *gin.RouterGroup) {
 
 	r.Use(authorizationMiddle.AuthManagerMiddleware)
 	{
+		r.GET("/", controller.GetSupportTickets)
 		r.POST("/:id/approve", controller.ApproveSupportTicket)
 		r.POST("/:id/deny", controller.DenySupportTicket)
 	}

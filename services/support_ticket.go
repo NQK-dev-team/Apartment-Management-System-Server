@@ -25,6 +25,13 @@ func NewSupportTicketService() *SupportTicketService {
 	}
 }
 
+func (s *SupportTicketService) GetSupportTickets(ctx *gin.Context, tickets *[]structs.SupportTicket, limit, offset int64, startDate string, endDate string) error {
+	if err := s.supportTicketRepository.GetSupportTickets(ctx, tickets, limit, offset, startDate, endDate); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID int64) (bool, error) {
 	role, exists := ctx.Get("role")
 
