@@ -77,7 +77,7 @@ func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID i
 		}
 		ticket.Status = 1
 	} else {
-		if ticket.OwnerID != 0 {
+		if ticket.OwnerID != 0 || ticket.ManagerID == 0 {
 			return false, nil
 		}
 
@@ -152,7 +152,7 @@ func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int6
 			Valid: true,
 		}
 	} else {
-		if ticket.OwnerID != 0 {
+		if ticket.OwnerID != 0 || ticket.ManagerID == 0 {
 			return false, nil
 		}
 
