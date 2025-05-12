@@ -1,6 +1,7 @@
 package structs
 
 import (
+	"api/models"
 	"mime/multipart"
 )
 
@@ -81,4 +82,17 @@ type EditBuilding struct {
 	Rooms                 []EditRoom     `form:"rooms[]"`
 	TotalFloor            int            `form:"totalFloor"`
 	TotalImage            int            `validate:"required,min=1"`
+}
+
+type BuildingRoom struct {
+	models.DefaultModel
+	No           int                     `json:"no" gorm:"column:no;type:int;not null;"`
+	Floor        int                     `json:"floor" gorm:"column:floor;type:int;not null;"`
+	Description  string                  `json:"description" gorm:"column:description;type:varchar(255);"`
+	Area         float64                 `json:"area" gorm:"column:area;type:numeric;not null;"`
+	Status       int                     `json:"status" gorm:"column:status;type:int;not null;default:1;"` // 1: Rented, 2: Bought, 3: Available, 4: Maintenanced, 5: Unavailable
+	BuildingID   int64                   `json:"buildingID" gorm:"column:building_id;not null;"`
+	Contracts    []models.ContractModel  `json:"contracts" gorm:"foreignKey:room_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Images       []models.RoomImageModel `json:"images" gorm:"foreignKey:room_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	BuildingName string                  `json:"buildingName" gorm:"column:building_name;type:varchar(255);"`
 }

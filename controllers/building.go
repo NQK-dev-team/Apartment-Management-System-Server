@@ -106,7 +106,6 @@ func (c *BuildingController) GetBuildingDetail(ctx *gin.Context) {
 	}
 
 	if permission := c.buildingService.CheckManagerPermission(ctx, id); !permission {
-		response.Data = building
 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
 		ctx.JSON(403, response)
 		return
@@ -309,5 +308,68 @@ func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
 	}
 
 	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
+	ctx.JSON(200, response)
+}
+
+func (c *BuildingController) GetRoomDetail(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	room := &structs.BuildingRoom{}
+
+	buildingID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		buildingID = 0
+	}
+
+	roomID, err := strconv.ParseInt(ctx.Param("roomID"), 10, 64)
+	if err != nil {
+		roomID = 0
+	}
+
+	if permission := c.buildingService.CheckManagerPermission(ctx, buildingID); !permission {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(403, response)
+		return
+	}
+
+	buildingModel := &models.BuildingModel{}
+	roomModel := &models.RoomModel{}
+
+	if err := c.buildingService.GetBuildingDetail(ctx, buildingModel, buildingID); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	if err := c.roomService.GetRoomDetail(ctx, roomModel, roomID); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	if roomModel.ID == 0 || buildingModel.ID == 0 || roomModel.BuildingID != buildingModel.ID || roomModel.ID != roomID || buildingModel.ID != buildingID {
+		response.Message = config.GetMessageCode("DATA_NOT_FOUND")
+		ctx.JSON(404, response)
+		return
+	}
+
+	room.ID = roomModel.ID
+	room.CreatedAt = roomModel.CreatedAt
+	room.CreatedBy = roomModel.CreatedBy
+	room.UpdatedAt = roomModel.UpdatedAt
+	room.UpdatedBy = roomModel.UpdatedBy
+	room.DeletedAt = roomModel.DeletedAt
+	room.DeletedBy = roomModel.DeletedBy
+	room.No = roomModel.No
+	room.Floor = roomModel.Floor
+	room.Area = roomModel.Area
+	room.Status = roomModel.Status
+	room.Description = roomModel.Description
+	room.BuildingID = roomModel.BuildingID
+	room.BuildingName = buildingModel.Name
+	room.Images = roomModel.Images
+	room.Contracts = roomModel.Contracts
+
+	response.Data = room
+	response.Message = config.GetMessageCode("GET_SUCCESS")
 	ctx.JSON(200, response)
 }
