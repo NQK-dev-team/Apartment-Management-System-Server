@@ -192,6 +192,13 @@ func (r *BuildingRepository) GetBuildingSchedule(ctx *gin.Context, buildingID in
 	return nil
 }
 
+func (r *BuildingRepository) GetBuildingRoom(ctx *gin.Context, buildingID int64, rooms *[]models.RoomModel) error {
+	if err := config.DB.Where("building_id = ?", buildingID).Find(rooms).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *BuildingRepository) GetManagerBuildingSchedule(ctx *gin.Context, buildingID int64, schedule *[]models.ManagerScheduleModel, mangerID int64) error {
 	if err := config.DB.Preload("Manager").Preload("Building").
 		Joins("JOIN building on building.id = manager_schedule.building_id").

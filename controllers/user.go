@@ -273,6 +273,20 @@ func (c *UserController) UpdateStaff(ctx *gin.Context) {
 		return
 	}
 
+	checkUser := &models.UserModel{}
+
+	if err := c.userService.GetStaffDetail(ctx, checkUser, staffID); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	if checkUser.ID == 0 {
+		response.Message = config.GetMessageCode("USER_NOT_FOUND")
+		ctx.JSON(400, response)
+		return
+	}
+
 	if err := c.userService.UpdateStaff(ctx, editStaff); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(500, response)

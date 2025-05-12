@@ -209,10 +209,10 @@ func (s *BuildingService) DeleteBuilding(ctx *gin.Context, id int64) error {
 			return err
 		}
 
-		roomIDs := []int64{}
-		for _, room := range deletedBuilding.Rooms {
-			roomIDs = append(roomIDs, room.ID)
-		}
+		// roomIDs := []int64{}
+		// for _, room := range deletedBuilding.Rooms {
+		// 	roomIDs = append(roomIDs, room.ID)
+		// }
 
 		// if err := s.roomService.DeleteWithoutTransaction(ctx, tx, roomIDs); err != nil {
 		// 	return err
@@ -250,6 +250,51 @@ func (s *BuildingService) GetBuildingSchedule(ctx *gin.Context, buildingID int64
 	}
 
 	return true, s.buildingRepository.GetBuildingSchedule(ctx, buildingID, schedules)
+}
+
+func (s *BuildingService) GetBuildingRoom(ctx *gin.Context, buildingID int64, rooms *[]models.RoomModel) (bool, error) {
+	role, exists := ctx.Get("role")
+
+	if !exists {
+		return false, nil
+	}
+
+	if role.(string) == constants.Roles.Manager {
+		jwt, exists := ctx.Get("jwt")
+
+		if !exists {
+			return false, nil
+		}
+
+		token, err := utils.ValidateJWTToken(jwt.(string))
+
+		if err != nil {
+			return true, err
+		}
+
+		claim := &structs.JTWClaim{}
+
+		utils.ExtractJWTClaim(token, claim)
+
+		building := &[]models.BuildingModel{}
+
+		if err := s.buildingRepository.GetBuildingBaseOnSchedule(ctx, building, claim.UserID); err != nil {
+			return false, err
+		}
+
+		if len(*building) == 0 {
+			return false, nil
+		}
+
+		for _, val := range *building {
+			if val.ID == buildingID {
+				return true, s.buildingRepository.GetBuildingRoom(ctx, buildingID, rooms)
+			}
+		}
+		return false, nil
+	}
+
+	return true, s.buildingRepository.GetBuildingRoom(ctx, buildingID, rooms)
 }
 
 func (s *BuildingService) UpdateBuilding(ctx *gin.Context, building *structs.EditBuilding) error {
