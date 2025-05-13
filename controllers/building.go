@@ -368,6 +368,7 @@ func (c *BuildingController) GetRoomDetail(ctx *gin.Context) {
 	room.BuildingName = buildingModel.Name
 	room.Images = roomModel.Images
 	room.Contracts = roomModel.Contracts
+	room.BuildingAddress = buildingModel.Address
 
 	response.Data = room
 	response.Message = config.GetMessageCode("GET_SUCCESS")
