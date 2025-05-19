@@ -75,6 +75,56 @@ func (r *ContractRepository) GetContractsByCustomerID(ctx *gin.Context, contract
 	return nil
 }
 
+func (r *ContractRepository) GetContractByRoomIDAndBuildingID(ctx *gin.Context, contracts *[]structs.Contract, roomID int64, buildingID int64) error {
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").Preload("Files").
+		Joins("INNER JOIN room ON room.id = contract.room_id").
+		Where("room_id = ? AND building_id = ?", roomID, buildingID).Order("start_date DESC, end_date DESC, sign_date DESC").
+		Find(contracts).Error; err != nil {
+		return err
+	}
+
+	for i := range *contracts {
+		if err := config.DB.Raw("SELECT room.no AS room_no FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*contracts)[i].ID).Scan(&(*contracts)[i].RoomNo).Error; err != nil {
+			return err
+		}
+
+		if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*contracts)[i].ID).Scan(&(*contracts)[i].RoomFloor).Error; err != nil {
+			return err
+		}
+
+		if err := config.DB.Raw("SELECT building.name AS building_name FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*contracts)[i].ID).Scan(&(*contracts)[i].BuildingName).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *ContractRepository) GetContractByRoomIDAndBuildingIDAndManagerID(ctx *gin.Context, contracts *[]structs.Contract, roomID int64, buildingID int64, managerID int64) error {
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").Preload("Files").
+		Joins("INNER JOIN room ON room.id = contract.room_id").
+		Where("room_id = ? AND building_id = ? AND creator_id = ?", roomID, buildingID, managerID).Order("start_date DESC, end_date DESC, sign_date DESC").
+		Find(contracts).Error; err != nil {
+		return err
+	}
+
+	for i := range *contracts {
+		if err := config.DB.Raw("SELECT room.no AS room_no FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*contracts)[i].ID).Scan(&(*contracts)[i].RoomNo).Error; err != nil {
+			return err
+		}
+
+		if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*contracts)[i].ID).Scan(&(*contracts)[i].RoomFloor).Error; err != nil {
+			return err
+		}
+
+		if err := config.DB.Raw("SELECT building.name AS building_name FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*contracts)[i].ID).Scan(&(*contracts)[i].BuildingName).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (r *ContractRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 	now := time.Now()
 	userID := ctx.GetInt64("userID")

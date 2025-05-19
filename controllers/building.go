@@ -15,12 +15,14 @@ import (
 type BuildingController struct {
 	buildingService *services.BuildingService
 	roomService     *services.RoomService
+	contractService *services.ContractService
 }
 
 func NewBuildingController() *BuildingController {
 	return &BuildingController{
 		buildingService: services.NewBuildingService(),
 		roomService:     services.NewRoomService(),
+		contractService: services.NewContractService(),
 	}
 }
 
@@ -333,6 +335,7 @@ func (c *BuildingController) GetRoomDetail(ctx *gin.Context) {
 
 	buildingModel := &models.BuildingModel{}
 	roomModel := &models.RoomModel{}
+	contracts := &[]structs.Contract{}
 
 	if err := c.buildingService.GetBuildingDetail(ctx, buildingModel, buildingID); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
@@ -341,6 +344,12 @@ func (c *BuildingController) GetRoomDetail(ctx *gin.Context) {
 	}
 
 	if err := c.roomService.GetRoomDetail(ctx, roomModel, roomID); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	if err := c.contractService.GetContractByRoomIDAndBuildingID(ctx, contracts, roomID, buildingID); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(500, response)
 		return
@@ -367,10 +376,42 @@ func (c *BuildingController) GetRoomDetail(ctx *gin.Context) {
 	room.BuildingID = roomModel.BuildingID
 	room.BuildingName = buildingModel.Name
 	room.Images = roomModel.Images
-	room.Contracts = roomModel.Contracts
 	room.BuildingAddress = buildingModel.Address
+	room.Contracts = *contracts
 
 	response.Data = room
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(200, response)
+}
+
+func (c *BuildingController) GetRoomContract(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	buildingID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		buildingID = 0
+	}
+
+	roomID, err := strconv.ParseInt(ctx.Param("roomID"), 10, 64)
+	if err != nil {
+		roomID = 0
+	}
+
+	if permission := c.buildingService.CheckManagerPermission(ctx, buildingID); !permission {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(403, response)
+		return
+	}
+
+	contracts := &[]structs.Contract{}
+
+	if err := c.contractService.GetContractByRoomIDAndBuildingID(ctx, contracts, roomID, buildingID); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	response.Data = contracts
 	response.Message = config.GetMessageCode("GET_SUCCESS")
 	ctx.JSON(200, response)
 }

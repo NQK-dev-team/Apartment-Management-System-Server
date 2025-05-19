@@ -2,6 +2,9 @@ package services
 
 import (
 	"api/repositories"
+	"api/structs"
+
+	"github.com/gin-gonic/gin"
 )
 
 type ContractService struct {
@@ -16,6 +19,36 @@ func NewContractService() *ContractService {
 		billRepository:     repositories.NewBillRepository(),
 		ticketRepository:   repositories.NewSupportTicketRepository(),
 	}
+}
+
+func (s *ContractService) GetContractByRoomIDAndBuildingID(ctx *gin.Context, contracts *[]structs.Contract, roomID int64, buildingID int64) error {
+	// role, exists := ctx.Get("role")
+
+	// if !exists {
+	// 	return errors.New("role not found")
+	// }
+
+	// if role.(string) == constants.Roles.Manager {
+	// 	jwt, exists := ctx.Get("jwt")
+
+	// 	if !exists {
+	// 		return errors.New("jwt not found")
+	// 	}
+
+	// 	token, err := utils.ValidateJWTToken(jwt.(string))
+
+	// 	if err != nil {
+	// 		return err
+	// 	}
+
+	// 	claim := &structs.JTWClaim{}
+
+	// 	utils.ExtractJWTClaim(token, claim)
+
+	// 	return s.contractRepository.GetContractByRoomIDAndBuildingIDAndManagerID(ctx, contracts, roomID, buildingID, claim.UserID)
+	// }
+
+	return s.contractRepository.GetContractByRoomIDAndBuildingID(ctx, contracts, roomID, buildingID)
 }
 
 // func (s *ContractService) DeleteWithoutTransaction(ctx *gin.Context, tx *gorm.DB, id []int64) error {
