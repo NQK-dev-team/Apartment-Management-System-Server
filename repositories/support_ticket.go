@@ -28,12 +28,21 @@ func (r *SupportTicketRepository) GetById(ctx *gin.Context, ticket *models.Suppo
 	return nil
 }
 
-func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[]structs.SupportTicket, limit int64, offset int64, startDate string, endDate string) error {
-	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
-		Where("created_at::timestamp::date >= ? AND created_at::timestamp::date <= ?", startDate, endDate).
-		Limit(int(limit)).Offset(int(offset)).Order("created_at desc, owner_resolve_time desc, manager_resolve_time desc").
-		Find(tickets).Error; err != nil {
-		return err
+func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[]structs.SupportTicket, limit int64, offset int64, startDate string, endDate string, isOwner bool, managerID *int64) error {
+	if isOwner {
+		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
+			Where("created_at::timestamp::date >= ? AND created_at::timestamp::date <= ? AND manager_id IS NOT NULL", startDate, endDate).
+			Limit(int(limit)).Offset(int(offset)).Order("created_at desc, owner_resolve_time desc, manager_resolve_time desc").
+			Find(tickets).Error; err != nil {
+			return err
+		}
+	} else {
+		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
+			Where("created_at::timestamp::date >= ? AND created_at::timestamp::date <= ? AND (manager_id IS NOT NULL OR manager_id = ?)", startDate, endDate, *managerID).
+			Limit(int(limit)).Offset(int(offset)).Order("created_at desc, owner_resolve_time desc, manager_resolve_time desc").
+			Find(tickets).Error; err != nil {
+			return err
+		}
 	}
 
 	for i := range *tickets {

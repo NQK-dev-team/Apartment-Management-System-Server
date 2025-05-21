@@ -26,10 +26,33 @@ func NewSupportTicketService() *SupportTicketService {
 }
 
 func (s *SupportTicketService) GetSupportTickets(ctx *gin.Context, tickets *[]structs.SupportTicket, limit, offset int64, startDate string, endDate string) error {
-	if err := s.supportTicketRepository.GetSupportTickets(ctx, tickets, limit, offset, startDate, endDate); err != nil {
-		return err
+	role, exists := ctx.Get("role")
+
+	if !exists {
+		return errors.New("role not found")
 	}
-	return nil
+
+	if role.(string) == constants.Roles.Manager {
+		jwt, exists := ctx.Get("jwt")
+
+		if !exists {
+			return errors.New("jwt not found")
+		}
+
+		token, err := utils.ValidateJWTToken(jwt.(string))
+
+		if err != nil {
+			return err
+		}
+
+		claim := &structs.JTWClaim{}
+
+		utils.ExtractJWTClaim(token, claim)
+
+		return s.supportTicketRepository.GetSupportTickets(ctx, tickets, limit, offset, startDate, endDate, false, &claim.UserID)
+	}
+
+	return s.supportTicketRepository.GetSupportTickets(ctx, tickets, limit, offset, startDate, endDate, true, nil)
 }
 
 func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID int64) (bool, error) {
