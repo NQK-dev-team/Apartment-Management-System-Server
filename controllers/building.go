@@ -413,5 +413,61 @@ func (c *BuildingController) GetRoomContract(ctx *gin.Context) {
 
 	response.Data = contracts
 	response.Message = config.GetMessageCode("GET_SUCCESS")
+
+	ctx.JSON(200, response)
+}
+
+func (c *BuildingController) DeleteRoomContract(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	buildingID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		buildingID = 0
+	}
+
+	roomID, err := strconv.ParseInt(ctx.Param("roomID"), 10, 64)
+	if err != nil {
+		roomID = 0
+	}
+
+	type deleteIDs struct {
+		IDs []int64 `json:"IDs" validate:"required"`
+	}
+
+	input := &deleteIDs{}
+
+	if err := ctx.ShouldBindJSON(input); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
+	}
+
+	if err := constants.Validate.Struct(input); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = err.Error()
+		ctx.JSON(400, response)
+		return
+	}
+
+	if permission := c.buildingService.CheckManagerPermission(ctx, buildingID); !permission {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(403, response)
+		return
+	}
+
+	validID, err := c.contractService.DeleteContract(ctx, input.IDs, roomID, buildingID)
+	if err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	if !validID {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(403, response)
+		return
+	}
+
+	response.Message = config.GetMessageCode("DELETE_SUCCESS")
 	ctx.JSON(200, response)
 }

@@ -125,6 +125,24 @@ func (r *ContractRepository) GetContractByRoomIDAndBuildingIDAndManagerID(ctx *g
 	return nil
 }
 
+func (r *ContractRepository) GetDeletableContracts(ctx *gin.Context, contracts *[]models.ContractModel, IDs []int64, managerID *int64, roomID int64, buildingID int64) error {
+	if managerID == nil {
+		if err := config.DB.Model(&models.ContractModel{}).
+			Joins("INNER JOIN room ON room.id = contract.room_id").
+			Where("contract.id in ? and contract.status in (3,4) and room_id = ? and building_id = ?", IDs, roomID, buildingID).Find(contracts).Error; err != nil {
+			return err
+		}
+	} else {
+		if err := config.DB.Model(&models.ContractModel{}).
+			Joins("INNER JOIN room ON room.id = contract.room_id").
+			Where("contract.id in ? and contract.status in (3,4) and creator_id = ? and room_id = ? and building_id = ?", IDs, *managerID, roomID, buildingID).Find(contracts).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (r *ContractRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 	now := time.Now()
 	userID := ctx.GetInt64("userID")

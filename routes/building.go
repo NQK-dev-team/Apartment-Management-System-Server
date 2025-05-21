@@ -20,6 +20,8 @@ func InitBuildingRoutes(router *gin.RouterGroup) {
 		r.GET("/:id/room", buildingController.GetBuildingRoom)
 		r.POST("/:id/update", buildingController.UpdateBuilding)
 		r.GET("/:id/room/:roomID", buildingController.GetRoomDetail)
+		r.GET("/:id/room/:roomID/contracts", buildingController.GetRoomContract)
+		r.POST("/:id/room/:roomID/delete-contracts", buildingController.DeleteRoomContract)
 	}
 
 	r.Use(authorizationMiddle.AuthOwnerMiddleware)

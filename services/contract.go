@@ -1,10 +1,16 @@
 package services
 
 import (
+	"api/config"
+	"api/constants"
+	"api/models"
 	"api/repositories"
 	"api/structs"
+	"api/utils"
+	"errors"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type ContractService struct {
@@ -49,6 +55,53 @@ func (s *ContractService) GetContractByRoomIDAndBuildingID(ctx *gin.Context, con
 	// }
 
 	return s.contractRepository.GetContractByRoomIDAndBuildingID(ctx, contracts, roomID, buildingID)
+}
+
+func (s *ContractService) DeleteContract(ctx *gin.Context, IDs []int64, roomID int64, buildingID int64) (bool, error) {
+	role, exists := ctx.Get("role")
+
+	if !exists {
+		return true, errors.New("role not found")
+	}
+
+	if role.(string) == constants.Roles.Manager {
+		jwt, exists := ctx.Get("jwt")
+
+		if !exists {
+			return true, errors.New("jwt not found")
+		}
+
+		token, err := utils.ValidateJWTToken(jwt.(string))
+
+		if err != nil {
+			return true, err
+		}
+
+		claim := &structs.JTWClaim{}
+
+		utils.ExtractJWTClaim(token, claim)
+
+		contracts := []models.ContractModel{}
+		if err := s.contractRepository.GetDeletableContracts(ctx, &contracts, IDs, &claim.UserID, roomID, buildingID); err != nil {
+			return true, err
+		}
+
+		if len(contracts) != len(IDs) {
+			return false, nil
+		}
+	} else if role.(string) == constants.Roles.Owner {
+		contracts := []models.ContractModel{}
+		if err := s.contractRepository.GetDeletableContracts(ctx, &contracts, IDs, nil, roomID, buildingID); err != nil {
+			return true, err
+		}
+
+		if len(contracts) != len(IDs) {
+			return false, nil
+		}
+	}
+	return true, config.DB.Transaction(func(tx *gorm.DB) error {
+		return s.contractRepository.Delete(ctx, tx, IDs)
+	})
 }
 
 // func (s *ContractService) DeleteWithoutTransaction(ctx *gin.Context, tx *gorm.DB, id []int64) error {
