@@ -6,6 +6,7 @@ import (
 	"api/models"
 	"api/services"
 	"api/structs"
+	"api/utils"
 	"strconv"
 	"strings"
 
@@ -349,7 +350,7 @@ func (c *BuildingController) GetRoomDetail(ctx *gin.Context) {
 		return
 	}
 
-	if err := c.contractService.GetContractByRoomIDAndBuildingID(ctx, contracts, roomID, buildingID); err != nil {
+	if err := c.roomService.GetContractByRoomIDAndBuildingID(ctx, contracts, roomID, buildingID); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(500, response)
 		return
@@ -405,13 +406,57 @@ func (c *BuildingController) GetRoomContract(ctx *gin.Context) {
 
 	contracts := &[]structs.Contract{}
 
-	if err := c.contractService.GetContractByRoomIDAndBuildingID(ctx, contracts, roomID, buildingID); err != nil {
+	if err := c.roomService.GetContractByRoomIDAndBuildingID(ctx, contracts, roomID, buildingID); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(500, response)
 		return
 	}
 
 	response.Data = contracts
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+
+	ctx.JSON(200, response)
+}
+
+func (c *BuildingController) GetRoomTicket(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	buildingID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		buildingID = 0
+	}
+
+	roomID, err := strconv.ParseInt(ctx.Param("roomID"), 10, 64)
+	if err != nil {
+		roomID = 0
+	}
+
+	startDate := ctx.Query("startDate")
+	endDate := ctx.Query("endDate")
+
+	if startDate == "" {
+		startDate = utils.GetFirstDayOfMonth()
+	}
+
+	if endDate == "" {
+		endDate = utils.GetCurrentDate()
+	}
+
+	if permission := c.buildingService.CheckManagerPermission(ctx, buildingID); !permission {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(403, response)
+		return
+	}
+
+	tickets := []models.SupportTicketModel{}
+
+	if err := c.roomService.GetTicketByRoomIDAndBuildingID(ctx, roomID, buildingID, startDate, endDate, &tickets); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	response.Data = tickets
 	response.Message = config.GetMessageCode("GET_SUCCESS")
 
 	ctx.JSON(200, response)

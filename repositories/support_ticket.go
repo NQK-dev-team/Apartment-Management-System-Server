@@ -141,6 +141,20 @@ func (r *SupportTicketRepository) GetTicketsByCustomerID(ctx *gin.Context, ticke
 	return nil
 }
 
+func (r *SupportTicketRepository) GetTicketByRoomIDAndBuildingID(ctx *gin.Context, roomID int64, buildingID int64, startDate string, endDate string, tickets *[]models.SupportTicketModel) error {
+	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
+		Joins("JOIN contract ON contract.id = support_ticket.contract_id").
+		Joins("JOIN room ON room.id = contract.room_id").
+		Joins("JOIN building ON building.id = room.building_id").
+		Where("support_ticket.created_at::timestamp::date >= ? AND support_ticket.created_at::timestamp::date <= ? AND room.id = ? AND building.id = ?", startDate, endDate, roomID, buildingID).
+		Order("support_ticket.created_at desc, owner_resolve_time desc, manager_resolve_time desc").
+		Find(tickets).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *SupportTicketRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 	now := time.Now()
 	userID := ctx.GetInt64("userID")
