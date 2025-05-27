@@ -17,11 +17,13 @@ import (
 
 type SupportTicketService struct {
 	supportTicketRepository *repositories.SupportTicketRepository
+	buildingService         *BuildingService
 }
 
 func NewSupportTicketService() *SupportTicketService {
 	return &SupportTicketService{
 		supportTicketRepository: repositories.NewSupportTicketRepository(),
+		buildingService:         NewBuildingService(),
 	}
 }
 
@@ -49,10 +51,19 @@ func (s *SupportTicketService) GetSupportTickets(ctx *gin.Context, tickets *[]st
 
 		utils.ExtractJWTClaim(token, claim)
 
-		return s.supportTicketRepository.GetSupportTickets(ctx, tickets, limit, offset, startDate, endDate, false, &claim.UserID)
+		return s.supportTicketRepository.GetSupportTickets(ctx, tickets, limit, offset, startDate, endDate, &claim.UserID)
 	}
 
-	return s.supportTicketRepository.GetSupportTickets(ctx, tickets, limit, offset, startDate, endDate, true, nil)
+	return s.supportTicketRepository.GetSupportTickets(ctx, tickets, limit, offset, startDate, endDate, nil)
+}
+
+func (s *SupportTicketService) CheckManagerPermission(ctx *gin.Context, ticketID int64, managerID int64) bool {
+	building := &models.BuildingModel{}
+	if err := s.supportTicketRepository.GetTicketBuilding(ctx, ticketID, building); err != nil {
+		return false
+	}
+
+	return s.buildingService.CheckManagerPermission(ctx, building.ID)
 }
 
 func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID int64) (bool, error) {
@@ -85,6 +96,10 @@ func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID i
 	}
 
 	if role.(string) == constants.Roles.Manager {
+		if !s.CheckManagerPermission(ctx, ticketID, claim.UserID) {
+			return false, nil
+		}
+
 		if ticket.ManagerID != 0 {
 			return false, nil
 		}
@@ -161,6 +176,10 @@ func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int6
 	}
 
 	if role.(string) == constants.Roles.Manager {
+		if !s.CheckManagerPermission(ctx, ticketID, claim.UserID) {
+			return false, nil
+		}
+
 		if ticket.ManagerID != 0 {
 			return false, nil
 		}

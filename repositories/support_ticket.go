@@ -18,6 +18,21 @@ func NewSupportTicketRepository() *SupportTicketRepository {
 	return &SupportTicketRepository{}
 }
 
+func (r *SupportTicketRepository) GetTicketBuilding(ctx *gin.Context, ticketID int64, building *models.BuildingModel) error {
+	if err := config.DB.Model(&models.BuildingModel{}).
+		Joins("JOIN room ON room.building_id = building.id").
+		Joins("JOIN contract ON contract.room_id = room.id").
+		Joins("JOIN support_ticket ON support_ticket.contract_id = contract.id").
+		Where("support_ticket.id = ?", ticketID).
+		First(building).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
 func (r *SupportTicketRepository) GetById(ctx *gin.Context, ticket *models.SupportTicketModel, id int64) error {
 	if err := config.DB.Where("id = ?", id).Preload("Files").First(ticket).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -28,33 +43,45 @@ func (r *SupportTicketRepository) GetById(ctx *gin.Context, ticket *models.Suppo
 	return nil
 }
 
-func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[]structs.SupportTicket, limit int64, offset int64, startDate string, endDate string, isOwner bool, managerID *int64) error {
-	if isOwner {
+func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[]structs.SupportTicket, limit int64, offset int64, startDate string, endDate string, managerID *int64) error {
+	if managerID == nil {
 		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
-			Where("created_at::timestamp::date >= ? AND created_at::timestamp::date <= ? AND manager_id IS NOT NULL", startDate, endDate).
-			Limit(int(limit)).Offset(int(offset)).Order("created_at desc, owner_resolve_time desc, manager_resolve_time desc").
+			Where("support_ticket.created_at::timestamp::date >= ? AND support_ticket.created_at::timestamp::date <= ? AND manager_id IS NOT NULL", startDate, endDate).
+			Limit(int(limit)).Offset(int(offset)).Order("support_ticket.created_at desc, owner_resolve_time desc, manager_resolve_time desc").
 			Find(tickets).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil
+			}
 			return err
 		}
 	} else {
 		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
-			Where("created_at::timestamp::date >= ? AND created_at::timestamp::date <= ? AND (manager_id IS NOT NULL OR manager_id = ?)", startDate, endDate, *managerID).
-			Limit(int(limit)).Offset(int(offset)).Order("created_at desc, owner_resolve_time desc, manager_resolve_time desc").
+			Joins("JOIN contract ON contract.id = support_ticket.contract_id").
+			Joins("JOIN room ON room.id = contract.room_id").
+			Joins("JOIN building ON building.id = room.building_id").
+			Where("support_ticket.created_at::timestamp::date >= ? AND support_ticket.created_at::timestamp::date <= ? AND (manager_id = ? OR (manager_id IS NULL AND building.id IN (?)))", startDate, endDate, *managerID,
+				config.DB.Model(&models.BuildingModel{}).
+					Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id").
+					Where("manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ? AND manager_schedule.deleted_at IS NULL", *managerID).Select("building.id")).
+			Limit(int(limit)).Offset(int(offset)).Order("support_ticket.created_at desc, owner_resolve_time desc, manager_resolve_time desc").
 			Find(tickets).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil
+			}
 			return err
 		}
 	}
 
 	for i := range *tickets {
-		if err := config.DB.Raw("SELECT room.no AS room_no FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ID).Scan(&(*tickets)[i].RoomNo).Error; err != nil {
+		if err := config.DB.Raw("SELECT room.no AS room_no FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomNo).Error; err != nil {
 			return err
 		}
 
-		if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ID).Scan(&(*tickets)[i].RoomFloor).Error; err != nil {
+		if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomFloor).Error; err != nil {
 			return err
 		}
 
-		if err := config.DB.Raw("SELECT building.name AS building_name FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ID).Scan(&(*tickets)[i].BuildingName).Error; err != nil {
+		if err := config.DB.Raw("SELECT building.name AS building_name FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ContractID).Scan(&(*tickets)[i].BuildingName).Error; err != nil {
 			return err
 		}
 	}
@@ -68,47 +95,22 @@ func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, ticket
 		Where("manager_id = ? AND created_at::timestamp::date >= ? AND created_at::timestamp::date <= ?", managerID, startDate, endDate).
 		Limit(int(limit)).Offset(int(offset)).Order("created_at desc, owner_resolve_time desc, manager_resolve_time desc").
 		Find(tickets).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return err
 	}
 
 	for i := range *tickets {
-		// if err := config.DB.Raw("SELECT id FROM \"user\" JOIN manager_resolve_support_ticket ON manager_resolve_support_ticket.manager_id=\"user\".id WHERE NOT manager_id = ? AND support_ticket_id = ?", managerID, (*tickets)[i].SupportTicket.ID).Scan(&(*tickets)[i].OwnerID).Error; err != nil {
-		// 	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		// 		return err
-		// 	}
-		// } else if (*tickets)[i].OwnerID != 0 {
-		// 	if err := config.DB.Model(&models.UserModel{}).Where("id = ?", (*tickets)[i].OwnerID).First(&(*tickets)[i].Owner).Error; err != nil {
-		// 		return err
-		// 	}
-
-		// 	if err := config.DB.Raw("SELECT result FROM manager_resolve_support_ticket WHERE manager_id = ? AND support_ticket_id = ?", (*tickets)[i].OwnerID, (*tickets)[i].SupportTicket.ID).Scan(&(*tickets)[i].OwnerResult).Error; err != nil {
-		// 		return err
-		// 	}
-
-		// 	if err := config.DB.Raw("SELECT resolve_time FROM manager_resolve_support_ticket WHERE manager_id = ? AND support_ticket_id = ?", (*tickets)[i].OwnerID, (*tickets)[i].SupportTicket.ID).Scan(&(*tickets)[i].OwnerResolveTime).Error; err != nil {
-		// 		return err
-		// 	}
-		// }
-
-		// if err := config.DB.Model(&models.SupportTicketFileModel{}).Where("support_ticket_id = ?", (*tickets)[i].SupportTicket.ID).First(&(*tickets)[i].SupportTicket.Files).Error; err != nil {
-		// 	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		// 		return err
-		// 	}
-		// }
-
-		// if err := config.DB.Model(&models.UserModel{}).Where("id = ?", (*tickets)[i].SupportTicket.CustomerID).First(&(*tickets)[i].SupportTicket.Customer).Error; err != nil {
-		// 	return err
-		// }
-
-		if err := config.DB.Raw("SELECT room.no AS room_no FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ID).Scan(&(*tickets)[i].RoomNo).Error; err != nil {
+		if err := config.DB.Raw("SELECT room.no AS room_no FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomNo).Error; err != nil {
 			return err
 		}
 
-		if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ID).Scan(&(*tickets)[i].RoomFloor).Error; err != nil {
+		if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomFloor).Error; err != nil {
 			return err
 		}
 
-		if err := config.DB.Raw("SELECT building.name AS building_name FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ID).Scan(&(*tickets)[i].BuildingName).Error; err != nil {
+		if err := config.DB.Raw("SELECT building.name AS building_name FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ContractID).Scan(&(*tickets)[i].BuildingName).Error; err != nil {
 			return err
 		}
 	}
@@ -121,19 +123,22 @@ func (r *SupportTicketRepository) GetTicketsByCustomerID(ctx *gin.Context, ticke
 		Where("customer_id = ?", customerID).
 		Order("created_at desc, owner_resolve_time desc, manager_resolve_time desc").
 		Find(tickets).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return err
 	}
 
 	for i := range *tickets {
-		if err := config.DB.Raw("SELECT room.no AS room_no FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ID).Scan(&(*tickets)[i].RoomNo).Error; err != nil {
+		if err := config.DB.Raw("SELECT room.no AS room_no FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomNo).Error; err != nil {
 			return err
 		}
 
-		if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ID).Scan(&(*tickets)[i].RoomFloor).Error; err != nil {
+		if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomFloor).Error; err != nil {
 			return err
 		}
 
-		if err := config.DB.Raw("SELECT building.name AS building_name FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ID).Scan(&(*tickets)[i].BuildingName).Error; err != nil {
+		if err := config.DB.Raw("SELECT building.name AS building_name FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*tickets)[i].ContractID).Scan(&(*tickets)[i].BuildingName).Error; err != nil {
 			return err
 		}
 	}
@@ -149,6 +154,9 @@ func (r *SupportTicketRepository) GetTicketByRoomIDAndBuildingID(ctx *gin.Contex
 		Where("support_ticket.created_at::timestamp::date >= ? AND support_ticket.created_at::timestamp::date <= ? AND room.id = ? AND building.id = ?", startDate, endDate, roomID, buildingID).
 		Order("support_ticket.created_at desc, owner_resolve_time desc, manager_resolve_time desc").
 		Find(tickets).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return err
 	}
 
