@@ -30,6 +30,9 @@ func (r *ContractRepository) GetById(ctx *gin.Context, contract *models.Contract
 
 func (r *ContractRepository) GetContractByIDs(ctx *gin.Context, contract *[]models.ContractModel, id []int64) error {
 	if err := config.DB.Where("id in ?", id).Preload("Bills").Preload("SupportTickets").Find(contract).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return err
 	}
 	return nil
@@ -37,6 +40,9 @@ func (r *ContractRepository) GetContractByIDs(ctx *gin.Context, contract *[]mode
 
 func (r *ContractRepository) GetContractByRoomID(ctx *gin.Context, contract *[]models.ContractModel, roomIDs []int64) error {
 	if err := config.DB.Where("room_id in ?", roomIDs).Find(contract).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return err
 	}
 	return nil
@@ -46,6 +52,9 @@ func (r *ContractRepository) GetContractsByManagerID(ctx *gin.Context, contracts
 	if err := config.DB.Preload("Creator").Preload("Householder").Preload("Files").
 		Where("creator_id = ?", managerID).Order("start_date DESC, end_date DESC, sign_date DESC").
 		Find(contracts).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return err
 	}
 	return nil
@@ -55,6 +64,9 @@ func (r *ContractRepository) GetContractsByCustomerID(ctx *gin.Context, contract
 	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").Preload("Files").
 		Where("householder_id = ?", customerID).Order("start_date DESC, end_date DESC, sign_date DESC").
 		Find(contracts).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return err
 	}
 
@@ -80,6 +92,9 @@ func (r *ContractRepository) GetContractByRoomIDAndBuildingID(ctx *gin.Context, 
 		Joins("INNER JOIN room ON room.id = contract.room_id").
 		Where("room_id = ? AND building_id = ?", roomID, buildingID).Order("start_date DESC, end_date DESC, sign_date DESC").
 		Find(contracts).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return err
 	}
 
@@ -105,6 +120,9 @@ func (r *ContractRepository) GetContractByRoomIDAndBuildingIDAndManagerID(ctx *g
 		Joins("INNER JOIN room ON room.id = contract.room_id").
 		Where("room_id = ? AND building_id = ? AND creator_id = ?", roomID, buildingID, managerID).Order("start_date DESC, end_date DESC, sign_date DESC").
 		Find(contracts).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return err
 	}
 
@@ -130,12 +148,18 @@ func (r *ContractRepository) GetDeletableContracts(ctx *gin.Context, contracts *
 		if err := config.DB.Model(&models.ContractModel{}).
 			Joins("INNER JOIN room ON room.id = contract.room_id").
 			Where("contract.id in ? and contract.status in (3,4) and room_id = ? and building_id = ?", IDs, roomID, buildingID).Find(contracts).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil
+			}
 			return err
 		}
 	} else {
 		if err := config.DB.Model(&models.ContractModel{}).
 			Joins("INNER JOIN room ON room.id = contract.room_id").
 			Where("contract.id in ? and contract.status in (3,4) and creator_id = ? and room_id = ? and building_id = ?", IDs, *managerID, roomID, buildingID).Find(contracts).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil
+			}
 			return err
 		}
 	}

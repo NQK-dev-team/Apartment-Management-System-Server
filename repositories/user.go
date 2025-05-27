@@ -20,6 +20,9 @@ func NewUserRepository() *UserRepository {
 func (r *UserRepository) GetNewID(ctx *gin.Context) (int64, error) {
 	lastestUser := models.UserModel{}
 	if err := config.DB.Order("id desc").Unscoped().First(&lastestUser).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, nil
+		}
 		return 0, err
 	}
 	return lastestUser.ID + 1, nil
@@ -93,6 +96,9 @@ func (r *UserRepository) GetByEmail(ctx *gin.Context, user *models.UserModel, em
 
 func (r *UserRepository) Get(ctx *gin.Context, user *[]models.UserModel) error {
 	if err := config.DB.Find(user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return err
 	}
 
@@ -144,6 +150,9 @@ func (r *UserRepository) DeleteByIDs(ctx *gin.Context, tx *gorm.DB, ids []int64)
 
 func (r *UserRepository) GetStaffList(ctx *gin.Context, users *[]models.UserModel) error {
 	if err := config.DB.Model(&models.UserModel{}).Where("is_owner = false AND is_manager = true AND is_customer = false").Find(users).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return err
 	}
 	return nil
@@ -161,6 +170,9 @@ func (r *UserRepository) GetStaffDetail(ctx *gin.Context, user *models.UserModel
 
 func (r *UserRepository) GetStaffSchedule(ctx *gin.Context, schedules *[]models.ManagerScheduleModel, staffID int64) error {
 	if err := config.DB.Preload("Building").Preload("Manager").Where("manager_id = ?", staffID).Find(schedules).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return err
 	}
 	return nil
@@ -168,6 +180,9 @@ func (r *UserRepository) GetStaffSchedule(ctx *gin.Context, schedules *[]models.
 
 func (r *UserRepository) GetCustomerList(ctx *gin.Context, users *[]models.UserModel, limit int64, offset int64) error {
 	if err := config.DB.Model(&models.UserModel{}).Where("is_owner = false AND is_manager = false AND is_customer = true").Limit(int(limit)).Offset(int(offset)).Find(users).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return err
 	}
 	return nil

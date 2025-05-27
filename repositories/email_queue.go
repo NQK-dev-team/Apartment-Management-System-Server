@@ -25,6 +25,9 @@ func (r *EmailQueueRepository) Create(job *models.EmailQueueModel) error {
 
 func (r *EmailQueueRepository) Get(jobs *[]models.EmailQueueModel) error {
 	if err := config.DB.Find(jobs).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return err
 	}
 
