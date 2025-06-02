@@ -385,6 +385,32 @@ func (c *BuildingController) GetRoomDetail(ctx *gin.Context) {
 	ctx.JSON(200, response)
 }
 
+func (c *BuildingController) UpdateRoomInformation(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	buildingID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		buildingID = 0
+	}
+
+	roomID, err := strconv.ParseInt(ctx.Param("roomID"), 10, 64)
+	if err != nil {
+		roomID = 0
+	}
+
+	if permission := c.buildingService.CheckManagerPermission(ctx, buildingID); !permission {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(403, response)
+		return
+	}
+
+	room := &structs.EditRoom2{}
+
+	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
+
+	ctx.JSON(200, response)
+}
+
 func (c *BuildingController) GetRoomContract(ctx *gin.Context) {
 	response := config.NewDataResponse(ctx)
 

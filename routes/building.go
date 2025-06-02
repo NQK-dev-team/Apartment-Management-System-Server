@@ -20,6 +20,7 @@ func InitBuildingRoutes(router *gin.RouterGroup) {
 		r.GET("/:id/room", buildingController.GetBuildingRoom)
 		r.POST("/:id/update", buildingController.UpdateBuilding)
 		r.GET("/:id/room/:roomID", buildingController.GetRoomDetail)
+		r.POST("/:id/room/:roomID/update", buildingController.UpdateRoomInformation)
 		r.GET("/:id/room/:roomID/contracts", buildingController.GetRoomContract)
 		r.GET("/:id/room/:roomID/tickets", buildingController.GetRoomTicket)
 		r.POST("/:id/room/:roomID/delete-contracts", buildingController.DeleteRoomContract)

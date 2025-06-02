@@ -64,6 +64,14 @@ type EditRoom struct {
 	TotalImage  int `validate:"required,min=1"`
 }
 
+type EditRoom2 struct {
+	Status            int     `form:"status" validate:"required,min=1,max=5"`
+	Area              float64 `form:"area" validate:"required,gt=0"`
+	Description       string  `form:"description" validate:"required"`
+	NewRoomImages     []*multipart.FileHeader
+	DeletedRoomImages []int64 `form:"deletedRoomImages[]"`
+}
+
 type EditBuilding struct {
 	ID                    int64   `form:"id" validate:"required"`
 	Name                  string  `form:"name" validate:"required"`
