@@ -398,16 +398,38 @@ func (c *BuildingController) UpdateRoomInformation(ctx *gin.Context) {
 		roomID = 0
 	}
 
+	oldRoomData := &models.RoomModel{}
+	if err := c.roomService.GetRoomByRoomIDAndBuildingID(ctx, oldRoomData, roomID, buildingID); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
+
+	room := &structs.EditRoom2{}
+
+	form, _ := ctx.MultipartForm()
+	room.NewRoomImages = form.File["newRoomImages[]"]
+	room.TotalImage = len(oldRoomData.Images) + len(room.NewRoomImages) - len(room.DeletedRoomImages)
+
+	if err := ctx.ShouldBind(room); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(400, response)
+		return
+	}
+
 	if permission := c.buildingService.CheckManagerPermission(ctx, buildingID); !permission {
 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
 		ctx.JSON(403, response)
 		return
 	}
 
-	room := &structs.EditRoom2{}
+	if err := c.roomService.UpdateRoomByRoomIDAndBuildingID(ctx, oldRoomData, room, roomID, buildingID); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(500, response)
+		return
+	}
 
 	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
-
 	ctx.JSON(200, response)
 }
 

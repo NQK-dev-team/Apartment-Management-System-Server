@@ -151,3 +151,13 @@ func (r *RoomRepository) GetNewImageNo(ctx *gin.Context, roomID int64) (int, err
 	}
 	return lastestImage.No + 1, nil
 }
+
+func (r *RoomRepository) GetRoomByRoomIDAndBuildingID(ctx *gin.Context, room *models.RoomModel, roomID int64, buildingID int64) error {
+	if err := config.DB.Where("id = ? AND building_id = ?", roomID, buildingID).Preload("Images").Preload("Contracts").First(room).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+	return nil
+}

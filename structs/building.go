@@ -70,6 +70,7 @@ type EditRoom2 struct {
 	Description       string  `form:"description" validate:"required"`
 	NewRoomImages     []*multipart.FileHeader
 	DeletedRoomImages []int64 `form:"deletedRoomImages[]"`
+	TotalImage        int     `validate:"required,min=1"`
 }
 
 type EditBuilding struct {
