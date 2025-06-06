@@ -1,6 +1,7 @@
 package services
 
 import (
+	"api/constants"
 	"api/models"
 	"api/repositories"
 	"api/structs"
@@ -36,9 +37,9 @@ func (s *EmailService) SendResetPasswordEmail(ctx *gin.Context, email string) (b
 	isSpam := true
 
 	if len(tokens) > 0 {
-		if len(tokens) >= 5 {
+		if len(tokens) >= constants.Common.EmailTokenLimit {
 			// Check if the 5 most recent tokens are sent within the last 1 hour
-			for i := 0; i < 5; i++ {
+			for i := 0; i < constants.Common.EmailTokenLimit; i++ {
 				if tokens[i].CreatedAt.Add(1 * time.Hour).After(time.Now()) {
 					isSpam = true
 					break
@@ -125,9 +126,9 @@ func (s *EmailService) SendEmailVerificationEmail(ctx *gin.Context, email string
 	isSpam := true
 
 	if len(tokens) > 0 {
-		if len(tokens) >= 5 {
+		if len(tokens) >= constants.Common.EmailTokenLimit {
 			// Check if the 5 most recent tokens are sent within the last 1 hour
-			for i := 0; i < 5; i++ {
+			for i := 0; i < constants.Common.EmailTokenLimit; i++ {
 				if tokens[i].CreatedAt.Add(1 * time.Hour).After(time.Now()) {
 					isSpam = true
 					break

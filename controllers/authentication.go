@@ -6,6 +6,7 @@ import (
 	"api/models"
 	"api/services"
 	"api/structs"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -30,14 +31,14 @@ func (c *AuthenticationController) Login(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&account); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := constants.Validate.Struct(&account); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -45,20 +46,20 @@ func (c *AuthenticationController) Login(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if jwtToken == "" && isEmailVerified {
 		response.Message = config.GetMessageCode("INVALID_CREDENTIALS")
-		ctx.JSON(401, response)
+		ctx.JSON(http.StatusUnauthorized, response)
 		return
 	}
 
 	if jwtToken == "" && !isEmailVerified {
 		c.emailService.SendEmailVerificationEmail(ctx, account.Email)
 		response.Message = config.GetMessageCode("EMAIL_NOT_VERIFIED")
-		ctx.JSON(401, response)
+		ctx.JSON(http.StatusUnauthorized, response)
 		return
 	}
 
@@ -66,7 +67,7 @@ func (c *AuthenticationController) Login(ctx *gin.Context) {
 	response.JWTToken = jwtToken
 	response.RefreshToken = refreshToken
 
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *AuthenticationController) VerifyToken(ctx *gin.Context) {
@@ -75,14 +76,14 @@ func (c *AuthenticationController) VerifyToken(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&token); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := constants.Validate.Struct(&token); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -90,14 +91,14 @@ func (c *AuthenticationController) VerifyToken(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("TOKEN_VERIFY_FAILED")
-		ctx.JSON(401, response)
+		ctx.JSON(http.StatusUnauthorized, response)
 		return
 	}
 
 	response.Message = config.GetMessageCode("VERIFY_SUCCESS")
 	response.Data = isValid
 
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *AuthenticationController) RefreshToken(ctx *gin.Context) {
@@ -106,14 +107,14 @@ func (c *AuthenticationController) RefreshToken(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&token); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := constants.Validate.Struct(&token); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -121,14 +122,14 @@ func (c *AuthenticationController) RefreshToken(ctx *gin.Context) {
 
 	if err != nil || jwtToken == "" {
 		response.Message = config.GetMessageCode("TOKEN_REFRESH_FAILED")
-		ctx.JSON(401, response)
+		ctx.JSON(http.StatusUnauthorized, response)
 		return
 	}
 
 	response.Message = config.GetMessageCode("VERIFY_SUCCESS")
 	response.JWTToken = jwtToken
 
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *AuthenticationController) Recovery(ctx *gin.Context) {
@@ -137,14 +138,14 @@ func (c *AuthenticationController) Recovery(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&email); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := constants.Validate.Struct(&email); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -153,13 +154,13 @@ func (c *AuthenticationController) Recovery(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if user.ID == 0 {
 		response.Message = config.GetMessageCode("USER_NOT_FOUND")
-		ctx.JSON(404, response)
+		ctx.JSON(http.StatusNotFound, response)
 		return
 	}
 
@@ -167,18 +168,18 @@ func (c *AuthenticationController) Recovery(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if isSpam {
 		response.Message = config.GetMessageCode("REQUEST_SPAM")
-		ctx.JSON(429, response)
+		ctx.JSON(http.StatusTooManyRequests, response)
 		return
 	}
 
 	response.Message = config.GetMessageCode("EMAIL_SENT")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *AuthenticationController) CheckResetPasswordToken(ctx *gin.Context) {
@@ -187,14 +188,14 @@ func (c *AuthenticationController) CheckResetPasswordToken(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&token); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := constants.Validate.Struct(&token); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -202,18 +203,18 @@ func (c *AuthenticationController) CheckResetPasswordToken(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if !isValid {
 		response.Message = config.GetMessageCode("TOKEN_VERIFY_FAILED")
-		ctx.JSON(401, response)
+		ctx.JSON(http.StatusUnauthorized, response)
 		return
 	}
 
 	response.Message = config.GetMessageCode("VERIFY_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *AuthenticationController) ResetPassword(ctx *gin.Context) {
@@ -222,14 +223,14 @@ func (c *AuthenticationController) ResetPassword(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&resetPassword); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := constants.Validate.Struct(&resetPassword); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -237,13 +238,13 @@ func (c *AuthenticationController) ResetPassword(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if !isValid {
 		response.Message = config.GetMessageCode("TOKEN_VERIFY_FAILED")
-		ctx.JSON(401, response)
+		ctx.JSON(http.StatusUnauthorized, response)
 		return
 	}
 	var user = &models.UserModel{}
@@ -251,13 +252,13 @@ func (c *AuthenticationController) ResetPassword(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if user.ID == 0 {
 		response.Message = config.GetMessageCode("USER_NOT_FOUND")
-		ctx.JSON(404, response)
+		ctx.JSON(http.StatusNotFound, response)
 		return
 	}
 
@@ -266,18 +267,18 @@ func (c *AuthenticationController) ResetPassword(ctx *gin.Context) {
 
 	if err := c.userSerivce.UpdateUser(ctx, user); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if err := c.authenticationService.DeletePasswordResetToken(ctx, user.Email); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Message = config.GetMessageCode("PASSWORD_RESET")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *AuthenticationController) VerifyEmail(ctx *gin.Context) {
@@ -286,14 +287,14 @@ func (c *AuthenticationController) VerifyEmail(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&token); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := constants.Validate.Struct(&token); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -301,13 +302,13 @@ func (c *AuthenticationController) VerifyEmail(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if !isValid {
 		response.Message = config.GetMessageCode("TOKEN_VERIFY_FAILED")
-		ctx.JSON(401, response)
+		ctx.JSON(http.StatusUnauthorized, response)
 		return
 	}
 
@@ -316,13 +317,13 @@ func (c *AuthenticationController) VerifyEmail(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if user.ID == 0 {
 		response.Message = config.GetMessageCode("USER_NOT_FOUND")
-		ctx.JSON(404, response)
+		ctx.JSON(http.StatusNotFound, response)
 		return
 	}
 
@@ -332,12 +333,12 @@ func (c *AuthenticationController) VerifyEmail(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Message = config.GetMessageCode("VERIFY_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *AuthenticationController) Logout(ctx *gin.Context) {
@@ -357,7 +358,7 @@ func (c *AuthenticationController) Logout(ctx *gin.Context) {
 
 		if claims == nil {
 			response.Message = config.GetMessageCode("SYSTEM_ERROR")
-			ctx.JSON(500, response)
+			ctx.JSON(http.StatusInternalServerError, response)
 			return
 		}
 
@@ -365,13 +366,13 @@ func (c *AuthenticationController) Logout(ctx *gin.Context) {
 
 		if err != nil {
 			response.Message = config.GetMessageCode("SYSTEM_ERROR")
-			ctx.JSON(500, response)
+			ctx.JSON(http.StatusInternalServerError, response)
 			return
 		}
 	}
 
 	response.Message = config.GetMessageCode("LOGOUT_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *AuthenticationController) VerifyPassword(ctx *gin.Context) {
@@ -381,14 +382,14 @@ func (c *AuthenticationController) VerifyPassword(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&verifyPasswordStruct); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := constants.Validate.Struct(&verifyPasswordStruct); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -401,13 +402,13 @@ func (c *AuthenticationController) VerifyPassword(ctx *gin.Context) {
 
 	if jwt == "" {
 		response.Data = false
-		ctx.JSON(200, response)
+		ctx.JSON(http.StatusOK, response)
 		return
 	}
 
 	if _, err := c.authenticationService.VerifyToken(ctx, jwt); err != nil {
 		response.Data = false
-		ctx.JSON(200, response)
+		ctx.JSON(http.StatusOK, response)
 		return
 	}
 
@@ -415,7 +416,7 @@ func (c *AuthenticationController) VerifyPassword(ctx *gin.Context) {
 
 	if claims == nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
@@ -423,17 +424,17 @@ func (c *AuthenticationController) VerifyPassword(ctx *gin.Context) {
 
 	if err := c.userSerivce.GetUserByID(ctx, claims.UserID, user); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if !c.authenticationService.CheckPassword(ctx, verifyPasswordStruct.Password, user.Password) {
 		response.Data = false
-		ctx.JSON(200, response)
+		ctx.JSON(http.StatusOK, response)
 		return
 	}
 
 	response.Data = true
 	response.Message = config.GetMessageCode("VERIFY_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }

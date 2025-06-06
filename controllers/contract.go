@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"api/config"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,5 +18,5 @@ func (c *ContractController) GetContractList(ctx *gin.Context) {
 	response := config.NewDataResponse(ctx)
 
 	response.Message = config.GetMessageCode("GET_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }

@@ -71,7 +71,7 @@ func (s *UserService) GetUserByID(ctx *gin.Context, id int64, user *models.UserM
 
 func (s *UserService) CreateStaff(ctx *gin.Context, newStaff *structs.NewStaff) error {
 
-	newPassword, err := utils.GeneratePassword(8)
+	newPassword, err := utils.GeneratePassword(constants.Common.NewPasswordLength)
 	if err != nil {
 		return err
 	}
@@ -394,7 +394,7 @@ func (s *UserService) GetCustomerTicket(ctx *gin.Context, tickets *[]structs.Sup
 }
 
 func (s *UserService) CreateCustomer(ctx *gin.Context, newCustomer *structs.NewCustomer) error {
-	newPassword, err := utils.GeneratePassword(8)
+	newPassword, err := utils.GeneratePassword(constants.Common.NewPasswordLength)
 	if err != nil {
 		return err
 	}

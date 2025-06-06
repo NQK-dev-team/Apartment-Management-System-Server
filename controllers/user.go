@@ -7,6 +7,7 @@ import (
 	"api/services"
 	"api/structs"
 	"api/utils"
+	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -26,13 +27,13 @@ func (c *UserController) GetStaffList(ctx *gin.Context) {
 
 	if err := c.userService.GetStaffList(ctx, users); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Data = users
 	response.Message = config.GetMessageCode("GET_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *UserController) GetStaffDetail(ctx *gin.Context) {
@@ -42,7 +43,7 @@ func (c *UserController) GetStaffDetail(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -50,13 +51,13 @@ func (c *UserController) GetStaffDetail(ctx *gin.Context) {
 
 	if err := c.userService.GetStaffDetail(ctx, user, id); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Data = user
 	response.Message = config.GetMessageCode("GET_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *UserController) GetStaffSchedule(ctx *gin.Context) {
@@ -66,7 +67,7 @@ func (c *UserController) GetStaffSchedule(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -74,13 +75,13 @@ func (c *UserController) GetStaffSchedule(ctx *gin.Context) {
 
 	if err := c.userService.GetStaffSchedule(ctx, &schedules, id); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Data = schedules
 	response.Message = config.GetMessageCode("GET_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *UserController) GetStaffRelatedContract(ctx *gin.Context) {
@@ -90,7 +91,7 @@ func (c *UserController) GetStaffRelatedContract(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -98,13 +99,13 @@ func (c *UserController) GetStaffRelatedContract(ctx *gin.Context) {
 
 	if err := c.userService.GetStaffRelatedContract(ctx, &contracts, id); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Data = contracts
 	response.Message = config.GetMessageCode("GET_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *UserController) GetStaffRelatedTicket(ctx *gin.Context) {
@@ -114,7 +115,7 @@ func (c *UserController) GetStaffRelatedTicket(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -147,13 +148,13 @@ func (c *UserController) GetStaffRelatedTicket(ctx *gin.Context) {
 
 	if err := c.userService.GetStaffRelatedTicket(ctx, &tickets, id, limit, offset, startDate, endDate); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Data = tickets
 	response.Message = config.GetMessageCode("GET_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *UserController) DeleteStaffs(ctx *gin.Context) {
@@ -166,25 +167,25 @@ func (c *UserController) DeleteStaffs(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(input); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := constants.Validate.Struct(input); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := c.userService.DeleteUsers(ctx, input.IDs); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Message = config.GetMessageCode("DELETE_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *UserController) AddStaff(ctx *gin.Context) {
@@ -193,7 +194,7 @@ func (c *UserController) AddStaff(ctx *gin.Context) {
 
 	if err := ctx.ShouldBind(newStaff); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -201,49 +202,49 @@ func (c *UserController) AddStaff(ctx *gin.Context) {
 	newStaff.ProfileImage, err = ctx.FormFile("profileImage")
 	if err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	newStaff.FrontSSNImage, err = ctx.FormFile("frontSSNImage")
 	if err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	newStaff.BackSSNImage, err = ctx.FormFile("backSSNImage")
 	if err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := constants.Validate.Struct(newStaff); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if messageCode, err := c.userService.CheckDuplicateData(ctx, newStaff.Email, newStaff.SSN, newStaff.Phone, newStaff.OldSSN); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	} else if messageCode != "" {
 		response.Message = messageCode
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := c.userService.CreateStaff(ctx, newStaff); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Message = config.GetMessageCode("CREATE_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *UserController) UpdateStaff(ctx *gin.Context) {
@@ -254,13 +255,13 @@ func (c *UserController) UpdateStaff(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := ctx.ShouldBind(editStaff); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -269,7 +270,7 @@ func (c *UserController) UpdateStaff(ctx *gin.Context) {
 	if err := constants.Validate.Struct(editStaff); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -277,24 +278,24 @@ func (c *UserController) UpdateStaff(ctx *gin.Context) {
 
 	if err := c.userService.GetStaffDetail(ctx, checkUser, staffID); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if checkUser.ID == 0 {
 		response.Message = config.GetMessageCode("USER_NOT_FOUND")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := c.userService.UpdateStaff(ctx, editStaff); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *UserController) GetCustomerList(ctx *gin.Context) {
@@ -318,13 +319,13 @@ func (c *UserController) GetCustomerList(ctx *gin.Context) {
 
 	if err := c.userService.GetCustomerList(ctx, &users, limit, offset); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Data = users
 	response.Message = config.GetMessageCode("GET_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *UserController) DeleteCustomers(ctx *gin.Context) {
@@ -337,25 +338,25 @@ func (c *UserController) DeleteCustomers(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(input); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := constants.Validate.Struct(input); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := c.userService.DeleteUsers(ctx, input.IDs); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Message = config.GetMessageCode("DELETE_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *UserController) GetCustomerDetail(ctx *gin.Context) {
@@ -365,7 +366,7 @@ func (c *UserController) GetCustomerDetail(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -373,13 +374,13 @@ func (c *UserController) GetCustomerDetail(ctx *gin.Context) {
 
 	if err := c.userService.GetCustomerDetail(ctx, user, id); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Data = user
 	response.Message = config.GetMessageCode("GET_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *UserController) GetCustomerContract(ctx *gin.Context) {
@@ -388,20 +389,20 @@ func (c *UserController) GetCustomerContract(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	contracts := []structs.Contract{}
 	if err := c.userService.GetCustomerContract(ctx, &contracts, id); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Data = contracts
 	response.Message = config.GetMessageCode("GET_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *UserController) GetCustomerTicket(ctx *gin.Context) {
@@ -410,20 +411,20 @@ func (c *UserController) GetCustomerTicket(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	tickets := []structs.SupportTicket{}
 	if err := c.userService.GetCustomerTicket(ctx, &tickets, id); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Data = tickets
 	response.Message = config.GetMessageCode("GET_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *UserController) AddCustomer(ctx *gin.Context) {
@@ -432,7 +433,7 @@ func (c *UserController) AddCustomer(ctx *gin.Context) {
 
 	if err := ctx.ShouldBind(newCustomer); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -440,47 +441,47 @@ func (c *UserController) AddCustomer(ctx *gin.Context) {
 	newCustomer.ProfileImage, err = ctx.FormFile("profileImage")
 	if err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	newCustomer.FrontSSNImage, err = ctx.FormFile("frontSSNImage")
 	if err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	newCustomer.BackSSNImage, err = ctx.FormFile("backSSNImage")
 	if err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := constants.Validate.Struct(newCustomer); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if messageCode, err := c.userService.CheckDuplicateData(ctx, newCustomer.Email, newCustomer.SSN, newCustomer.Phone, newCustomer.OldSSN); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	} else if messageCode != "" {
 		response.Message = messageCode
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := c.userService.CreateCustomer(ctx, newCustomer); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Message = config.GetMessageCode("CREATE_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }

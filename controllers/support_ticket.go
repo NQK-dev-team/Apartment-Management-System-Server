@@ -5,6 +5,7 @@ import (
 	"api/services"
 	"api/structs"
 	"api/utils"
+	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -52,13 +53,13 @@ func (c *SupportTicketController) GetSupportTickets(ctx *gin.Context) {
 
 	if err := c.supportTicketService.GetSupportTickets(ctx, &tickets, limit, offset, startDate, endDate); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Data = tickets
 	response.Message = config.GetMessageCode("GET_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *SupportTicketController) ApproveSupportTicket(ctx *gin.Context) {
@@ -68,25 +69,25 @@ func (c *SupportTicketController) ApproveSupportTicket(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	isAllowed, err := c.supportTicketService.ApproveSupportTicket(ctx, ticketID)
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if !isAllowed {
 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
-		ctx.JSON(403, response)
+		ctx.JSON(http.StatusForbidden, response)
 		return
 	}
 
 	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *SupportTicketController) DenySupportTicket(ctx *gin.Context) {
@@ -96,23 +97,23 @@ func (c *SupportTicketController) DenySupportTicket(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	isAllowed, err := c.supportTicketService.DenySupportTicket(ctx, ticketID)
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if !isAllowed {
 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
-		ctx.JSON(403, response)
+		ctx.JSON(http.StatusForbidden, response)
 		return
 	}
 
 	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }

@@ -4,6 +4,7 @@ import (
 	"api/config"
 	"api/services"
 	"api/utils"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,14 +27,14 @@ func (c *FileController) GetBuildingImage(ctx *gin.Context) {
 
 	if buildingID == "" || filename == "" {
 		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
-		ctx.JSON(404, response)
+		ctx.JSON(http.StatusNotFound, response)
 		return
 	}
 
 	// file := &structs.CustomFileStruct{}
 	// if err := utils.GetFile(file, "images/buildings/"+buildingID+"/"+filename); err != nil {
 	// 	response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
-	// 	ctx.JSON(404, response)
+	// 	ctx.JSON(http.StatusNotFound, response)
 	// 	return
 	// }
 
@@ -44,13 +45,13 @@ func (c *FileController) GetBuildingImage(ctx *gin.Context) {
 
 	// if _, err := io.Copy(ctx.Writer, bytes.NewReader(file.Content)); err != nil {
 	// 	response.Message = config.GetMessageCode("SYSTEM_ERROR")
-	// 	ctx.JSON(500, response)
+	// 	ctx.JSON(http.StatusInternalServerError, response)
 	// 	return
 	// }
 
 	if err := utils.GetFile(ctx, "images/buildings/"+buildingID+"/"+filename); err != nil {
 		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
-		ctx.JSON(404, response)
+		ctx.JSON(http.StatusNotFound, response)
 		return
 	}
 }
@@ -64,7 +65,7 @@ func (c *FileController) GetRoomImage(ctx *gin.Context) {
 
 	if buildingID == "" || roomNo == "" || filename == "" {
 		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
-		ctx.JSON(404, response)
+		ctx.JSON(http.StatusNotFound, response)
 		return
 	}
 
@@ -72,7 +73,7 @@ func (c *FileController) GetRoomImage(ctx *gin.Context) {
 	// fmt.Println("images/buildings/" + buildingID + "/rooms/" + roomNo + "/" + filename)
 	// if err := utils.GetFile(file, "images/buildings/"+buildingID+"/rooms/"+roomNo+"/"+filename); err != nil {
 	// 	response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
-	// 	ctx.JSON(404, response)
+	// 	ctx.JSON(http.StatusNotFound, response)
 	// 	return
 	// }
 
@@ -83,13 +84,13 @@ func (c *FileController) GetRoomImage(ctx *gin.Context) {
 
 	// if _, err := io.Copy(ctx.Writer, bytes.NewReader(file.Content)); err != nil {
 	// 	response.Message = config.GetMessageCode("SYSTEM_ERROR")
-	// 	ctx.JSON(500, response)
+	// 	ctx.JSON(http.StatusInternalServerError, response)
 	// 	return
 	// }
 
 	if err := utils.GetFile(ctx, "images/buildings/"+buildingID+"/rooms/"+roomNo+"/"+filename); err != nil {
 		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
-		ctx.JSON(404, response)
+		ctx.JSON(http.StatusNotFound, response)
 		return
 	}
 }
@@ -102,7 +103,7 @@ func (c *FileController) GetUserImage(ctx *gin.Context) {
 
 	if userID == "" || filename == "" {
 		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
-		ctx.JSON(404, response)
+		ctx.JSON(http.StatusNotFound, response)
 		return
 	}
 
@@ -110,7 +111,7 @@ func (c *FileController) GetUserImage(ctx *gin.Context) {
 	// fmt.Println("images/buildings/" + buildingID + "/rooms/" + roomNo + "/" + filename)
 	// if err := utils.GetFile(file, "images/buildings/"+buildingID+"/rooms/"+roomNo+"/"+filename); err != nil {
 	// 	response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
-	// 	ctx.JSON(404, response)
+	// 	ctx.JSON(http.StatusNotFound, response)
 	// 	return
 	// }
 
@@ -121,13 +122,13 @@ func (c *FileController) GetUserImage(ctx *gin.Context) {
 
 	// if _, err := io.Copy(ctx.Writer, bytes.NewReader(file.Content)); err != nil {
 	// 	response.Message = config.GetMessageCode("SYSTEM_ERROR")
-	// 	ctx.JSON(500, response)
+	// 	ctx.JSON(http.StatusInternalServerError, response)
 	// 	return
 	// }
 
 	if err := utils.GetFile(ctx, "images/users/"+userID+"/"+filename); err != nil {
 		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
-		ctx.JSON(404, response)
+		ctx.JSON(http.StatusNotFound, response)
 		return
 	}
 }

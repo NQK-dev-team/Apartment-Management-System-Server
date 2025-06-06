@@ -7,6 +7,7 @@ import (
 	"api/services"
 	"api/structs"
 	"api/utils"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -37,19 +38,19 @@ func (c *BuildingController) GetBuilding(ctx *gin.Context) {
 	isAuthenticated, err := c.buildingService.GetBuilding(ctx, building, getAll)
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if !isAuthenticated {
 		response.Message = config.GetMessageCode("INVALID_CREDENTIALS")
-		ctx.JSON(401, response)
+		ctx.JSON(http.StatusUnauthorized, response)
 		return
 	}
 
 	response.Data = building
 	response.Message = config.GetMessageCode("GET_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *BuildingController) CreateBuilding(ctx *gin.Context) {
@@ -58,7 +59,7 @@ func (c *BuildingController) CreateBuilding(ctx *gin.Context) {
 
 	if err := ctx.ShouldBind(building); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -84,18 +85,18 @@ func (c *BuildingController) CreateBuilding(ctx *gin.Context) {
 	if err := constants.Validate.Struct(building); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := c.buildingService.CreateBuilding(ctx, building); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Message = config.GetMessageCode("CREATE_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *BuildingController) GetBuildingDetail(ctx *gin.Context) {
@@ -110,25 +111,25 @@ func (c *BuildingController) GetBuildingDetail(ctx *gin.Context) {
 
 	if permission := c.buildingService.CheckManagerPermission(ctx, id); !permission {
 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
-		ctx.JSON(403, response)
+		ctx.JSON(http.StatusForbidden, response)
 		return
 	}
 
 	if err := c.buildingService.GetBuildingDetail(ctx, building, id); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if building.ID == 0 {
 		response.Message = config.GetMessageCode("DATA_NOT_FOUND")
-		ctx.JSON(404, response)
+		ctx.JSON(http.StatusNotFound, response)
 		return
 	}
 
 	response.Data = building
 	response.Message = config.GetMessageCode("GET_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *BuildingController) DeleteBuilding(ctx *gin.Context) {
@@ -141,12 +142,12 @@ func (c *BuildingController) DeleteBuilding(ctx *gin.Context) {
 
 	if err := c.buildingService.DeleteBuilding(ctx, id); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Message = config.GetMessageCode("DELETE_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *BuildingController) GetBuildingSchedule(ctx *gin.Context) {
@@ -156,7 +157,7 @@ func (c *BuildingController) GetBuildingSchedule(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -165,19 +166,19 @@ func (c *BuildingController) GetBuildingSchedule(ctx *gin.Context) {
 	isAuthenticated, err := c.buildingService.GetBuildingSchedule(ctx, buildingID, schedule)
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if !isAuthenticated {
 		response.Message = config.GetMessageCode("INVALID_CREDENTIALS")
-		ctx.JSON(401, response)
+		ctx.JSON(http.StatusUnauthorized, response)
 		return
 	}
 
 	response.Data = schedule
 	response.Message = config.GetMessageCode("GET_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *BuildingController) GetBuildingRoom(ctx *gin.Context) {
@@ -187,7 +188,7 @@ func (c *BuildingController) GetBuildingRoom(ctx *gin.Context) {
 
 	if err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -196,19 +197,19 @@ func (c *BuildingController) GetBuildingRoom(ctx *gin.Context) {
 	isAuthenticated, err := c.buildingService.GetBuildingRoom(ctx, buildingID, rooms)
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if !isAuthenticated {
 		response.Message = config.GetMessageCode("INVALID_CREDENTIALS")
-		ctx.JSON(401, response)
+		ctx.JSON(http.StatusUnauthorized, response)
 		return
 	}
 
 	response.Data = rooms
 	response.Message = config.GetMessageCode("GET_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
@@ -217,7 +218,7 @@ func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
 
 	if err := ctx.ShouldBind(building); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -226,7 +227,7 @@ func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
 
 		if err != nil {
 			response.Message = config.GetMessageCode("INVALID_PARAMETER")
-			ctx.JSON(400, response)
+			ctx.JSON(http.StatusBadRequest, response)
 			return
 		}
 
@@ -235,7 +236,7 @@ func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
 
 	if permission := c.buildingService.CheckManagerPermission(ctx, building.ID); !permission {
 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
-		ctx.JSON(403, response)
+		ctx.JSON(http.StatusForbidden, response)
 		return
 	}
 
@@ -271,7 +272,7 @@ func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
 		var oldRoomData models.RoomModel
 		if err := c.roomService.GetRoomDetail(ctx, &oldRoomData, room.ID); err != nil {
 			response.Message = config.GetMessageCode("SYSTEM_ERROR")
-			ctx.JSON(500, response)
+			ctx.JSON(http.StatusInternalServerError, response)
 			return
 		}
 
@@ -291,7 +292,7 @@ func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
 	var oldBuildingData models.BuildingModel
 	if err := c.buildingService.GetBuildingDetail(ctx, &oldBuildingData, building.ID); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
@@ -300,18 +301,18 @@ func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
 	if err := constants.Validate.Struct(building); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := c.buildingService.UpdateBuilding(ctx, building); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *BuildingController) GetRoomDetail(ctx *gin.Context) {
@@ -330,7 +331,7 @@ func (c *BuildingController) GetRoomDetail(ctx *gin.Context) {
 
 	if permission := c.buildingService.CheckManagerPermission(ctx, buildingID); !permission {
 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
-		ctx.JSON(403, response)
+		ctx.JSON(http.StatusForbidden, response)
 		return
 	}
 
@@ -340,25 +341,25 @@ func (c *BuildingController) GetRoomDetail(ctx *gin.Context) {
 
 	if err := c.buildingService.GetBuildingDetail(ctx, buildingModel, buildingID); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if err := c.roomService.GetRoomDetail(ctx, roomModel, roomID); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if err := c.roomService.GetContractByRoomIDAndBuildingID(ctx, contracts, roomID, buildingID); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if roomModel.ID == 0 || buildingModel.ID == 0 || roomModel.BuildingID != buildingModel.ID || roomModel.ID != roomID || buildingModel.ID != buildingID {
 		response.Message = config.GetMessageCode("DATA_NOT_FOUND")
-		ctx.JSON(404, response)
+		ctx.JSON(http.StatusNotFound, response)
 		return
 	}
 
@@ -382,7 +383,7 @@ func (c *BuildingController) GetRoomDetail(ctx *gin.Context) {
 
 	response.Data = room
 	response.Message = config.GetMessageCode("GET_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *BuildingController) UpdateRoomInformation(ctx *gin.Context) {
@@ -401,7 +402,7 @@ func (c *BuildingController) UpdateRoomInformation(ctx *gin.Context) {
 	oldRoomData := &models.RoomModel{}
 	if err := c.roomService.GetRoomByRoomIDAndBuildingID(ctx, oldRoomData, roomID, buildingID); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
@@ -413,24 +414,24 @@ func (c *BuildingController) UpdateRoomInformation(ctx *gin.Context) {
 
 	if err := ctx.ShouldBind(room); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if permission := c.buildingService.CheckManagerPermission(ctx, buildingID); !permission {
 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
-		ctx.JSON(403, response)
+		ctx.JSON(http.StatusForbidden, response)
 		return
 	}
 
 	if err := c.roomService.UpdateRoomByRoomIDAndBuildingID(ctx, oldRoomData, room, roomID, buildingID); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *BuildingController) GetRoomContract(ctx *gin.Context) {
@@ -448,7 +449,7 @@ func (c *BuildingController) GetRoomContract(ctx *gin.Context) {
 
 	if permission := c.buildingService.CheckManagerPermission(ctx, buildingID); !permission {
 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
-		ctx.JSON(403, response)
+		ctx.JSON(http.StatusForbidden, response)
 		return
 	}
 
@@ -456,14 +457,14 @@ func (c *BuildingController) GetRoomContract(ctx *gin.Context) {
 
 	if err := c.roomService.GetContractByRoomIDAndBuildingID(ctx, contracts, roomID, buildingID); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Data = contracts
 	response.Message = config.GetMessageCode("GET_SUCCESS")
 
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *BuildingController) GetRoomTicket(ctx *gin.Context) {
@@ -492,7 +493,7 @@ func (c *BuildingController) GetRoomTicket(ctx *gin.Context) {
 
 	if permission := c.buildingService.CheckManagerPermission(ctx, buildingID); !permission {
 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
-		ctx.JSON(403, response)
+		ctx.JSON(http.StatusForbidden, response)
 		return
 	}
 
@@ -500,14 +501,14 @@ func (c *BuildingController) GetRoomTicket(ctx *gin.Context) {
 
 	if err := c.roomService.GetTicketByRoomIDAndBuildingID(ctx, roomID, buildingID, startDate, endDate, &tickets); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	response.Data = tickets
 	response.Message = config.GetMessageCode("GET_SUCCESS")
 
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *BuildingController) DeleteRoomContract(ctx *gin.Context) {
@@ -531,36 +532,36 @@ func (c *BuildingController) DeleteRoomContract(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(input); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if err := constants.Validate.Struct(input); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = err.Error()
-		ctx.JSON(400, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	if permission := c.buildingService.CheckManagerPermission(ctx, buildingID); !permission {
 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
-		ctx.JSON(403, response)
+		ctx.JSON(http.StatusForbidden, response)
 		return
 	}
 
 	validID, err := c.contractService.DeleteContract(ctx, input.IDs, roomID, buildingID)
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(500, response)
+		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	if !validID {
 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
-		ctx.JSON(403, response)
+		ctx.JSON(http.StatusForbidden, response)
 		return
 	}
 
 	response.Message = config.GetMessageCode("DELETE_SUCCESS")
-	ctx.JSON(200, response)
+	ctx.JSON(http.StatusOK, response)
 }

@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"api/config"
+	"api/constants"
 	"api/models"
 	"api/structs"
 	"errors"
@@ -147,7 +148,7 @@ func (r *ContractRepository) GetDeletableContracts(ctx *gin.Context, contracts *
 	if managerID == nil {
 		if err := config.DB.Model(&models.ContractModel{}).
 			Joins("INNER JOIN room ON room.id = contract.room_id").
-			Where("contract.id in ? and contract.status in (3,4) and room_id = ? and building_id = ?", IDs, roomID, buildingID).Find(contracts).Error; err != nil {
+			Where("contract.id in ? and contract.status in ? and room_id = ? and building_id = ?", IDs, []int{constants.Common.ContractStatus.CANCELLED, constants.Common.ContractStatus.WAITING_FOR_SIGNATURE}, roomID, buildingID).Find(contracts).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil
 			}
@@ -156,7 +157,7 @@ func (r *ContractRepository) GetDeletableContracts(ctx *gin.Context, contracts *
 	} else {
 		if err := config.DB.Model(&models.ContractModel{}).
 			Joins("INNER JOIN room ON room.id = contract.room_id").
-			Where("contract.id in ? and contract.status in (3,4) and creator_id = ? and room_id = ? and building_id = ?", IDs, *managerID, roomID, buildingID).Find(contracts).Error; err != nil {
+			Where("contract.id in ? and contract.status in ? and creator_id = ? and room_id = ? and building_id = ?", IDs, []int{constants.Common.ContractStatus.CANCELLED, constants.Common.ContractStatus.WAITING_FOR_SIGNATURE}, *managerID, roomID, buildingID).Find(contracts).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil
 			}

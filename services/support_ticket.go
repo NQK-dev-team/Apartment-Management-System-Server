@@ -113,7 +113,7 @@ func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID i
 			Bool:  true,
 			Valid: true,
 		}
-		ticket.Status = 1
+		ticket.Status = constants.Common.SupportTicketStatus.PENDING
 	} else {
 		if ticket.OwnerID != 0 || ticket.ManagerID == 0 {
 			return false, nil
@@ -128,7 +128,7 @@ func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID i
 			Bool:  true,
 			Valid: true,
 		}
-		ticket.Status = 2
+		ticket.Status = constants.Common.SupportTicketStatus.APPROVED
 	}
 
 	err = config.DB.Transaction(func(tx *gorm.DB) error {
@@ -208,7 +208,7 @@ func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int6
 			Valid: true,
 		}
 	}
-	ticket.Status = 3
+	ticket.Status = constants.Common.SupportTicketStatus.REJECTED
 
 	err = config.DB.Transaction(func(tx *gorm.DB) error {
 		if err := s.supportTicketRepository.Update(ctx, tx, ticket, ticketID); err != nil {
