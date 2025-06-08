@@ -27,6 +27,41 @@ func NewContractService() *ContractService {
 	}
 }
 
+func (s *ContractService) GetContractList(ctx *gin.Context, contracts *[]structs.Contract, limit int64, offset int64) error {
+	role, exists := ctx.Get("role")
+
+	if !exists {
+		return errors.New("role not found")
+	}
+
+	if role.(string) == constants.Roles.Manager || role.(string) == constants.Roles.Customer {
+		jwt, exists := ctx.Get("jwt")
+
+		if !exists {
+			return errors.New("jwt not found")
+		}
+
+		token, err := utils.ValidateJWTToken(jwt.(string))
+
+		if err != nil {
+			return err
+		}
+
+		claim := &structs.JTWClaim{}
+
+		utils.ExtractJWTClaim(token, claim)
+
+		if role.(string) == constants.Roles.Manager {
+			return s.contractRepository.GetContractsByManagerID2(ctx, contracts, claim.UserID, limit, offset)
+		} else {
+			return s.contractRepository.GetContractsByCustomerID2(ctx, contracts, claim.UserID, limit, offset)
+		}
+
+	}
+
+	return s.contractRepository.GetContracts(ctx, contracts, limit, offset)
+}
+
 func (s *ContractService) DeleteContract(ctx *gin.Context, IDs []int64, roomID int64, buildingID int64) (bool, error) {
 	role, exists := ctx.Get("role")
 
@@ -62,6 +97,53 @@ func (s *ContractService) DeleteContract(ctx *gin.Context, IDs []int64, roomID i
 	} else if role.(string) == constants.Roles.Owner {
 		contracts := []models.ContractModel{}
 		if err := s.contractRepository.GetDeletableContracts(ctx, &contracts, IDs, nil, roomID, buildingID); err != nil {
+			return true, err
+		}
+
+		if len(contracts) != len(IDs) {
+			return false, nil
+		}
+	}
+	return true, config.DB.Transaction(func(tx *gorm.DB) error {
+		return s.contractRepository.Delete(ctx, tx, IDs)
+	})
+}
+
+func (s *ContractService) DeleteContract2(ctx *gin.Context, IDs []int64) (bool, error) {
+	role, exists := ctx.Get("role")
+
+	if !exists {
+		return true, errors.New("role not found")
+	}
+
+	if role.(string) == constants.Roles.Manager {
+		jwt, exists := ctx.Get("jwt")
+
+		if !exists {
+			return true, errors.New("jwt not found")
+		}
+
+		token, err := utils.ValidateJWTToken(jwt.(string))
+
+		if err != nil {
+			return true, err
+		}
+
+		claim := &structs.JTWClaim{}
+
+		utils.ExtractJWTClaim(token, claim)
+
+		contracts := []models.ContractModel{}
+		if err := s.contractRepository.GetDeletableContracts2(ctx, &contracts, IDs, &claim.UserID); err != nil {
+			return true, err
+		}
+
+		if len(contracts) != len(IDs) {
+			return false, nil
+		}
+	} else if role.(string) == constants.Roles.Owner {
+		contracts := []models.ContractModel{}
+		if err := s.contractRepository.GetDeletableContracts2(ctx, &contracts, IDs, nil); err != nil {
 			return true, err
 		}
 
