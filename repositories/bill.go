@@ -27,6 +27,15 @@ func (r *BillRepository) GetById(ctx *gin.Context, bill *models.BillModel, id in
 	return nil
 }
 
+func (r *BillRepository) GetByContractId(ctx *gin.Context, bills *[]models.BillModel, contractID int64) error {
+	if err := config.DB.Where("contract_id = ?", contractID).Preload("ExtraPayments").Find(bills).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+	}
+	return nil
+}
+
 func (r *BillRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 	now := time.Now()
 	userID := ctx.GetInt64("userID")

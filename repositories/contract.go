@@ -20,7 +20,7 @@ func NewContractRepository() *ContractRepository {
 }
 
 func (r *ContractRepository) GetById(ctx *gin.Context, contract *models.ContractModel, id int64) error {
-	if err := config.DB.Where("id = ?", id).Preload("Files").Preload("Bills").Preload("SupportTickets").First(contract).Error; err != nil {
+	if err := config.DB.Where("id = ?", id).Preload("Files").Preload("SupportTickets").First(contract).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -30,7 +30,7 @@ func (r *ContractRepository) GetById(ctx *gin.Context, contract *models.Contract
 }
 
 func (r *ContractRepository) GetContractByIDs(ctx *gin.Context, contract *[]models.ContractModel, id []int64) error {
-	if err := config.DB.Where("id in ?", id).Preload("Bills").Preload("SupportTickets").Find(contract).Error; err != nil {
+	if err := config.DB.Where("id in ?", id).Preload("SupportTickets").Find(contract).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -58,6 +58,35 @@ func (r *ContractRepository) GetContractsByManagerID(ctx *gin.Context, contracts
 		}
 		return err
 	}
+	return nil
+}
+
+func (r *ContractRepository) GetContractByID(ctx *gin.Context, contract *structs.Contract, id int64) error {
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").Preload("Files").
+		Where("id = ?", id).
+		Find(contract).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+
+	if err := config.DB.Raw("SELECT room.no AS room_no FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*contract).ID).Scan(&(*contract).RoomNo).Error; err != nil {
+		return err
+	}
+
+	if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*contract).ID).Scan(&(*contract).RoomFloor).Error; err != nil {
+		return err
+	}
+
+	if err := config.DB.Raw("SELECT building.name AS building_name FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*contract).ID).Scan(&(*contract).BuildingName).Error; err != nil {
+		return err
+	}
+
+	if err := config.DB.Raw("SELECT building.address AS building_address FROM building INNER JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ?", (*contract).ID).Scan(&(*contract).BuildingAddress).Error; err != nil {
+		return err
+	}
+
 	return nil
 }
 

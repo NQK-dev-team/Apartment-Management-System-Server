@@ -13,6 +13,7 @@ func InitContractRoutes(router *gin.RouterGroup) {
 	authorizationMiddle := middlewares.NewAuthorizationMiddleware()
 
 	contractRoutes.GET("/", contractController.GetContractList)
+	contractRoutes.GET("/:id", contractController.GetContractDetail)
 
 	contractRoutes.Use(authorizationMiddle.AuthManagerMiddleware)
 	{

@@ -62,6 +62,52 @@ func (s *ContractService) GetContractList(ctx *gin.Context, contracts *[]structs
 	return s.contractRepository.GetContracts(ctx, contracts, limit, offset)
 }
 
+func (s *ContractService) GetContractDetail(ctx *gin.Context, contract *structs.Contract, id int64) (bool, error) {
+	if err := s.contractRepository.GetContractByID(ctx, contract, id); err != nil {
+		return false, err
+	}
+
+	if contract.ID == 0 {
+		return true, nil
+	}
+
+	if err := s.billRepository.GetByContractId(ctx, &contract.Bills, contract.ID); err != nil {
+		return false, err
+	}
+
+	role, exists := ctx.Get("role")
+
+	if !exists {
+		return false, errors.New("role not found")
+	}
+
+	if role.(string) == constants.Roles.Manager || role.(string) == constants.Roles.Customer {
+		jwt, exists := ctx.Get("jwt")
+
+		if !exists {
+			return false, errors.New("jwt not found")
+		}
+
+		token, err := utils.ValidateJWTToken(jwt.(string))
+
+		if err != nil {
+			return false, err
+		}
+
+		claim := &structs.JTWClaim{}
+
+		utils.ExtractJWTClaim(token, claim)
+
+		if role.(string) == constants.Roles.Manager {
+			return contract.CreatorID == claim.UserID, nil
+		} else {
+			return contract.HouseholderID == claim.UserID, nil
+		}
+	}
+
+	return true, nil
+}
+
 func (s *ContractService) DeleteContract(ctx *gin.Context, IDs []int64, roomID int64, buildingID int64) (bool, error) {
 	role, exists := ctx.Get("role")
 
