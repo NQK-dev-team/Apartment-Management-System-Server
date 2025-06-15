@@ -30,7 +30,7 @@ func (r *BuildingRepository) Get(ctx *gin.Context, building *[]models.BuildingMo
 func (r *BuildingRepository) GetBuildingBaseOnSchedule(ctx *gin.Context, building *[]models.BuildingModel, userID int64) error {
 	if err := config.DB.Model(&models.BuildingModel{}).Preload("Images").
 		Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id").
-		Where("manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ? AND manager_schedule.deleted_at IS NULL", userID).
+		Where("manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ? AND building.deleted_at IS  AND manager_schedule.deleted_at IS NULL", userID).
 		Find(building).Order("id asc").Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
@@ -41,7 +41,7 @@ func (r *BuildingRepository) GetBuildingBaseOnSchedule(ctx *gin.Context, buildin
 }
 
 func (r *BuildingRepository) GetById(ctx *gin.Context, building *models.BuildingModel, id int64) error {
-	if err := config.DB.Where("id = ?", id).Preload("Rooms").Preload("Rooms.Images").Preload("Images").Preload("Services").First(building).Error; err != nil {
+	if err := config.DB.Model(&models.BuildingModel{}).Where("id = ?", id).Preload("Rooms").Preload("Rooms.Images").Preload("Images").Preload("Services").First(building).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -52,7 +52,7 @@ func (r *BuildingRepository) GetById(ctx *gin.Context, building *models.Building
 
 func (r *BuildingRepository) GetNewImageNo(ctx *gin.Context, buildingID int64) (int, error) {
 	lastestImage := models.BuildingImageModel{}
-	if err := config.DB.Where("building_id = ?", buildingID).Order("no desc").Unscoped().First(&lastestImage).Error; err != nil {
+	if err := config.DB.Model(&models.BuildingImageModel{}).Where("building_id = ?", buildingID).Order("no desc").Unscoped().First(&lastestImage).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return 0, nil
 		}
@@ -186,7 +186,9 @@ func (r *BuildingRepository) EditService(ctx *gin.Context, service *models.Build
 }
 
 func (r *BuildingRepository) GetServiceByID(ctx *gin.Context, service *models.BuildingServiceModel, id int64) error {
-	if err := config.DB.Where("id = ?", id).First(service).Error; err != nil {
+	if err := config.DB.Model(&models.BuildingServiceModel{}).
+		Joins("JOIN building ON building.id = building_service.building_id AND building.deleted_at IS NULL").
+		Where("building_service.id = ? AND building_service.deleted_at IS NULL", id).First(service).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -196,9 +198,9 @@ func (r *BuildingRepository) GetServiceByID(ctx *gin.Context, service *models.Bu
 }
 
 func (r *BuildingRepository) GetBuildingSchedule(ctx *gin.Context, buildingID int64, schedule *[]models.ManagerScheduleModel) error {
-	if err := config.DB.Preload("Manager").Preload("Building").
+	if err := config.DB.Model(&models.ManagerScheduleModel{}).Preload("Manager").Preload("Building").
 		Joins("JOIN building on building.id = manager_schedule.building_id").
-		Where("building_id = ? AND building.deleted_at IS NULL", buildingID).Find(schedule).Error; err != nil {
+		Where("building_id = ? AND building.deleted_at IS NULL AND manager_schedule.deleted_at IS NULL", buildingID).Find(schedule).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -208,7 +210,7 @@ func (r *BuildingRepository) GetBuildingSchedule(ctx *gin.Context, buildingID in
 }
 
 func (r *BuildingRepository) GetBuildingRoom(ctx *gin.Context, buildingID int64, rooms *[]models.RoomModel) error {
-	if err := config.DB.Where("building_id = ?", buildingID).Find(rooms).Error; err != nil {
+	if err := config.DB.Model(&models.RoomModel{}).Where("building_id = ?", buildingID).Find(rooms).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -218,9 +220,9 @@ func (r *BuildingRepository) GetBuildingRoom(ctx *gin.Context, buildingID int64,
 }
 
 func (r *BuildingRepository) GetManagerBuildingSchedule(ctx *gin.Context, buildingID int64, schedule *[]models.ManagerScheduleModel, mangerID int64) error {
-	if err := config.DB.Preload("Manager").Preload("Building").
+	if err := config.DB.Model(&models.ManagerScheduleModel{}).Preload("Manager").Preload("Building").
 		Joins("JOIN building on building.id = manager_schedule.building_id").
-		Where("building_id = ? AND manager_id = ? AND building.deleted_at IS NULL", buildingID, mangerID).Find(schedule).Error; err != nil {
+		Where("building_id = ? AND manager_id = ? AND building.deleted_at IS NULL AND manager_schedule.deleted_at IS NULL", buildingID, mangerID).Find(schedule).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -230,7 +232,9 @@ func (r *BuildingRepository) GetManagerBuildingSchedule(ctx *gin.Context, buildi
 }
 
 func (r *BuildingRepository) GetServicesByIDs(ctx *gin.Context, services *[]models.BuildingServiceModel, IDs []int64) error {
-	if err := config.DB.Where("id in ?", IDs).Find(services).Error; err != nil {
+	if err := config.DB.Model(&models.BuildingServiceModel{}).
+		Joins("JOIN building ON building.id = building_service.building_id AND building.deleted_at IS NULL").
+		Where("building_service.id in ? AND building_service.deleted_at IS NULL", IDs).Find(services).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}

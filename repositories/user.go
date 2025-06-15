@@ -19,7 +19,7 @@ func NewUserRepository() *UserRepository {
 
 func (r *UserRepository) GetNewID(ctx *gin.Context) (int64, error) {
 	lastestUser := models.UserModel{}
-	if err := config.DB.Order("id desc").Unscoped().First(&lastestUser).Error; err != nil {
+	if err := config.DB.Model(&models.UserModel{}).Order("id desc").Unscoped().First(&lastestUser).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return 0, nil
 		}
@@ -29,7 +29,7 @@ func (r *UserRepository) GetNewID(ctx *gin.Context) (int64, error) {
 }
 
 func (r *UserRepository) GetByID(ctx *gin.Context, user *models.UserModel, id int64) error {
-	if err := config.DB.Where("id = ?", id).First(user).Error; err != nil {
+	if err := config.DB.Model(&models.UserModel{}).Where("id = ?", id).First(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -40,7 +40,7 @@ func (r *UserRepository) GetByID(ctx *gin.Context, user *models.UserModel, id in
 }
 
 func (r *UserRepository) GetByIDs(ctx *gin.Context, user *[]models.UserModel, id []int64) error {
-	if err := config.DB.Where("id IN ?", id).Find(user).Error; err != nil {
+	if err := config.DB.Model(&models.UserModel{}).Where("id IN ?", id).Find(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -51,7 +51,7 @@ func (r *UserRepository) GetByIDs(ctx *gin.Context, user *[]models.UserModel, id
 }
 
 func (r *UserRepository) GetBySSN(ctx *gin.Context, user *models.UserModel, ssn string) error {
-	if err := config.DB.Where("ssn = ?", ssn).First(user).Error; err != nil {
+	if err := config.DB.Model(&models.UserModel{}).Where("ssn = ?", ssn).First(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -62,7 +62,7 @@ func (r *UserRepository) GetBySSN(ctx *gin.Context, user *models.UserModel, ssn 
 }
 
 func (r *UserRepository) GetByOldSSN(ctx *gin.Context, user *models.UserModel, ssn string) error {
-	if err := config.DB.Where("old_ssn = ?", ssn).First(user).Error; err != nil {
+	if err := config.DB.Model(&models.UserModel{}).Where("old_ssn = ?", ssn).First(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -73,7 +73,7 @@ func (r *UserRepository) GetByOldSSN(ctx *gin.Context, user *models.UserModel, s
 }
 
 func (r *UserRepository) GetByPhone(ctx *gin.Context, user *models.UserModel, phone string) error {
-	if err := config.DB.Where("phone = ?", phone).First(user).Error; err != nil {
+	if err := config.DB.Model(&models.UserModel{}).Where("phone = ?", phone).First(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -84,7 +84,7 @@ func (r *UserRepository) GetByPhone(ctx *gin.Context, user *models.UserModel, ph
 }
 
 func (r *UserRepository) GetByEmail(ctx *gin.Context, user *models.UserModel, email string) error {
-	if err := config.DB.Where("email = ?", email).First(user).Error; err != nil {
+	if err := config.DB.Model(&models.UserModel{}).Where("email = ?", email).First(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -95,7 +95,7 @@ func (r *UserRepository) GetByEmail(ctx *gin.Context, user *models.UserModel, em
 }
 
 func (r *UserRepository) Get(ctx *gin.Context, user *[]models.UserModel) error {
-	if err := config.DB.Find(user).Error; err != nil {
+	if err := config.DB.Model(&models.UserModel{}).Find(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -159,7 +159,7 @@ func (r *UserRepository) GetStaffList(ctx *gin.Context, users *[]models.UserMode
 }
 
 func (r *UserRepository) GetStaffDetail(ctx *gin.Context, user *models.UserModel, id int64) error {
-	if err := config.DB.Where("id = ? AND is_owner = false AND is_manager = true AND is_customer = false", id).First(user).Error; err != nil {
+	if err := config.DB.Model(&models.UserModel{}).Where("id = ? AND is_owner = false AND is_manager = true AND is_customer = false", id).First(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -169,7 +169,7 @@ func (r *UserRepository) GetStaffDetail(ctx *gin.Context, user *models.UserModel
 }
 
 func (r *UserRepository) GetStaffSchedule(ctx *gin.Context, schedules *[]models.ManagerScheduleModel, staffID int64) error {
-	if err := config.DB.Preload("Building").Preload("Manager").Where("manager_id = ?", staffID).Find(schedules).Error; err != nil {
+	if err := config.DB.Model(&models.ManagerScheduleModel{}).Preload("Building").Preload("Manager").Where("manager_id = ?", staffID).Find(schedules).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -189,7 +189,7 @@ func (r *UserRepository) GetCustomerList(ctx *gin.Context, users *[]models.UserM
 }
 
 func (r *UserRepository) GetCustomerDetail(ctx *gin.Context, user *models.UserModel, id int64) error {
-	if err := config.DB.Where("id = ? AND is_owner = false AND is_manager = false AND is_customer = true", id).First(user).Error; err != nil {
+	if err := config.DB.Model(&models.UserModel{}).Where("id = ? AND is_owner = false AND is_manager = false AND is_customer = true", id).First(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
