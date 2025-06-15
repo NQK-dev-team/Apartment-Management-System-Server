@@ -36,14 +36,22 @@ type importTypeStruct struct {
 	ADD_BILLS     int
 }
 
+type billStatusStruct struct {
+	UN_PAID    int
+	PAID       int
+	OVERDUE    int
+	PROCESSING int
+}
+
 var Common = struct {
 	SupportTicketStatus supportTicketStatusStruct
 	ContractStatus      contractStatusStruct
 	RoomStatus          roomStatusStruct
 	UserGender          userGenderStruct
 	ImportType          importTypeStruct
+	BillStatus          billStatusStruct
 	EmailTokenLimit     int
-	NewPasswordLength int
+	NewPasswordLength   int
 }{
 	SupportTicketStatus: supportTicketStatusStruct{
 		PENDING:  1,
@@ -76,6 +84,12 @@ var Common = struct {
 		ADD_CUSTOMERS: 4,
 		ADD_BILLS:     5,
 	},
-	EmailTokenLimit: 5,
+	BillStatus: billStatusStruct{
+		UN_PAID:    1,
+		PAID:       2,
+		OVERDUE:    3,
+		PROCESSING: 4,
+	},
+	EmailTokenLimit:   5,
 	NewPasswordLength: 8,
 }

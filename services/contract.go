@@ -99,7 +99,8 @@ func (s *ContractService) GetContractDetail(ctx *gin.Context, contract *structs.
 		utils.ExtractJWTClaim(token, claim)
 
 		if role.(string) == constants.Roles.Manager {
-			return contract.CreatorID == claim.UserID, nil
+			// return contract.CreatorID == claim.UserID, nil
+			return true, nil
 		} else {
 			return contract.HouseholderID == claim.UserID, nil
 		}

@@ -1,7 +1,16 @@
 package services
 
 import (
+	"api/config"
+	"api/constants"
+	"api/models"
 	"api/repositories"
+	"api/structs"
+	"api/utils"
+	"errors"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type BillService struct {
@@ -12,4 +21,51 @@ func NewBillService() *BillService {
 	return &BillService{
 		billRepository: repositories.NewBillRepository(),
 	}
+}
+
+func (s *BillService) DeleteBill(ctx *gin.Context, IDs []int64) (bool, error) {
+	role, exists := ctx.Get("role")
+
+	if !exists {
+		return true, errors.New("role not found")
+	}
+
+	if role.(string) == constants.Roles.Manager {
+		jwt, exists := ctx.Get("jwt")
+
+		if !exists {
+			return true, errors.New("jwt not found")
+		}
+
+		token, err := utils.ValidateJWTToken(jwt.(string))
+
+		if err != nil {
+			return true, err
+		}
+
+		claim := &structs.JTWClaim{}
+
+		utils.ExtractJWTClaim(token, claim)
+
+		bills := []models.BillModel{}
+		if err := s.billRepository.GetDeletableBills(ctx, &bills, IDs, &claim.UserID); err != nil {
+			return true, err
+		}
+
+		if len(bills) != len(IDs) {
+			return false, nil
+		}
+	} else if role.(string) == constants.Roles.Owner {
+		bills := []models.BillModel{}
+		if err := s.billRepository.GetDeletableBills(ctx, &bills, IDs, nil); err != nil {
+			return true, err
+		}
+
+		if len(bills) != len(IDs) {
+			return false, nil
+		}
+	}
+	return true, config.DB.Transaction(func(tx *gorm.DB) error {
+		return s.billRepository.Delete(ctx, tx, IDs)
+	})
 }

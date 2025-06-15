@@ -90,6 +90,17 @@ func (r *ContractRepository) GetContractByID(ctx *gin.Context, contract *structs
 		return err
 	}
 
+	if err := config.DB.Model(&models.RoomResidentModel{}).Preload("UserAccount").
+		Joins("JOIN room_resident_list ON room_resident_list.resident_id = room_resident.ID").
+		Where("room_resident_list.contract_id = ? AND room_resident.deleted_at IS NULL", (*contract).ID).
+		Find(&(*contract).Residents).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			(*contract).Residents = []models.RoomResidentModel{}
+		} else {
+			return err
+		}
+	}
+
 	return nil
 }
 
