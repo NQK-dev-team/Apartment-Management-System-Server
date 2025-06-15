@@ -203,6 +203,10 @@ func (s *ContractService) DeleteContract2(ctx *gin.Context, IDs []int64) (bool, 
 	})
 }
 
+func (s *ContractService) CheckManagerContractPermission(ctx *gin.Context, managerID int64, contractID int64) (bool, error) {
+	return true, nil
+}
+
 // func (s *ContractService) DeleteWithoutTransaction(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 // 	contracts := []models.ContractModel{}
 // 	if err := s.contractRepository.GetContractByIDs(ctx, &contracts, id); err != nil {
