@@ -34,7 +34,11 @@ func (r *SupportTicketRepository) GetTicketBuilding(ctx *gin.Context, ticketID i
 }
 
 func (r *SupportTicketRepository) GetById(ctx *gin.Context, ticket *models.SupportTicketModel, id int64) error {
-	if err := config.DB.Model(&models.SupportTicketModel{}).Where("id = ? AND deleted_at IS NULL", id).Preload("Files").First(ticket).Error; err != nil {
+	if err := config.DB.Model(&models.SupportTicketModel{}).
+		Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
+		Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
+		Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
+		Where("support_ticket.id = ? AND support_ticket.deleted_at IS NULL", id).Preload("Files").First(ticket).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -46,8 +50,11 @@ func (r *SupportTicketRepository) GetById(ctx *gin.Context, ticket *models.Suppo
 func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[]structs.SupportTicket, limit int64, offset int64, startDate string, endDate string, managerID *int64) error {
 	if managerID == nil {
 		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
-			Where("support_ticket.created_at::timestamp::date >= ? AND support_ticket.created_at::timestamp::date <= ? AND manager_id IS NOT NULL", startDate, endDate).
-			Limit(int(limit)).Offset(int(offset)).Order("support_ticket.created_at desc, owner_resolve_time desc, manager_resolve_time desc").
+			Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
+			Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
+			Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
+			Where("support_ticket.created_at::timestamp::date >= ? AND support_ticket.created_at::timestamp::date <= ? AND support_ticket.manager_id IS NOT NULL", startDate, endDate).
+			Limit(int(limit)).Offset(int(offset)).Order("support_ticket.created_at desc, support_ticket.owner_resolve_time desc, support_ticket.manager_resolve_time desc").
 			Find(tickets).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil
@@ -63,7 +70,7 @@ func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[
 				config.DB.Model(&models.BuildingModel{}).
 					Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id AND manager_schedule.deleted_at IS NULL").
 					Where("manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ? AND building.deleted_at IS NULL", *managerID).Select("building.id")).
-			Limit(int(limit)).Offset(int(offset)).Order("support_ticket.created_at desc, owner_resolve_time desc, manager_resolve_time desc").
+			Limit(int(limit)).Offset(int(offset)).Order("support_ticket.created_at desc, support_ticket.owner_resolve_time desc, support_ticket.manager_resolve_time desc").
 			Find(tickets).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil
@@ -91,9 +98,11 @@ func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[
 
 func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, tickets *[]structs.SupportTicket, managerID int64, limit int64, offset int64, startDate string, endDate string) error {
 	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
-		// Joins("JOIN support_ticket ON support_ticket.id = manager_resolve_support_ticket.support_ticket_id").
-		Where("manager_id = ? AND created_at::timestamp::date >= ? AND created_at::timestamp::date <= ? AND support_ticket.deleted_at IS NULL", managerID, startDate, endDate).
-		Limit(int(limit)).Offset(int(offset)).Order("created_at desc, owner_resolve_time desc, manager_resolve_time desc").
+		Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
+		Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
+		Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
+		Where("support_ticket.manager_id = ? AND support_ticket.created_at::timestamp::date >= ? AND support_ticket.created_at::timestamp::date <= ? AND support_ticket.deleted_at IS NULL", managerID, startDate, endDate).
+		Limit(int(limit)).Offset(int(offset)).Order("support_ticket.created_at desc, support_ticket.owner_resolve_time desc, support_ticket.manager_resolve_time desc").
 		Find(tickets).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
@@ -120,8 +129,11 @@ func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, ticket
 
 func (r *SupportTicketRepository) GetTicketsByCustomerID(ctx *gin.Context, tickets *[]structs.SupportTicket, customerID int64) error {
 	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
-		Where("customer_id = ? AND support_ticket.deleted_at IS NULL", customerID).
-		Order("created_at desc, owner_resolve_time desc, manager_resolve_time desc").
+		Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
+		Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
+		Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
+		Where("support_ticket.customer_id = ? AND support_ticket.deleted_at IS NULL", customerID).
+		Order("support_ticket.created_at desc, support_ticket.owner_resolve_time desc, support_ticket.manager_resolve_time desc").
 		Find(tickets).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil

@@ -71,6 +71,9 @@ func (r *BillRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int64) error
 func (r *BillRepository) GetDeletableBills(ctx *gin.Context, bills *[]models.BillModel, IDs []int64, managerID *int64) error {
 	if managerID == nil {
 		if err := config.DB.Model(&models.BillModel{}).
+			Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
+			Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
+			Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 			Where("bill.id in ? and bill.status in ? AND bill.deleted_at IS NULL", IDs, []int{constants.Common.BillStatus.UN_PAID, constants.Common.BillStatus.OVERDUE}).Find(bills).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil
@@ -78,12 +81,20 @@ func (r *BillRepository) GetDeletableBills(ctx *gin.Context, bills *[]models.Bil
 			return err
 		}
 	} else {
-		if err := config.DB.Model(&models.BillModel{}).
-			Joins("JOIN contracts ON contracts.id = bill.contract_id AND contracts.deleted_at IS NULL").
+		query1 := config.DB.Model(&models.BillModel{}).
+			Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
+			Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
+			Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
+			Where("bill.id in ? and bill.status in ? and contract.creator_id = ? AND bill.deleted_at IS NULL", IDs, []int{constants.Common.BillStatus.UN_PAID, constants.Common.BillStatus.OVERDUE}, *managerID)
+		query2 := config.DB.Model(&models.BillModel{}).
+			Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
 			Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 			Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 			Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id AND manager_schedule.deleted_at IS NULL").
-			Where("bill.id in ? and bill.status in ? AND bill.deleted_at IS NULL AND manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ?", IDs, []int{constants.Common.BillStatus.UN_PAID, constants.Common.BillStatus.OVERDUE}, *managerID).Find(bills).Error; err != nil {
+			Where("bill.id in ? and bill.status in ? and contract.creator_id != ? AND bill.deleted_at IS NULL AND manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ?", IDs, []int{constants.Common.BillStatus.UN_PAID, constants.Common.BillStatus.OVERDUE}, *managerID, *managerID)
+
+		if err := config.DB.Model(&models.BillModel{}).Table("((?) UNION ALL (?)) as all_bills", query1, query2).
+			Find(bills).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil
 			}
