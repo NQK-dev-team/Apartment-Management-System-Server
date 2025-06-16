@@ -25,8 +25,8 @@ type Contract struct {
 	// SupportTickets []SupportTicketModel `json:"supportTickets" gorm:"foreignKey:contract_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	// BuildingID    int64     `json:"buildingID" gorm:"column:building_id;not null;"`
 	// Room          RoomModel           `json:"room" gorm:"foreignKey:room_id,building_id;references:id,building_id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	BuildingName    string `json:"buildingName" gorm:"-"`
-	BuildingAddress string `json:"buildingAddress" gorm:"-"`
-	RoomNo          int    `json:"roomNo" gorm:"-"`
-	RoomFloor       int    `json:"roomFloor" gorm:"-"`
+	BuildingName    string `json:"buildingName" gorm:"building_name"`
+	BuildingAddress string `json:"buildingAddress" gorm:"building_address"`
+	RoomNo          int    `json:"roomNo" gorm:"room_no"`
+	RoomFloor       int    `json:"roomFloor" gorm:"room_floor"`
 }

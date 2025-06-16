@@ -49,7 +49,7 @@ func (r *SupportTicketRepository) GetById(ctx *gin.Context, ticket *models.Suppo
 
 func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[]structs.SupportTicket, limit int64, offset int64, startDate string, endDate string, managerID *int64) error {
 	if managerID == nil {
-		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
+		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 			Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
 			Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
 			Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
@@ -62,7 +62,7 @@ func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[
 			return err
 		}
 	} else {
-		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
+		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 			Joins("JOIN contract ON contract.id = support_ticket.contract_id AND contract.deleted_at IS NULL").
 			Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 			Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
@@ -79,25 +79,25 @@ func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[
 		}
 	}
 
-	for i := range *tickets {
-		if err := config.DB.Raw("SELECT room.no AS room_no FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomNo).Error; err != nil {
-			return err
-		}
+	// for i := range *tickets {
+	// 	if err := config.DB.Raw("SELECT room.no AS room_no FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomNo).Error; err != nil {
+	// 		return err
+	// 	}
 
-		if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomFloor).Error; err != nil {
-			return err
-		}
+	// 	if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomFloor).Error; err != nil {
+	// 		return err
+	// 	}
 
-		if err := config.DB.Raw("SELECT building.name AS building_name FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].BuildingName).Error; err != nil {
-			return err
-		}
-	}
+	// 	if err := config.DB.Raw("SELECT building.name AS building_name FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].BuildingName).Error; err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	return nil
 }
 
 func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, tickets *[]structs.SupportTicket, managerID int64, limit int64, offset int64, startDate string, endDate string) error {
-	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
+	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 		Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
 		Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
@@ -110,25 +110,25 @@ func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, ticket
 		return err
 	}
 
-	for i := range *tickets {
-		if err := config.DB.Raw("SELECT room.no AS room_no FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomNo).Error; err != nil {
-			return err
-		}
+	// for i := range *tickets {
+	// 	if err := config.DB.Raw("SELECT room.no AS room_no FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomNo).Error; err != nil {
+	// 		return err
+	// 	}
 
-		if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomFloor).Error; err != nil {
-			return err
-		}
+	// 	if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomFloor).Error; err != nil {
+	// 		return err
+	// 	}
 
-		if err := config.DB.Raw("SELECT building.name AS building_name FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].BuildingName).Error; err != nil {
-			return err
-		}
-	}
+	// 	if err := config.DB.Raw("SELECT building.name AS building_name FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].BuildingName).Error; err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	return nil
 }
 
 func (r *SupportTicketRepository) GetTicketsByCustomerID(ctx *gin.Context, tickets *[]structs.SupportTicket, customerID int64) error {
-	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
+	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 		Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
 		Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
@@ -141,19 +141,19 @@ func (r *SupportTicketRepository) GetTicketsByCustomerID(ctx *gin.Context, ticke
 		return err
 	}
 
-	for i := range *tickets {
-		if err := config.DB.Raw("SELECT room.no AS room_no FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomNo).Error; err != nil {
-			return err
-		}
+	// for i := range *tickets {
+	// 	if err := config.DB.Raw("SELECT room.no AS room_no FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomNo).Error; err != nil {
+	// 		return err
+	// 	}
 
-		if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomFloor).Error; err != nil {
-			return err
-		}
+	// 	if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomFloor).Error; err != nil {
+	// 		return err
+	// 	}
 
-		if err := config.DB.Raw("SELECT building.name AS building_name FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].BuildingName).Error; err != nil {
-			return err
-		}
-	}
+	// 	if err := config.DB.Raw("SELECT building.name AS building_name FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].BuildingName).Error; err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	return nil
 }

@@ -23,7 +23,7 @@ type SupportTicket struct {
 	Owner              models.UserModel                `json:"owner" gorm:"foreignKey:owner_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	OwnerResult        bool                            `json:"ownerResult" gorm:"column:owner_result;type:bool;"` // 0: Rejected, 1: Approved
 	OwnerResolveTime   sql.NullTime                    `json:"ownerResolveTime" gorm:"column:owner_resolve_time;type:timestamp with time zone;"`
-	BuildingName       string                          `json:"buildingName" gorm:"-"`
-	RoomNo             int                             `json:"roomNo" gorm:"-"`
-	RoomFloor          int                             `json:"roomFloor" gorm:"-"`
+	BuildingName       string                          `json:"buildingName" gorm:"building_name"`
+	RoomNo             int                             `json:"roomNo" gorm:"room_no"`
+	RoomFloor          int                             `json:"roomFloor" gorm:"room_floor"`
 }
