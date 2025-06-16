@@ -257,3 +257,17 @@ func (r *BuildingRepository) UpdateServices(ctx *gin.Context, tx *gorm.DB, servi
 
 	return nil
 }
+
+func (r *BuildingRepository) GetBuildingByContractID(ctx *gin.Context, building *models.BuildingModel, ID int64) error {
+	if err := config.DB.Model(&models.BuildingModel{}).
+		Joins("JOIN room ON room.building_id = building.id AND room.deleted_at IS NULL").
+		Joins("JOIN contract ON contract.room_id = room.id AND contract.deleted_at IS NULL").
+		Where("contract.id = ? AND building.deleted_at IS NULL", ID).First(building).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+
+	return nil
+}

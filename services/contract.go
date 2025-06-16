@@ -17,6 +17,7 @@ type ContractService struct {
 	contractRepository *repositories.ContractRepository
 	billRepository     *repositories.BillRepository
 	ticketRepository   *repositories.SupportTicketRepository
+	buildingRepository *repositories.BuildingRepository
 }
 
 func NewContractService() *ContractService {
@@ -24,6 +25,7 @@ func NewContractService() *ContractService {
 		contractRepository: repositories.NewContractRepository(),
 		billRepository:     repositories.NewBillRepository(),
 		ticketRepository:   repositories.NewSupportTicketRepository(),
+		buildingRepository: repositories.NewBuildingRepository(),
 	}
 }
 
@@ -99,6 +101,16 @@ func (s *ContractService) GetContractDetail(ctx *gin.Context, contract *structs.
 		utils.ExtractJWTClaim(token, claim)
 
 		if role.(string) == constants.Roles.Manager {
+			isAllowed, err := s.CheckManagerContractPermission(ctx, claim.UserID, contract.ID)
+
+			if err != nil {
+				return false, err
+			}
+
+			if !isAllowed {
+				return false, nil
+			}
+
 			// return contract.CreatorID == claim.UserID, nil
 			return true, nil
 		} else {
@@ -204,7 +216,23 @@ func (s *ContractService) DeleteContract2(ctx *gin.Context, IDs []int64) (bool, 
 }
 
 func (s *ContractService) CheckManagerContractPermission(ctx *gin.Context, managerID int64, contractID int64) (bool, error) {
-	return true, nil
+	managerBuildings := []models.BuildingModel{}
+	if err := s.buildingRepository.GetBuildingBaseOnSchedule(ctx, &managerBuildings, managerID); err != nil {
+		return false, err
+	}
+
+	contractBuilding := models.BuildingModel{}
+	if err := s.buildingRepository.GetBuildingByContractID(ctx, &contractBuilding, contractID); err != nil {
+		return false, err
+	}
+
+	for _, building := range managerBuildings {
+		if building.ID == contractBuilding.ID {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 // func (s *ContractService) DeleteWithoutTransaction(ctx *gin.Context, tx *gorm.DB, id []int64) error {

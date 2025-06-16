@@ -41,14 +41,14 @@ func (c *BillController) DeleteManyBills(ctx *gin.Context) {
 		return
 	}
 
-	validID, err := c.billService.DeleteBill(ctx, input.IDs)
+	isValid, err := c.billService.DeleteBill(ctx, input.IDs)
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
-	if !validID {
+	if !isValid {
 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
 		ctx.JSON(http.StatusForbidden, response)
 		return
