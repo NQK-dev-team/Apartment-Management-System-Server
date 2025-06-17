@@ -11,18 +11,23 @@ type DataResponse struct {
 }
 
 func NewDataResponse(ctx *gin.Context) *DataResponse {
-	jwt, _ := ctx.Get("jwt")
+	// jwt, _ := ctx.Get("jwt")
 
-	if jwt == nil {
-		jwt = ""
-	}
+	// if jwt == nil {
+	// 	jwt = ""
+	// }
+
+	jwt := ctx.GetString("jwt")
+
+	refreshToken := ctx.GetString("refreshToken")
 
 	return &DataResponse{
 		Message:       "",
 		Data:          nil,
 		ValidateError: nil,
-		JWTToken:      jwt.(string),
-		RefreshToken:  "",
+		// JWTToken:      jwt.(string),
+		JWTToken:     jwt,
+		RefreshToken: refreshToken,
 	}
 }
 
