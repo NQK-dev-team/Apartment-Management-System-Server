@@ -75,6 +75,10 @@ func (s *AuthenticationService) Login(ctx *gin.Context, email string, password s
 	var refreshToken = ""
 
 	if remember {
+		if err := s.DeleteRefreshToken(ctx, user.ID); err != nil {
+			return "", "", err, true
+		}
+
 		refreshToken, _ = s.CreateRefreshToken(ctx, user.ID)
 	}
 
@@ -284,4 +288,11 @@ func (s *AuthenticationService) DeletePasswordResetToken(ctx *gin.Context, email
 
 func (s *AuthenticationService) CheckPassword(ctx *gin.Context, providedPassword string, userPassword string) bool {
 	return utils.CompareHashPassword(userPassword, providedPassword)
+}
+
+func (s *AuthenticationService) GetRefreshToken(ctx *gin.Context, refreshTokenRecord *models.RefreshTokenModel, userID int64) error {
+	if err := s.refreshTokenRepository.GetByUserID(ctx, refreshTokenRecord, userID); err != nil {
+		return err
+	}
+	return nil
 }

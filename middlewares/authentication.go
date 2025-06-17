@@ -2,8 +2,11 @@ package middlewares
 
 import (
 	"api/config"
+	"api/models"
 	"api/services"
 	"api/utils"
+	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,14 +34,14 @@ func (m *AuthenticationMiddleware) AuthMiddleware(ctx *gin.Context) {
 	if jwt == "" {
 		if refreshToken == "" {
 			response.Message = config.GetMessageCode("TOKEN_VERIFY_FAILED")
-			ctx.AbortWithStatusJSON(401, response)
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, response)
 			return
 		} else {
 			newJwt, err := m.authenticationService.GetNewToken(ctx, refreshToken)
 
 			if err != nil {
 				response.Message = config.GetMessageCode("TOKEN_REFRESH_FAILED")
-				ctx.AbortWithStatusJSON(401, response)
+				ctx.AbortWithStatusJSON(http.StatusUnauthorized, response)
 				return
 			}
 
@@ -52,14 +55,14 @@ func (m *AuthenticationMiddleware) AuthMiddleware(ctx *gin.Context) {
 
 				if err != nil {
 					response.Message = config.GetMessageCode("TOKEN_REFRESH_FAILED")
-					ctx.AbortWithStatusJSON(401, response)
+					ctx.AbortWithStatusJSON(http.StatusUnauthorized, response)
 					return
 				}
 
 				response.JWTToken = newJwt
 			} else {
 				response.Message = config.GetMessageCode("TOKEN_VERIFY_FAILED")
-				ctx.AbortWithStatusJSON(401, response)
+				ctx.AbortWithStatusJSON(http.StatusUnauthorized, response)
 				return
 			}
 		} else {
@@ -71,7 +74,7 @@ func (m *AuthenticationMiddleware) AuthMiddleware(ctx *gin.Context) {
 
 	if claims == nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.AbortWithStatusJSON(500, response)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, response)
 		return
 	}
 
