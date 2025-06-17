@@ -77,6 +77,32 @@ func (m *AuthenticationMiddleware) AuthMiddleware(ctx *gin.Context) {
 
 	ctx.Set("role", utils.GetRoleString(claims))
 
+	// Get the refresh token
+	refreshTokenRecord := &models.RefreshTokenModel{}
+	if err := m.authenticationService.GetRefreshToken(ctx, refreshTokenRecord, claims.UserID); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	// Check if the refresh token expiration date is less than 1 day from now
+	if refreshTokenRecord.ExpiresAt.Before(time.Now().AddDate(0, 0, 1)) {
+		// Delete the old refresh token
+		if err := m.authenticationService.DeleteRefreshToken(ctx, claims.UserID); err != nil {
+			response.Message = config.GetMessageCode("SYSTEM_ERROR")
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, response)
+			return
+		}
+		// Generate a new refresh token
+		newRefreshToken, err := m.authenticationService.CreateRefreshToken(ctx, claims.UserID)
+		if err != nil {
+			response.Message = config.GetMessageCode("SYSTEM_ERROR")
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, response)
+			return
+		}
+		ctx.Set("refreshToken", newRefreshToken)
+	}
+
 	// if response.JWTToken != jwt {
 	ctx.Set("jwt", response.JWTToken)
 	// }
