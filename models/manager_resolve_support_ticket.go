@@ -1,6 +1,6 @@
 package models
 
-// This file is redacted
+// This file is not used in the current implementation.
 
 // import (
 // 	"api/config"
