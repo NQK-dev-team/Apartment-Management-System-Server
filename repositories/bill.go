@@ -19,7 +19,11 @@ func NewBillRepository() *BillRepository {
 }
 
 func (r *BillRepository) GetById(ctx *gin.Context, bill *models.BillModel, id int64) error {
-	if err := config.DB.Model(&models.BillModel{}).Where("id = ? AND bill.deleted_at IS NULL", id).Preload("Payer").Preload("ExtraPayments").First(bill).Error; err != nil {
+	if err := config.DB.Model(&models.BillModel{}).
+	Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
+	Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
+	Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
+	Where("id = ? AND bill.deleted_at IS NULL", id).Preload("Payer").Preload("ExtraPayments").First(bill).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
@@ -29,7 +33,11 @@ func (r *BillRepository) GetById(ctx *gin.Context, bill *models.BillModel, id in
 }
 
 func (r *BillRepository) GetByContractId(ctx *gin.Context, bills *[]models.BillModel, contractID int64) error {
-	if err := config.DB.Model(&models.BillModel{}).Where("contract_id = ? AND bill.deleted_at IS NULL", contractID).Preload("Payer").Preload("ExtraPayments").Find(bills).Error; err != nil {
+	if err := config.DB.Model(&models.BillModel{}).
+	Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
+	Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
+	Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
+	Where("contract_id = ? AND bill.deleted_at IS NULL", contractID).Preload("Payer").Preload("ExtraPayments").Find(bills).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
