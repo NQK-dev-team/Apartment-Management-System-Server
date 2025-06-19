@@ -14,6 +14,7 @@ func InitContractRoutes(router *gin.RouterGroup) {
 
 	contractRoutes.GET("/", contractController.GetContractList)
 	contractRoutes.GET("/:id", contractController.GetContractDetail)
+	contractRoutes.GET("/:id/bill", contractController.GetContractBill)
 
 	contractRoutes.Use(authorizationMiddle.AuthManagerMiddleware)
 	{

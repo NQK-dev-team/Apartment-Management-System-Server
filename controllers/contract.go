@@ -3,6 +3,7 @@ package controllers
 import (
 	"api/config"
 	"api/constants"
+	"api/models"
 	"api/services"
 	"api/structs"
 	"net/http"
@@ -78,6 +79,36 @@ func (c *ContractController) GetContractDetail(ctx *gin.Context) {
 	}
 
 	response.Data = contract
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *ContractController) GetContractBill(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+
+	if err != nil {
+		id = 0
+	}
+
+	bills := []models.BillModel{}
+
+	isAllowed, err := c.contractService.GetContractBill(ctx, &bills, id)
+
+	if err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if !isAllowed {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(http.StatusForbidden, response)
+		return
+	}
+
+	response.Data = bills
 	response.Message = config.GetMessageCode("GET_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }
