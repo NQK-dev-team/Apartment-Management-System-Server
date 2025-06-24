@@ -10,17 +10,17 @@ import (
 type RoomResidentModel struct {
 	DefaultModel
 	FirstName               string         `json:"firstName" gorm:"column:first_name;type:varchar(255);not null;"`
-	MiddleName              string         `json:"middleName" gorm:"column:middle_name;type:varchar(255);"`
+	MiddleName              sql.NullString `json:"middleName" gorm:"column:middle_name;type:varchar(255);"`
 	LastName                string         `json:"lastName" gorm:"column:last_name;type:varchar(255);not null;"`
 	SSN                     string         `json:"ssn" gorm:"column:ssn;type:varchar(12);not null;uniqueIndex:idx_ssn;"`
-	OldSSN                  string         `json:"oldSSN" gorm:"column:old_ssn;type:varchar(9);unique;"`
+	OldSSN                  sql.NullString `json:"oldSSN" gorm:"column:old_ssn;type:varchar(9);unique;"`
 	DOB                     string         `json:"dob" gorm:"column:dob;type:date;not null;"`
 	POB                     string         `json:"pob" gorm:"column:pob;type:varchar(255);"`
 	Email                   sql.NullString `json:"email" gorm:"column:email;type:varchar(255);uniqueIndex:idx_email;"`
 	Phone                   sql.NullString `json:"phone" gorm:"column:phone;type:varchar(10);"`
 	Gender                  int            `json:"gender" gorm:"column:gender;type:int;not null;"`                                     // 1: Male, 2: Female, 3: Other
 	RelationWithHouseholder int            `json:"relationWithHouseholder" gorm:"column:relation_with_householder;type:int;not null;"` // 1: Child, 2: Spouse, 3: Parent, 4: Other
-	UserAccountID           int64          `json:"userAccountID" gorm:"column:user_account_id;"`
+	UserAccountID           sql.NullInt64  `json:"userAccountID" gorm:"column:user_account_id;"`
 	UserAccount             UserModel      `json:"userAccount" gorm:"foreignKey:user_account_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
 
