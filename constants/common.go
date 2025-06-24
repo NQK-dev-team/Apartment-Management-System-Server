@@ -43,15 +43,23 @@ type billStatusStruct struct {
 	PROCESSING int
 }
 
+type residentRelationshipStruct struct {
+	SPOUSE int
+	CHILD  int
+	PARENT int
+	OTHER  int
+}
+
 var Common = struct {
-	SupportTicketStatus supportTicketStatusStruct
-	ContractStatus      contractStatusStruct
-	RoomStatus          roomStatusStruct
-	UserGender          userGenderStruct
-	ImportType          importTypeStruct
-	BillStatus          billStatusStruct
-	EmailTokenLimit     int
-	NewPasswordLength   int
+	SupportTicketStatus  supportTicketStatusStruct
+	ContractStatus       contractStatusStruct
+	RoomStatus           roomStatusStruct
+	UserGender           userGenderStruct
+	ImportType           importTypeStruct
+	BillStatus           billStatusStruct
+	ResidentRelationship residentRelationshipStruct
+	EmailTokenLimit      int
+	NewPasswordLength    int
 }{
 	SupportTicketStatus: supportTicketStatusStruct{
 		PENDING:  1,
@@ -89,6 +97,12 @@ var Common = struct {
 		PAID:       2,
 		OVERDUE:    3,
 		PROCESSING: 4,
+	},
+	ResidentRelationship: residentRelationshipStruct{
+		SPOUSE: 1,
+		CHILD:  2,
+		PARENT: 3,
+		OTHER:  4,
 	},
 	EmailTokenLimit:   5,
 	NewPasswordLength: 8,
