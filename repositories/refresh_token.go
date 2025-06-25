@@ -3,7 +3,6 @@ package repositories
 import (
 	"api/config"
 	"api/models"
-	"errors"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -25,10 +24,10 @@ func (r *RefreshTokenRepository) Create(ctx *gin.Context, tx *gorm.DB, refreshTo
 }
 
 func (r *RefreshTokenRepository) GetByUserID(ctx *gin.Context, refreshToken *models.RefreshTokenModel, userID int64) error {
-	if err := config.DB.Where("user_id = ?", userID).Order("created_at DESC").First(refreshToken).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil
-		}
+	if err := config.DB.Where("user_id = ?", userID).Order("created_at DESC").Find(refreshToken).Error; err != nil {
+		// if errors.Is(err, gorm.ErrRecordNotFound) {
+		// 	return nil
+		// }
 		return err
 	}
 
@@ -37,9 +36,9 @@ func (r *RefreshTokenRepository) GetByUserID(ctx *gin.Context, refreshToken *mod
 
 func (r *RefreshTokenRepository) Delete(ctx *gin.Context, tx *gorm.DB, userID int64) error {
 	if err := tx.Where("user_id = ?", userID).Delete(&models.RefreshTokenModel{}).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil
-		}
+		// if errors.Is(err, gorm.ErrRecordNotFound) {
+		// 	return nil
+		// }
 		return err
 	}
 

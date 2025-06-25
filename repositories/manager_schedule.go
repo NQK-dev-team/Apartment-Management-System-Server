@@ -3,7 +3,6 @@ package repositories
 import (
 	"api/config"
 	"api/models"
-	"errors"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -45,9 +44,9 @@ func (r *ManagerScheduleRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []i
 
 func (r *ManagerScheduleRepository) GetByIDs(ctx *gin.Context, schedule *[]models.ManagerScheduleModel, IDs []int64) error {
 	if err := config.DB.Where("id in ?", IDs).Find(schedule).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil
-		}
+		// if errors.Is(err, gorm.ErrRecordNotFound) {
+		// 	return nil
+		// }
 		return err
 	}
 	return nil

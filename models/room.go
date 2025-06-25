@@ -28,7 +28,7 @@ func (u *RoomModel) TableName() string {
 // func (u *RoomModel) BeforeCreate(tx *gorm.DB) error {
 // 	lastRoom := RoomModel{}
 // 	// Get the last room of the building floor
-// 	tx.Where("building_id = ? AND floor = ?", u.BuildingID, u.Floor).Order("no desc").First(&lastRoom)
+// 	tx.Where("building_id = ? AND floor = ?", u.BuildingID, u.Floor).Order("no desc").Find(&lastRoom)
 
 // 	if lastRoom.No == 0 {
 // 		u.No = 1000*u.Floor + 1
