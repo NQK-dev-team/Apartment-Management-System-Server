@@ -38,7 +38,7 @@ func NewModelFileLogger(dir string, level logger.LogLevel) *ModelFileLogger {
 
 // Regular expressions to extract table names from SQL queries
 var (
-	// selectRegex = regexp.MustCompile(`(?i)SELECT\s+.*?\s+FROM\s+"?([a-zA-Z0-9_]+)"?`)
+	selectRegex = regexp.MustCompile(`(?i)SELECT\s+.*?\s+FROM\s+"?([a-zA-Z0-9_]+)"?`)
 	intoRegex   = regexp.MustCompile(`(?i)INTO\s+"([^"]+)"`)
 	updateRegex = regexp.MustCompile(`(?i)UPDATE\s+"([^"]+)"`)
 	deleteRegex = regexp.MustCompile(`(?i)DELETE FROM\s+"([^"]+)"`)
@@ -48,9 +48,11 @@ var (
 func extractTableName(sql string) string {
 	var match []string
 
-	// if match = selectRegex.FindStringSubmatch(sql); len(match) > 1 {
-	// 	return match[1]
-	// }
+	if GetEnv("APP_ENV") == "development" {
+		if match = selectRegex.FindStringSubmatch(sql); len(match) > 1 {
+			return match[1]
+		}
+	}
 	if match = intoRegex.FindStringSubmatch(sql); len(match) > 1 {
 		return match[1]
 	}
