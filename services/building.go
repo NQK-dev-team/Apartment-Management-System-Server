@@ -320,6 +320,9 @@ func (s *BuildingService) UpdateBuilding(ctx *gin.Context, building *structs.Edi
 			newBuildingData.Address = building.Address
 			newBuildingData.TotalFloor = building.TotalFloor
 			newBuildingData.TotalRoom = len(building.Rooms) + len(building.NewRooms)
+			newBuildingData.Rooms = []models.RoomModel{}
+			newBuildingData.Images = []models.BuildingImageModel{}
+			newBuildingData.Services = []models.BuildingServiceModel{}
 
 			if err := s.buildingRepository.Update(ctx, tx, newBuildingData); err != nil {
 				return err
@@ -523,8 +526,8 @@ func (s *BuildingService) UpdateBuilding(ctx *gin.Context, building *structs.Edi
 						rooms[index].Status = val.Status
 						rooms[index].Area = val.Area
 						rooms[index].Description = val.Description
-						// rooms[index].Contracts = []models.ContractModel{}
-						// rooms[index].Images = []models.RoomImageModel{}
+						rooms[index].Contracts = []models.ContractModel{}
+						rooms[index].Images = []models.RoomImageModel{}
 						break
 					}
 				}
