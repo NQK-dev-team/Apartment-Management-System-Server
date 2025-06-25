@@ -76,7 +76,7 @@ func (r *BuildingRepository) Update(ctx *gin.Context, tx *gorm.DB, building *mod
 	if !exists {
 		userID = 0
 	}
-	if err := tx.Set("userID", userID).Updates(building).Error; err != nil {
+	if err := tx.Set("userID", userID).Save(building).Error; err != nil {
 		return err
 	}
 	return nil

@@ -523,7 +523,8 @@ func (s *BuildingService) UpdateBuilding(ctx *gin.Context, building *structs.Edi
 						rooms[index].Status = val.Status
 						rooms[index].Area = val.Area
 						rooms[index].Description = val.Description
-						rooms[index].Contracts = []models.ContractModel{}
+						// rooms[index].Contracts = []models.ContractModel{}
+						// rooms[index].Images = []models.RoomImageModel{}
 						break
 					}
 				}

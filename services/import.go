@@ -164,7 +164,7 @@ package services
 // 						} else {
 // 							user.Password = findUser.Password
 // 						}
-// 						if err := s.userRepository.Update(nil, tx, &user); err != nil {
+// 						if err := s.userRepository.Save(nil, tx, &user); err != nil {
 // 							return err
 // 						}
 // 					} else {

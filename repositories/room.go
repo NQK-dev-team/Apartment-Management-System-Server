@@ -137,7 +137,7 @@ func (r *RoomRepository) Update(ctx *gin.Context, tx *gorm.DB, rooms *[]models.R
 	// }
 
 	for _, room := range *rooms {
-		if err := tx.Set("userID", userID).Model(&models.RoomModel{}).Where("id = ?", room.ID).Updates(room).Error; err != nil {
+		if err := tx.Set("userID", userID).Model(&models.RoomModel{}).Where("id = ?", room.ID).Save(room).Error; err != nil {
 			return err
 		}
 	}
