@@ -29,8 +29,9 @@ func (r *RoomRepository) GetById(ctx *gin.Context, room *models.RoomModel, id in
 
 func (r *RoomRepository) GetByIDs(ctx *gin.Context, rooms *[]models.RoomModel, IDs []int64) error {
 	if err := config.DB.Model(&models.RoomModel{}).
-		Joins("JOIN building.id = room.building_id AND building.deleted_at IS NULL").
-		Where("room.id in ? AND room.deleted_at IS NULL", IDs).Preload("Images").Preload("Contracts").Find(rooms).Error; err != nil {
+		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
+		Where("room.id in ? AND room.deleted_at IS NULL", IDs). // Preload("Images").Preload("Contracts").
+		Find(rooms).Error; err != nil {
 		// if errors.Is(err, gorm.ErrRecordNotFound) {
 		// 	return nil
 		// }

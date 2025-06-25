@@ -136,7 +136,7 @@ func (r *BuildingRepository) DeleteImages(ctx *gin.Context, tx *gorm.DB, id []in
 	now := time.Now()
 	userID := ctx.GetInt64("userID")
 
-	if err := tx.Set("isQuiet", true).Model(&models.BuildingImageModel{}).Where("building_id in ?", id).UpdateColumns(models.BuildingImageModel{
+	if err := tx.Set("isQuiet", true).Model(&models.BuildingImageModel{}).Where("id in ?", id).UpdateColumns(models.BuildingImageModel{
 		DefaultFileModel: models.DefaultFileModel{
 			DeletedBy: userID,
 			DeletedAt: gorm.DeletedAt{
