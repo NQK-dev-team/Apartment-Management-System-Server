@@ -18,22 +18,22 @@ func InitDB() error {
 	dbName := GetEnv("DB_NAME")
 	ssh := GetEnv("DB_SSH")
 	timeZone := GetEnv("APP_TIME_ZONE")
-	appEnv := GetEnv("APP_ENV")
+	// appEnv := GetEnv("APP_ENV")
 
-	var logMode logger.LogLevel
+	// var logMode logger.LogLevel
 
-	if appEnv == "production" {
-		logMode = logger.Silent
-	} else {
-		logMode = logger.Info
-	}
+	// if appEnv == "production" {
+	// 	logMode = logger.Silent
+	// } else {
+	// 	logMode = logger.Info
+	// }
 
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s timeZone=%s", host, port, user, password, dbName, ssh, timeZone)
 
 	var err error
 
 	DB, err = gorm.Open(postgresDriver.Open(dsn), &gorm.Config{
-		Logger:      logger.Default.LogMode(logMode),
+		Logger:      NewModelFileLogger("assets/logs", logger.Info),
 		PrepareStmt: true,
 	})
 
