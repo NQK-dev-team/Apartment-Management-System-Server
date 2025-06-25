@@ -424,6 +424,13 @@ func (c *BuildingController) UpdateRoomInformation(ctx *gin.Context) {
 		return
 	}
 
+	if err := constants.Validate.Struct(room); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = err.Error()
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
 	if err := c.roomService.UpdateRoomByRoomIDAndBuildingID(ctx, oldRoomData, room, roomID, buildingID); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(http.StatusInternalServerError, response)
