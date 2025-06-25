@@ -106,8 +106,16 @@ func (l *ModelFileLogger) Trace(ctx context.Context, begin time.Time, fc func() 
 		return // Skip logging for default table
 	}
 
-	// Construct filename: logs/users-2025-06-25.log
-	filename := filepath.Join(l.logDirectory, fmt.Sprintf("%s_%s.log", tableName, dateStr))
+	// Construct filename: logs/2025/2025-06/2025-06-25/users_2025-06-25.log
+	currentDate := time.Now().Format("2006-01-02")
+	currentYear := time.Now().Format("2006")
+	currentMonth := time.Now().Format("2006-01")
+	finalDir := filepath.Join(l.logDirectory, currentYear, currentMonth, currentDate)
+	if err := os.MkdirAll(finalDir, 0755); err != nil {
+		log.Fatalf("Failed to create log directory: %v", err)
+	}
+
+	filename := filepath.Join(finalDir, fmt.Sprintf("%s_%s.log", tableName, dateStr))
 
 	// Use mutex to handle concurrent requests safely
 	l.mu.Lock()

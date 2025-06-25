@@ -60,8 +60,8 @@ func main() {
 	utils.InitS3Connection()
 
 	// Router settings
-	// Limit form size to 50 MB
-	router.MaxMultipartMemory = 50 << 20 // 50 MB
+	// Limit form size to 500 MB
+	router.MaxMultipartMemory = (50 << 20) * 10 // 500 MB
 
 	// Init routes
 	r := router.Group("api")
