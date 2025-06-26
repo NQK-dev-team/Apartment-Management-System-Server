@@ -50,6 +50,15 @@ type residentRelationshipStruct struct {
 	OTHER  int
 }
 
+type fileUploadStruct struct {
+	AllowedImageTypes []string
+	AllowedFileTypes  []string
+	MaxImageSize      int64
+	MaxFileSize       int64
+	MaxImageSizeStr   string
+	MaxFileSizeStr    string
+}
+
 var Common = struct {
 	SupportTicketStatus  supportTicketStatusStruct
 	ContractStatus       contractStatusStruct
@@ -58,6 +67,7 @@ var Common = struct {
 	ImportType           importTypeStruct
 	BillStatus           billStatusStruct
 	ResidentRelationship residentRelationshipStruct
+	FileUpload           fileUploadStruct
 	EmailTokenLimit      int
 	NewPasswordLength    int
 }{
@@ -106,4 +116,19 @@ var Common = struct {
 	},
 	EmailTokenLimit:   5,
 	NewPasswordLength: 8,
+	FileUpload: fileUploadStruct{
+		AllowedImageTypes: []string{"image/jpeg", "image/jpg", "image/png"},
+		AllowedFileTypes: []string{
+			"application/pdf",
+			"image/jpeg",
+			"image/jpg",
+			"image/png",
+			"application/msword",
+			"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+		},
+		MaxImageSize:    2 * 1024 * 1024,  // 2 MB
+		MaxFileSize:     10 * 1024 * 1024, // 10 MB
+		MaxImageSizeStr: "2MB",
+		MaxFileSizeStr:  "10MB",
+	},
 }

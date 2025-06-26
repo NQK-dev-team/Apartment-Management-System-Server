@@ -1,6 +1,8 @@
 package constants
 
 import (
+	"fmt"
+	"mime/multipart"
 	"strings"
 	"time"
 	"unicode"
@@ -13,6 +15,10 @@ var Validate = validator.New()
 func InitCustomValidationRules() {
 	Validate.RegisterValidation("password", ValidatePassword)
 	Validate.RegisterValidation("dob_18", ValidateDoB)
+	Validate.RegisterValidation("image_type", ValidateImageType)
+	Validate.RegisterValidation("file_type", ValidateFileType)
+	Validate.RegisterValidation("image_size", ValidateImageSize)
+	Validate.RegisterValidation("file_size", ValidateFileSize)
 }
 
 func customPasswordRule(password string) bool {
@@ -73,6 +79,96 @@ func ValidateDoB(fl validator.FieldLevel) bool {
 
 	if !isAdult {
 		return false // Age is less than 18
+	}
+
+	return true
+}
+
+func ValidateImageType(fl validator.FieldLevel) bool {
+	// file, ok := fl.Field().Interface().(*multipart.FileHeader)
+	// if !ok {
+	// 	// Field is not a*multipart.FileHeader, validation fails
+	// 	return false
+	// }
+	// if file == nil {
+	// 	// File is not present, `required` tag should handle this.
+	// 	return true
+	// }
+
+	file := fl.Field()
+
+	// // Get the actual MIME type of the uploaded file
+	// fileType := file.Header.Get("Content-Type")
+
+	// // Check if the file's MIME type is in the list of allowed types
+	// for _, t := range Common.FileUpload.AllowedImageTypes {
+	// 	if t == fileType {
+	// 		return true
+	// 	}
+	// }
+
+	fmt.Println(file)
+
+	return false
+}
+
+func ValidateFileType(fl validator.FieldLevel) bool {
+	file, ok := fl.Field().Interface().(*multipart.FileHeader)
+	if !ok {
+		// Field is not a *multipart.FileHeader, validation fails
+		return false
+	}
+	if file == nil {
+		// File is not present, `required` tag should handle this.
+		return true
+	}
+
+	// Get the actual MIME type of the uploaded file
+	fileType := file.Header.Get("Content-Type")
+
+	// Check if the file's MIME type is in the list of allowed types
+	for _, t := range Common.FileUpload.AllowedFileTypes {
+		if t == fileType {
+			return true
+		}
+	}
+
+	return false
+}
+
+func ValidateImageSize(fl validator.FieldLevel) bool {
+	file, ok := fl.Field().Interface().(*multipart.FileHeader)
+	if !ok {
+		// Field is not a *multipart.FileHeader, validation fails
+		return false
+	}
+	if file == nil {
+		// File is not present, `required` tag should handle this.
+		return true
+	}
+
+	// Check if the file size exceeds the maximum allowed size
+	if file.Size > Common.FileUpload.MaxImageSize {
+		return false
+	}
+
+	return true
+}
+
+func ValidateFileSize(fl validator.FieldLevel) bool {
+	file, ok := fl.Field().Interface().(*multipart.FileHeader)
+	if !ok {
+		// Field is not a *multipart.FileHeader, validation fails
+		return false
+	}
+	if file == nil {
+		// File is not present, `required` tag should handle this.
+		return true
+	}
+
+	// Check if the file size exceeds the maximum allowed size
+	if file.Size >= Common.FileUpload.MaxFileSize {
+		return false
 	}
 
 	return true
