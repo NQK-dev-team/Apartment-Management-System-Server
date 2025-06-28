@@ -173,7 +173,7 @@ func (c *UserController) DeleteStaffs(ctx *gin.Context) {
 
 	if err := constants.Validate.Struct(input); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
-		response.ValidateError = err.Error()
+		response.ValidateError = constants.GetValidateErrorMessage(err)
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
@@ -222,7 +222,7 @@ func (c *UserController) AddStaff(ctx *gin.Context) {
 
 	if err := constants.Validate.Struct(newStaff); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
-		response.ValidateError = err.Error()
+		response.ValidateError = constants.GetValidateErrorMessage(err)
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
@@ -269,7 +269,7 @@ func (c *UserController) UpdateStaff(ctx *gin.Context) {
 
 	if err := constants.Validate.Struct(editStaff); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
-		response.ValidateError = err.Error()
+		response.ValidateError = constants.GetValidateErrorMessage(err)
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
@@ -344,7 +344,7 @@ func (c *UserController) DeleteCustomers(ctx *gin.Context) {
 
 	if err := constants.Validate.Struct(input); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
-		response.ValidateError = err.Error()
+		response.ValidateError = constants.GetValidateErrorMessage(err)
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
@@ -461,7 +461,7 @@ func (c *UserController) AddCustomer(ctx *gin.Context) {
 
 	if err := constants.Validate.Struct(newCustomer); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
-		response.ValidateError = err.Error()
+		response.ValidateError = constants.GetValidateErrorMessage(err)
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}

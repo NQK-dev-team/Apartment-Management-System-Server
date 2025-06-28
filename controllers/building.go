@@ -84,7 +84,7 @@ func (c *BuildingController) CreateBuilding(ctx *gin.Context) {
 
 	if err := constants.Validate.Struct(building); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
-		response.ValidateError = err.Error()
+		response.ValidateError = constants.GetValidateErrorMessage(err)
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
@@ -426,7 +426,7 @@ func (c *BuildingController) UpdateRoomInformation(ctx *gin.Context) {
 
 	if err := constants.Validate.Struct(room); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
-		response.ValidateError = err.Error()
+		response.ValidateError = constants.GetValidateErrorMessage(err)
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
@@ -545,7 +545,7 @@ func (c *BuildingController) DeleteRoomContract(ctx *gin.Context) {
 
 	if err := constants.Validate.Struct(input); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
-		response.ValidateError = err.Error()
+		response.ValidateError = constants.GetValidateErrorMessage(err)
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}

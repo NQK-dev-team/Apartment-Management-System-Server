@@ -169,7 +169,13 @@ func ValidateFileSize(fl validator.FieldLevel) bool {
 	// Check if the file size exceeds the maximum allowed size
 	if file.Size >= Common.FileUpload.MaxFileSize {
 		return false
+func GetValidateErrorMessage(err error) string {
+	appEnv := config.GetEnv("APP_ENV")
+
+	if appEnv == "development" {
+		return err.Error()
 	}
 
 	return true
+	return ""
 }

@@ -36,7 +36,7 @@ func (c *BillController) DeleteManyBills(ctx *gin.Context) {
 
 	if err := constants.Validate.Struct(input); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
-		response.ValidateError = err.Error()
+		response.ValidateError = constants.GetValidateErrorMessage(err)
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
