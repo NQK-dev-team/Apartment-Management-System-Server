@@ -1,8 +1,7 @@
 package constants
 
 import (
-	"fmt"
-	"mime/multipart"
+	"api/config"
 	"strings"
 	"time"
 	"unicode"
@@ -85,46 +84,20 @@ func ValidateDoB(fl validator.FieldLevel) bool {
 }
 
 func ValidateImageType(fl validator.FieldLevel) bool {
-	// file, ok := fl.Field().Interface().(*multipart.FileHeader)
-	// if !ok {
-	// 	// Field is not a*multipart.FileHeader, validation fails
-	// 	return false
-	// }
-	// if file == nil {
-	// 	// File is not present, `required` tag should handle this.
-	// 	return true
-	// }
+	fileType := fl.Field().String()
 
-	file := fl.Field()
-
-	// // Get the actual MIME type of the uploaded file
-	// fileType := file.Header.Get("Content-Type")
-
-	// // Check if the file's MIME type is in the list of allowed types
-	// for _, t := range Common.FileUpload.AllowedImageTypes {
-	// 	if t == fileType {
-	// 		return true
-	// 	}
-	// }
-
-	fmt.Println(file)
+	// Check if the file's MIME type is in the list of allowed types
+	for _, t := range Common.FileUpload.AllowedImageTypes {
+		if t == fileType {
+			return true
+		}
+	}
 
 	return false
 }
 
 func ValidateFileType(fl validator.FieldLevel) bool {
-	file, ok := fl.Field().Interface().(*multipart.FileHeader)
-	if !ok {
-		// Field is not a *multipart.FileHeader, validation fails
-		return false
-	}
-	if file == nil {
-		// File is not present, `required` tag should handle this.
-		return true
-	}
-
-	// Get the actual MIME type of the uploaded file
-	fileType := file.Header.Get("Content-Type")
+	fileType := fl.Field().String()
 
 	// Check if the file's MIME type is in the list of allowed types
 	for _, t := range Common.FileUpload.AllowedFileTypes {
@@ -137,38 +110,17 @@ func ValidateFileType(fl validator.FieldLevel) bool {
 }
 
 func ValidateImageSize(fl validator.FieldLevel) bool {
-	file, ok := fl.Field().Interface().(*multipart.FileHeader)
-	if !ok {
-		// Field is not a *multipart.FileHeader, validation fails
-		return false
-	}
-	if file == nil {
-		// File is not present, `required` tag should handle this.
-		return true
-	}
+	fileSize := fl.Field().Interface().(int64)
 
-	// Check if the file size exceeds the maximum allowed size
-	if file.Size > Common.FileUpload.MaxImageSize {
-		return false
-	}
-
-	return true
+	return fileSize < Common.FileUpload.MaxImageSize
 }
 
 func ValidateFileSize(fl validator.FieldLevel) bool {
-	file, ok := fl.Field().Interface().(*multipart.FileHeader)
-	if !ok {
-		// Field is not a *multipart.FileHeader, validation fails
-		return false
-	}
-	if file == nil {
-		// File is not present, `required` tag should handle this.
-		return true
-	}
+	fileSize := fl.Field().Interface().(int64)
 
-	// Check if the file size exceeds the maximum allowed size
-	if file.Size >= Common.FileUpload.MaxFileSize {
-		return false
+	return fileSize < Common.FileUpload.MaxFileSize
+}
+
 func GetValidateErrorMessage(err error) string {
 	appEnv := config.GetEnv("APP_ENV")
 
@@ -176,6 +128,5 @@ func GetValidateErrorMessage(err error) string {
 		return err.Error()
 	}
 
-	return true
 	return ""
 }

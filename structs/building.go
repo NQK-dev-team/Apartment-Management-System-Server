@@ -35,7 +35,7 @@ type NewBuilding struct {
 	TotalRoom  int                     `form:"totalRoom"`
 	TotalFloor int                     `form:"totalFloor"`
 	Services   []NewService            `form:"services[]"`
-	Images     []*multipart.FileHeader `validate:"required,min=1,dive,image_type,image_size"`
+	Images     []*multipart.FileHeader `validate:"required,min=1"`
 	Rooms      []NewRoom               `form:"rooms[]"`
 	Schedules  []NewSchedule           `form:"schedules[]"`
 }

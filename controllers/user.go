@@ -227,6 +227,19 @@ func (c *UserController) AddStaff(ctx *gin.Context) {
 		return
 	}
 
+	validateStaffFile := &structs.ValidateUserFile{
+		ProfileImage:  structs.ImageValidation{Type: newStaff.ProfileImage.Header.Get("Content-Type"), Size: newStaff.ProfileImage.Size},
+		FrontSSNImage: structs.ImageValidation{Type: newStaff.FrontSSNImage.Header.Get("Content-Type"), Size: newStaff.FrontSSNImage.Size},
+		BackSSNImage:  structs.ImageValidation{Type: newStaff.BackSSNImage.Header.Get("Content-Type"), Size: newStaff.BackSSNImage.Size},
+	}
+
+	if err := constants.Validate.Struct(validateStaffFile); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
 	if messageCode, err := c.userService.CheckDuplicateData(ctx, newStaff.Email, newStaff.SSN, newStaff.Phone, newStaff.OldSSN); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(http.StatusInternalServerError, response)
@@ -460,6 +473,19 @@ func (c *UserController) AddCustomer(ctx *gin.Context) {
 	}
 
 	if err := constants.Validate.Struct(newCustomer); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	validateCustomerFile := &structs.ValidateUserFile{
+		ProfileImage:  structs.ImageValidation{Type: newCustomer.ProfileImage.Header.Get("Content-Type"), Size: newCustomer.ProfileImage.Size},
+		FrontSSNImage: structs.ImageValidation{Type: newCustomer.FrontSSNImage.Header.Get("Content-Type"), Size: newCustomer.FrontSSNImage.Size},
+		BackSSNImage:  structs.ImageValidation{Type: newCustomer.BackSSNImage.Header.Get("Content-Type"), Size: newCustomer.BackSSNImage.Size},
+	}
+
+	if err := constants.Validate.Struct(validateCustomerFile); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = constants.GetValidateErrorMessage(err)
 		ctx.JSON(http.StatusBadRequest, response)

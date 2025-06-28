@@ -89,6 +89,38 @@ func (c *BuildingController) CreateBuilding(ctx *gin.Context) {
 		return
 	}
 
+	validateBuildingFile := &structs.ValidateAddBuildingFile{
+		Images: []structs.ImageValidation{},
+		Rooms:  []structs.ValidateAddRoomFile{},
+	}
+
+	for _, newImage := range building.Images {
+		validateBuildingFile.Images = append(validateBuildingFile.Images, structs.ImageValidation{
+			Type: newImage.Header.Get("Content-Type"),
+			Size: newImage.Size,
+		})
+	}
+
+	for _, room := range building.Rooms {
+		newRoom := &structs.ValidateAddRoomFile{
+			Images: []structs.ImageValidation{},
+		}
+		for _, newImage := range room.Images {
+			newRoom.Images = append(newRoom.Images, structs.ImageValidation{
+				Type: newImage.Header.Get("Content-Type"),
+				Size: newImage.Size,
+			})
+		}
+		validateBuildingFile.Rooms = append(validateBuildingFile.Rooms, *newRoom)
+	}
+
+	if err := constants.Validate.Struct(validateBuildingFile); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
 	if err := c.buildingService.CreateBuilding(ctx, building); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(http.StatusInternalServerError, response)
@@ -300,7 +332,58 @@ func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
 
 	if err := constants.Validate.Struct(building); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
-		response.ValidateError = err.Error()
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	validateBuildingFile := &structs.ValidateEditBuildingFile{
+		NewBuildingImages: []structs.ImageValidation{},
+		Rooms:             []structs.ValidateEditRoomFile{},
+		NewRooms:          []structs.ValidateAddRoomFile{},
+	}
+
+	for _, newImage := range building.NewBuildingImages {
+		validateBuildingFile.NewBuildingImages = append(validateBuildingFile.NewBuildingImages, structs.ImageValidation{
+			Type: newImage.Header.Get("Content-Type"),
+			Size: newImage.Size,
+		})
+	}
+
+	for _, room := range building.NewRooms {
+		newRoom := &structs.ValidateAddRoomFile{
+			Images: []structs.ImageValidation{},
+		}
+
+		for _, newImage := range room.Images {
+			newRoom.Images = append(newRoom.Images, structs.ImageValidation{
+				Type: newImage.Header.Get("Content-Type"),
+				Size: newImage.Size,
+			})
+		}
+		validateBuildingFile.NewRooms = append(validateBuildingFile.NewRooms, *newRoom)
+	}
+
+	for _, room := range building.Rooms {
+		editRoom := &structs.ValidateEditRoomFile{
+			NewImages: []structs.ImageValidation{},
+		}
+
+		for _, newImage := range room.NewImages {
+			editRoom.NewImages = append(editRoom.NewImages, structs.ImageValidation{
+				Type: newImage.Header.Get("Content-Type"),
+				Size: newImage.Size,
+			})
+		}
+
+		if len(editRoom.NewImages) > 0 {
+			validateBuildingFile.Rooms = append(validateBuildingFile.Rooms, *editRoom)
+		}
+	}
+
+	if err := constants.Validate.Struct(validateBuildingFile); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
@@ -425,6 +508,24 @@ func (c *BuildingController) UpdateRoomInformation(ctx *gin.Context) {
 	}
 
 	if err := constants.Validate.Struct(room); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	validateRoom := &structs.ValidateEditRoomFile2{
+		NewRoomImages: []structs.ImageValidation{},
+	}
+
+	for _, newImage := range room.NewRoomImages {
+		validateRoom.NewRoomImages = append(validateRoom.NewRoomImages, structs.ImageValidation{
+			Type: newImage.Header.Get("Content-Type"),
+			Size: newImage.Size,
+		})
+	}
+
+	if err := constants.Validate.Struct(validateRoom); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = constants.GetValidateErrorMessage(err)
 		ctx.JSON(http.StatusBadRequest, response)
