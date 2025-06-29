@@ -3,19 +3,23 @@ package controllers
 import (
 	"api/config"
 	"api/services"
+	"api/structs"
 	"api/utils"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type FileController struct {
 	authenticationService *services.AuthenticationService
+	contractService       *services.ContractService
 }
 
 func NewFileController() *FileController {
 	return &FileController{
 		authenticationService: services.NewAuthenticationService(),
+		contractService:       services.NewContractService(),
 	}
 }
 
@@ -128,6 +132,41 @@ func (c *FileController) GetUserImage(ctx *gin.Context) {
 
 	if err := utils.GetFile(ctx, "images/users/"+userID+"/"+filename); err != nil {
 		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
+		ctx.JSON(http.StatusNotFound, response)
+		return
+	}
+}
+
+func (c *FileController) GetContractFile(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	contractIDStr := ctx.Param("contractID")
+	contractID, _ := strconv.ParseInt(contractIDStr, 10, 64)
+	filename := ctx.Param("fileName")
+
+	if contractID == 0 || filename == "" {
+		response.Message = config.GetMessageCode("FILE_NOT_FOUND")
+		ctx.JSON(http.StatusNotFound, response)
+		return
+	}
+
+	contract := &structs.Contract{}
+
+	isAllowed, err := c.contractService.GetContractDetail(ctx, contract, contractID)
+	if err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if !isAllowed {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(http.StatusForbidden, response)
+		return
+	}
+
+	if err := utils.GetFile(ctx, "files/contracts/"+contractIDStr+"/"+filename); err != nil {
+		response.Message = config.GetMessageCode("FILE_NOT_FOUND")
 		ctx.JSON(http.StatusNotFound, response)
 		return
 	}

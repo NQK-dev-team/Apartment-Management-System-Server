@@ -19,5 +19,6 @@ func InitContractRoutes(router *gin.RouterGroup) {
 	contractRoutes.Use(authorizationMiddle.AuthManagerMiddleware)
 	{
 		contractRoutes.POST("/delete-many", contractController.DeleteManyContracts)
+		contractRoutes.POST("/:id/update", contractController.UpdateContract)
 	}
 }

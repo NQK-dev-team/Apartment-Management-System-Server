@@ -13,13 +13,15 @@ func InitRoutes(router *gin.RouterGroup) {
 	InitAuthRoutes(r)
 
 	// Init file sub-routes
-	InitFileRoutes(r)
+	// InitFileRoutes(r)
 
 	// Apply the jwtMiddleware to other sub-routes
 	authMiddleware := middlewares.NewAuthenticationMiddleware()
 	r.Use(authMiddleware.AuthMiddleware)
 	{
 		// Init other sub-routes
+		InitFileRoutes(r)
+
 		InitBuildingRoutes(r)
 		InitUserRoutes(r)
 		InitSupportTicketRoutes(r)

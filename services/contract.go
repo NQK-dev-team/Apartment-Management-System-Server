@@ -294,6 +294,81 @@ func (s *ContractService) CheckManagerContractPermission(ctx *gin.Context, manag
 	return false, nil
 }
 
+func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.EditContract, contractID int64) (bool, bool, error) {
+	oldContractData := &structs.Contract{}
+
+	if err := s.contractRepository.GetContractByID(ctx, oldContractData, contractID); err != nil {
+		return true, true, err
+	}
+
+	if oldContractData.ID == 0 {
+		return true, true, errors.New("contract not found")
+	}
+
+	role, exists := ctx.Get("role")
+
+	if !exists {
+		return true, true, errors.New("role not found")
+	}
+
+	if role.(string) == constants.Roles.Manager {
+		jwt, exists := ctx.Get("jwt")
+
+		if !exists {
+			return true, true, errors.New("jwt not found")
+		}
+
+		token, err := utils.ValidateJWTToken(jwt.(string))
+
+		if err != nil {
+			return true, true, err
+		}
+
+		claim := &structs.JTWClaim{}
+
+		utils.ExtractJWTClaim(token, claim)
+
+		isAllowed, err := s.CheckManagerContractPermission(ctx, claim.UserID, contractID)
+
+		if err != nil {
+			return true, true, err
+		}
+
+		if !isAllowed {
+			return false, true, nil
+		}
+	}
+
+	if contract.Status == constants.Common.ContractStatus.EXPIRED || contract.Status == constants.Common.ContractStatus.CANCELLED {
+		return false, true, nil
+	}
+
+	if oldContractData.SignDate.Valid {
+		if contract.NewSignDate != "" {
+			return true, false, nil
+		}
+	} else {
+		if contract.NewSignDate != "" {
+
+		} else {
+			if contract.Status != constants.Common.ContractStatus.WAITING_FOR_SIGNATURE &&
+				contract.Status != constants.Common.ContractStatus.NOT_IN_EFFECT {
+				return true, false, nil
+			}
+		}
+	}
+
+	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		return nil
+	})
+
+	if err != nil {
+		return false, false, err
+	}
+
+	return true, true, nil
+}
+
 // func (s *ContractService) DeleteWithoutTransaction(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 // 	contracts := []models.ContractModel{}
 // 	if err := s.contractRepository.GetContractByIDs(ctx, &contracts, id); err != nil {

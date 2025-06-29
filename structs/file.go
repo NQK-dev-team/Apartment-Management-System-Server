@@ -47,3 +47,7 @@ type ValidateUserFile struct {
 	FrontSSNImage ImageValidation
 	BackSSNImage  ImageValidation
 }
+
+type ValidateEditContractFile struct{
+	NewFiles []FileValidation `validate:"dive"`
+}
