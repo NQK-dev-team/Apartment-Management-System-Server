@@ -24,9 +24,6 @@ func (r *EmailVerifyTokenRepository) Create(ctx *gin.Context, verifyToken *model
 
 func (r *EmailVerifyTokenRepository) GetByEmail(ctx *gin.Context, email string, tokens *[]models.EmailVerifyTokenModel) error {
 	if err := config.DB.Where("email = ?", email).Order("created_at DESC").Find(tokens).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 
@@ -35,9 +32,6 @@ func (r *EmailVerifyTokenRepository) GetByEmail(ctx *gin.Context, email string, 
 
 func (r *EmailVerifyTokenRepository) Delete(ctx *gin.Context, tx *gorm.DB, email string) error {
 	if err := tx.Where("email = ?", email).Delete(&models.EmailVerifyTokenModel{}).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 

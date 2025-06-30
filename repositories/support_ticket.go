@@ -24,9 +24,6 @@ func (r *SupportTicketRepository) GetTicketBuilding(ctx *gin.Context, ticketID i
 		Joins("JOIN support_ticket ON support_ticket.contract_id = contract.id AND support_ticket.deleted_at IS NULL").
 		Where("support_ticket.id = ? AND building.deleted_at IS NULL", ticketID).
 		Find(building).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 	return nil
@@ -38,9 +35,6 @@ func (r *SupportTicketRepository) GetById(ctx *gin.Context, ticket *models.Suppo
 		Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
 		Where("support_ticket.id = ? AND support_ticket.deleted_at IS NULL", id).Preload("Files").Find(ticket).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 	return nil
@@ -55,9 +49,6 @@ func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[
 			Where("support_ticket.created_at::timestamp::date >= ? AND support_ticket.created_at::timestamp::date <= ? AND support_ticket.manager_id IS NOT NULL", startDate, endDate).
 			Limit(int(limit)).Offset(int(offset)).Order("support_ticket.created_at desc, support_ticket.owner_resolve_time desc, support_ticket.manager_resolve_time desc").
 			Find(tickets).Error; err != nil {
-			// if errors.Is(err, gorm.ErrRecordNotFound) {
-			// 	return nil
-			// }
 			return err
 		}
 	} else {
@@ -71,9 +62,6 @@ func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[
 					Where("manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ? AND building.deleted_at IS NULL", *managerID).Select("building.id")).
 			Limit(int(limit)).Offset(int(offset)).Order("support_ticket.created_at desc, support_ticket.owner_resolve_time desc, support_ticket.manager_resolve_time desc").
 			Find(tickets).Error; err != nil {
-			// if errors.Is(err, gorm.ErrRecordNotFound) {
-			// 	return nil
-			// }
 			return err
 		}
 	}
@@ -103,9 +91,6 @@ func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, ticket
 		Where("support_ticket.manager_id = ? AND support_ticket.created_at::timestamp::date >= ? AND support_ticket.created_at::timestamp::date <= ? AND support_ticket.deleted_at IS NULL", managerID, startDate, endDate).
 		Limit(int(limit)).Offset(int(offset)).Order("support_ticket.created_at desc, support_ticket.owner_resolve_time desc, support_ticket.manager_resolve_time desc").
 		Find(tickets).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 
@@ -134,9 +119,6 @@ func (r *SupportTicketRepository) GetTicketsByCustomerID(ctx *gin.Context, ticke
 		Where("support_ticket.customer_id = ? AND support_ticket.deleted_at IS NULL", customerID).
 		Order("support_ticket.created_at desc, support_ticket.owner_resolve_time desc, support_ticket.manager_resolve_time desc").
 		Find(tickets).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 
@@ -165,9 +147,6 @@ func (r *SupportTicketRepository) GetTicketByRoomIDAndBuildingID(ctx *gin.Contex
 		Where("support_ticket.created_at::timestamp::date >= ? AND support_ticket.created_at::timestamp::date <= ? AND room.id = ? AND building.id = ? AND support_ticket.deleted_at IS NULL", startDate, endDate, roomID, buildingID).
 		Order("support_ticket.created_at desc, owner_resolve_time desc, manager_resolve_time desc").
 		Find(tickets).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 

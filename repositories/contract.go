@@ -21,9 +21,6 @@ func NewContractRepository() *ContractRepository {
 
 func (r *ContractRepository) GetById(ctx *gin.Context, contract *models.ContractModel, id int64) error {
 	if err := config.DB.Model(&models.ContractModel{}).Where("id = ? AND contract.deleted_at IS NULL", id).Preload("Files").Preload("SupportTickets").Find(contract).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 	return nil
@@ -31,9 +28,6 @@ func (r *ContractRepository) GetById(ctx *gin.Context, contract *models.Contract
 
 func (r *ContractRepository) GetContractByIDs(ctx *gin.Context, contract *[]models.ContractModel, id []int64) error {
 	if err := config.DB.Model(&models.ContractModel{}).Where("id in ? AND contract.deleted_at IS NULL", id).Preload("SupportTickets").Find(contract).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 	return nil
@@ -44,9 +38,6 @@ func (r *ContractRepository) GetContractByRoomID(ctx *gin.Context, contract *[]m
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Where("contract.room_id in ? AND contract.deleted_at IS NULL", roomIDs).Find(contract).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 	return nil
@@ -56,9 +47,6 @@ func (r *ContractRepository) GetContractsByManagerID(ctx *gin.Context, contracts
 	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").
 		Where("creator_id = ? AND contract.deleted_at IS NULL", managerID).Order("start_date DESC, end_date DESC, sign_date DESC").
 		Find(contracts).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 	return nil
@@ -70,9 +58,6 @@ func (r *ContractRepository) GetContractByID(ctx *gin.Context, contract *structs
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Where("contract.id = ? AND contract.deleted_at IS NULL", id).
 		Find(contract).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 
@@ -113,9 +98,6 @@ func (r *ContractRepository) GetContracts(ctx *gin.Context, contracts *[]structs
 		Where("contract.deleted_at IS NULL").
 		Limit(int(limit)).Offset(int(offset)).Order("contract.start_date DESC, contract.end_date DESC, contract.sign_date DESC").
 		Find(contracts).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 
@@ -152,9 +134,6 @@ func (r *ContractRepository) GetContractsByManagerID2(ctx *gin.Context, contract
 		Select("all_contracts.*").
 		Limit(int(limit)).Offset(int(offset)).Order("all_contracts.start_date DESC, all_contracts.end_date DESC, all_contracts.sign_date DESC").
 		Find(contracts).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 
@@ -182,9 +161,6 @@ func (r *ContractRepository) GetContractsByCustomerID(ctx *gin.Context, contract
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Where("contract.householder_id = ? AND contract.deleted_at IS NULL", customerID).Order("contract.start_date DESC, contract.end_date DESC, contract.sign_date DESC").
 		Find(contracts).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 
@@ -212,9 +188,6 @@ func (r *ContractRepository) GetContractsByCustomerID2(ctx *gin.Context, contrac
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Where("contract.householder_id = ? AND contract.deleted_at IS NULL", customerID).Limit(int(limit)).Offset(int(offset)).Order("contract.start_date DESC, contract.end_date DESC, contract.sign_date DESC").
 		Find(contracts).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 
@@ -242,9 +215,6 @@ func (r *ContractRepository) GetContractByRoomIDAndBuildingID(ctx *gin.Context, 
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Where("room_id = ? AND building_id = ? AND contract.deleted_at IS NULL", roomID, buildingID).Order("contract.start_date DESC, contract.end_date DESC, contract.sign_date DESC").
 		Find(contracts).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 
@@ -272,9 +242,6 @@ func (r *ContractRepository) GetContractByRoomIDAndBuildingIDAndManagerID(ctx *g
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Where("room_id = ? AND building_id = ? AND creator_id = ? AND contract.deleted_at IS NULL", roomID, buildingID, managerID).Order("contract.start_date DESC, contract.end_date DESC, contract.sign_date DESC").
 		Find(contracts).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 
@@ -301,18 +268,12 @@ func (r *ContractRepository) GetDeletableContracts(ctx *gin.Context, contracts *
 			Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 			Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 			Where("contract.id in ? and contract.status in ? and room_id = ? and building_id = ? AND contract.deleted_at IS NULL", IDs, []int{constants.Common.ContractStatus.CANCELLED, constants.Common.ContractStatus.WAITING_FOR_SIGNATURE}, roomID, buildingID).Find(contracts).Error; err != nil {
-			// if errors.Is(err, gorm.ErrRecordNotFound) {
-			// 	return nil
-			// }
 			return err
 		}
 	} else {
 		if err := config.DB.Model(&models.ContractModel{}).
 			Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 			Where("contract.id in ? and contract.status in ? and creator_id = ? and room_id = ? and building_id = ? AND contract.deleted_at IS NULL", IDs, []int{constants.Common.ContractStatus.CANCELLED, constants.Common.ContractStatus.WAITING_FOR_SIGNATURE}, *managerID, roomID, buildingID).Find(contracts).Error; err != nil {
-			// if errors.Is(err, gorm.ErrRecordNotFound) {
-			// 	return nil
-			// }
 			return err
 		}
 	}
@@ -344,9 +305,6 @@ func (r *ContractRepository) GetDeletableContracts2(ctx *gin.Context, contracts 
 
 		if err := config.DB.Model(&models.ContractModel{}).Table("((?) UNION ALL (?)) as all_contracts", query1, query2).
 			Find(contracts).Error; err != nil {
-			// if errors.Is(err, gorm.ErrRecordNotFound) {
-			// 	return nil
-			// }
 			return err
 		}
 	}

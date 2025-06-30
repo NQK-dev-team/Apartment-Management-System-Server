@@ -23,9 +23,6 @@ func (r *BillRepository) GetById(ctx *gin.Context, bill *models.BillModel, id in
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Where("id = ? AND bill.deleted_at IS NULL", id).Preload("Payer").Preload("ExtraPayments").Find(bill).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 	return nil
@@ -37,9 +34,7 @@ func (r *BillRepository) GetByContractId(ctx *gin.Context, bills *[]models.BillM
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Where("contract_id = ? AND bill.deleted_at IS NULL", contractID).Preload("Payer").Preload("ExtraPayments").Find(bills).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
+		return err
 	}
 	return nil
 }
@@ -82,9 +77,6 @@ func (r *BillRepository) GetDeletableBills(ctx *gin.Context, bills *[]models.Bil
 			Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 			Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 			Where("bill.id in ? and bill.status in ? AND bill.deleted_at IS NULL", IDs, []int{constants.Common.BillStatus.UN_PAID, constants.Common.BillStatus.OVERDUE}).Find(bills).Error; err != nil {
-			// if errors.Is(err, gorm.ErrRecordNotFound) {
-			// 	return nil
-			// }
 			return err
 		}
 	} else {
@@ -102,9 +94,6 @@ func (r *BillRepository) GetDeletableBills(ctx *gin.Context, bills *[]models.Bil
 
 		if err := config.DB.Model(&models.BillModel{}).Table("((?) UNION ALL (?)) as all_bills", query1, query2).
 			Find(bills).Error; err != nil {
-			// if errors.Is(err, gorm.ErrRecordNotFound) {
-			// 	return nil
-			// }
 			return err
 		}
 	}

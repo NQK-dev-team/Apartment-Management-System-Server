@@ -19,9 +19,6 @@ func (r *RoomRepository) GetById(ctx *gin.Context, room *models.RoomModel, id in
 	if err := config.DB.Model(&models.RoomModel{}).
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Where("room.id = ? AND room.deleted_at IS NULL", id).Preload("Images").Preload("Contracts").Find(room).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 	return nil
@@ -32,9 +29,6 @@ func (r *RoomRepository) GetByIDs(ctx *gin.Context, rooms *[]models.RoomModel, I
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Where("room.id in ? AND room.deleted_at IS NULL", IDs). // Preload("Images").Preload("Contracts").
 		Find(rooms).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 	return nil
@@ -43,9 +37,6 @@ func (r *RoomRepository) GetByIDs(ctx *gin.Context, rooms *[]models.RoomModel, I
 func (r *RoomRepository) GetNewID(ctx *gin.Context) (int64, error) {
 	lastestRoom := models.RoomModel{}
 	if err := config.DB.Model(&models.RoomModel{}).Order("id desc").Unscoped().Find(&lastestRoom).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return 0, nil
-		// }
 		return 0, err
 	}
 	return lastestRoom.ID + 1, nil
@@ -54,9 +45,6 @@ func (r *RoomRepository) GetNewID(ctx *gin.Context) (int64, error) {
 func (r *RoomRepository) GetNewImageID(ctx *gin.Context) (int64, error) {
 	lastestImage := models.RoomImageModel{}
 	if err := config.DB.Model(&models.RoomImageModel{}).Order("id desc").Unscoped().Find(&lastestImage).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return 0, nil
-		// }
 		return 0, err
 	}
 	return lastestImage.ID + 1, nil
@@ -148,9 +136,6 @@ func (r *RoomRepository) Update(ctx *gin.Context, tx *gorm.DB, rooms *[]models.R
 func (r *RoomRepository) GetNewImageNo(ctx *gin.Context, roomID int64) (int, error) {
 	lastestImage := models.RoomImageModel{}
 	if err := config.DB.Model(&models.RoomImageModel{}).Where("room_id = ?", roomID).Order("no desc").Unscoped().Find(&lastestImage).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return 0, nil
-		// }
 		return 0, err
 	}
 	return lastestImage.No + 1, nil
@@ -160,9 +145,6 @@ func (r *RoomRepository) GetRoomByRoomIDAndBuildingID(ctx *gin.Context, room *mo
 	if err := config.DB.Model(&models.RoomModel{}).
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Where("room.id = ? AND room.building_id = ? AND room.deleted_at IS NULL", roomID, buildingID).Preload("Images").Preload("Contracts").Find(room).Error; err != nil {
-		// if errors.Is(err, gorm.ErrRecordNotFound) {
-		// 	return nil
-		// }
 		return err
 	}
 	return nil
