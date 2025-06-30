@@ -8,6 +8,8 @@ import (
 	"api/structs"
 	"api/utils"
 	"errors"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -343,26 +345,112 @@ func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.Edi
 		return false, true, nil
 	}
 
+	isContractSigned := false
+	contractActiveResult, err := utils.CompareDates(oldContractData.StartDate.String(), time.Now().Format("2006-01-02"))
+
+	if err != nil {
+		return true, true, err
+	}
+	isContractActive := contractActiveResult == 0 || contractActiveResult == 1
+
 	if oldContractData.SignDate.Valid {
 		if contract.NewSignDate != "" {
 			return true, false, nil
 		}
+		isContractSigned = true
 	} else {
 		if contract.NewSignDate != "" {
+			result, err := utils.CompareDates(contract.NewSignDate, oldContractData.StartDate.String())
+			if err != nil {
+				return true, true, err
+			}
 
-		} else {
-			if contract.Status != constants.Common.ContractStatus.WAITING_FOR_SIGNATURE &&
-				contract.Status != constants.Common.ContractStatus.NOT_IN_EFFECT {
+			if result == 1 {
 				return true, false, nil
 			}
+
+			isContractSigned = true
 		}
 	}
 
-	err := config.DB.Transaction(func(tx *gorm.DB) error {
+	if isContractSigned && isContractActive {
+		if contract.Status != constants.Common.ContractStatus.ACTIVE && contract.Status != constants.Common.ContractStatus.EXPIRED && contract.Status != constants.Common.ContractStatus.CANCELLED {
+			return true, false, nil
+		}
+	} else if isContractSigned && !isContractActive {
+		if contract.Status != constants.Common.ContractStatus.NOT_IN_EFFECT && contract.Status != constants.Common.ContractStatus.CANCELLED {
+			return true, false, nil
+		}
+	} else if !isContractSigned && isContractActive {
+		if contract.Status != constants.Common.ContractStatus.CANCELLED {
+			return true, false, nil
+		}
+	} else {
+		if contract.Status != constants.Common.ContractStatus.WAITING_FOR_SIGNATURE && contract.Status != constants.Common.ContractStatus.CANCELLED {
+			return true, false, nil
+		}
+	}
+
+	contractIDStr := strconv.Itoa(int(contractID))
+	deleteFileList := []string{}
+
+	updatedContractData := &models.ContractModel{}
+
+	if err := s.contractRepository.GetById(ctx, updatedContractData, contractID); err != nil {
+		return true, true, err
+	}
+
+	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		newContractFiles := []models.ContractFileModel{}
+
+		for index, file := range contract.NewFiles {
+			filePath, err := utils.StoreFile(file.File, "files/contracts/"+contractIDStr+"/")
+			if err != nil {
+				return err
+			}
+			newContractFiles = append(newContractFiles, models.ContractFileModel{
+				ContractID: contractID,
+				DefaultFileModel: models.DefaultFileModel{
+					Path:  filePath,
+					No:    index + 1,
+					Title: file.Title,
+				},
+			})
+			deleteFileList = append(deleteFileList, filePath)
+		}
+
+		if len(newContractFiles) > 0 {
+			if err := s.contractRepository.AddFile(ctx, tx, &newContractFiles); err != nil {
+				return err
+			}
+		}
+
+		if len(contract.RemovedResidents) > 0 {
+			if err := s.contractRepository.DeleteResident(ctx, tx, contract.RemovedResidents); err != nil {
+				return err
+			}
+		}
+
+		for _, resident := range contract.Residents {
+
+		}
+
+		updatedContractData.Status = contract.Status
+		if contract.NewSignDate != "" {
+			updatedContractData.SignDate = utils.StringToNullTime(contract.NewSignDate)
+		}
+
+		if err := s.contractRepository.UpdateContract(ctx, tx, updatedContractData); err != nil {
+			return err
+		}
+
 		return nil
 	})
 
 	if err != nil {
+		for _, path := range deleteFileList {
+			utils.RemoveFile(path)
+		}
 		return false, false, err
 	}
 

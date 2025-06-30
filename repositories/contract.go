@@ -342,3 +342,45 @@ func (r *ContractRepository) Delete(ctx *gin.Context, tx *gorm.DB, id []int64) e
 
 	return nil
 }
+
+func (r *ContractRepository) GetNewFileNo(ctx *gin.Context, contractID int64) (int, error) {
+	latestFile := models.ContractFileModel{}
+	if err := config.DB.Model(&models.ContractFileModel{}).Where("contract_id = ?", contractID).Order("no desc").Unscoped().Find(&latestFile).Error; err != nil {
+		return 0, err
+	}
+	return latestFile.No + 1, nil
+}
+
+func (r *ContractRepository) AddFile(ctx *gin.Context, tx *gorm.DB, file *[]models.ContractFileModel) error {
+	userID := ctx.GetInt64("userID")
+	if err := tx.Set("userID", userID).Model(&models.ContractFileModel{}).Omit("ID").Create(file).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ContractRepository) DeleteResident(ctx *gin.Context, tx *gorm.DB, id []int64) error {
+	now := time.Now()
+	userID := ctx.GetInt64("userID")
+
+	if err := tx.Set("isQuiet", true).Model(&models.RoomResidentModel{}).Where("id in ?", id).UpdateColumns(models.RoomResidentModel{
+		DefaultModel: models.DefaultModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ContractRepository) UpdateContract(ctx *gin.Context, tx *gorm.DB, contract *models.ContractModel) error {
+	userID := ctx.GetInt64("userID")
+	if err := tx.Set("userID", userID).Model(&models.ContractModel{}).Where("id = ?", contract.ID).Save(contract).Error; err != nil {
+		return err
+	}
+	return nil
+}
