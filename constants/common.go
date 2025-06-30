@@ -1,5 +1,7 @@
 package constants
 
+import "fmt"
+
 type supportTicketStatusStruct struct {
 	PENDING  int
 	APPROVED int
@@ -59,8 +61,14 @@ type fileUploadStruct struct {
 	MaxFileSizeStr    string
 }
 
+type contractTypeStruct struct {
+	RENT int
+	BUY  int
+}
+
 var Common = struct {
 	SupportTicketStatus  supportTicketStatusStruct
+	ContractType         contractTypeStruct
 	ContractStatus       contractStatusStruct
 	RoomStatus           roomStatusStruct
 	UserGender           userGenderStruct
@@ -75,6 +83,10 @@ var Common = struct {
 		PENDING:  1,
 		APPROVED: 2,
 		REJECTED: 3,
+	},
+	ContractType: contractTypeStruct{
+		RENT: 1,
+		BUY:  2,
 	},
 	ContractStatus: contractStatusStruct{
 		ACTIVE:                1,

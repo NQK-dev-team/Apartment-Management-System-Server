@@ -20,14 +20,14 @@ func NewContractRepository() *ContractRepository {
 }
 
 func (r *ContractRepository) GetById(ctx *gin.Context, contract *models.ContractModel, id int64) error {
-	if err := config.DB.Model(&models.ContractModel{}).Where("id = ? AND contract.deleted_at IS NULL", id).Preload("Files").Preload("SupportTickets").Find(contract).Error; err != nil {
+	if err := config.DB.Model(&models.ContractModel{}).Where("id = ? AND contract.deleted_at IS NULL", id).Preload("Files").Find(contract).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r *ContractRepository) GetContractByIDs(ctx *gin.Context, contract *[]models.ContractModel, id []int64) error {
-	if err := config.DB.Model(&models.ContractModel{}).Where("id in ? AND contract.deleted_at IS NULL", id).Preload("SupportTickets").Find(contract).Error; err != nil {
+	if err := config.DB.Model(&models.ContractModel{}).Where("id in ? AND contract.deleted_at IS NULL", id).Find(contract).Error; err != nil {
 		return err
 	}
 	return nil
@@ -380,6 +380,29 @@ func (r *ContractRepository) DeleteResident(ctx *gin.Context, tx *gorm.DB, id []
 func (r *ContractRepository) UpdateContract(ctx *gin.Context, tx *gorm.DB, contract *models.ContractModel) error {
 	userID := ctx.GetInt64("userID")
 	if err := tx.Set("userID", userID).Model(&models.ContractModel{}).Where("id = ?", contract.ID).Save(contract).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ContractRepository) AddNewRoomResident(ctx *gin.Context, tx *gorm.DB, resident *models.RoomResidentModel, contractID int64) error {
+	userID := ctx.GetInt64("userID")
+	if err := tx.Set("userID", userID).Model(&models.RoomResidentModel{}).Omit("ID").Create(resident).Error; err != nil {
+		return err
+	}
+
+	if err := tx.Set("userID", userID).Model(&models.RoomResidentListModel{}).Create(&models.RoomResidentListModel{
+		ResidentID: resident.ID,
+		ContractID: contractID,
+	}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ContractRepository) UpdateRoomResident(ctx *gin.Context, tx *gorm.DB, resident *models.RoomResidentModel) error {
+	userID := ctx.GetInt64("userID")
+	if err := tx.Set("userID", userID).Model(&models.RoomResidentModel{}).Where("id = ?", resident.ID).Save(resident).Error; err != nil {
 		return err
 	}
 	return nil

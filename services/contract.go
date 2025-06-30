@@ -7,6 +7,7 @@ import (
 	"api/repositories"
 	"api/structs"
 	"api/utils"
+	"database/sql"
 	"errors"
 	"strconv"
 	"time"
@@ -20,6 +21,7 @@ type ContractService struct {
 	billRepository     *repositories.BillRepository
 	ticketRepository   *repositories.SupportTicketRepository
 	buildingRepository *repositories.BuildingRepository
+	userRepository     *repositories.UserRepository
 }
 
 func NewContractService() *ContractService {
@@ -28,6 +30,7 @@ func NewContractService() *ContractService {
 		billRepository:     repositories.NewBillRepository(),
 		ticketRepository:   repositories.NewSupportTicketRepository(),
 		buildingRepository: repositories.NewBuildingRepository(),
+		userRepository:     repositories.NewUserRepository(),
 	}
 }
 
@@ -341,17 +344,17 @@ func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.Edi
 		}
 	}
 
-	if contract.Status == constants.Common.ContractStatus.EXPIRED || contract.Status == constants.Common.ContractStatus.CANCELLED {
+	if oldContractData.Status == constants.Common.ContractStatus.EXPIRED || oldContractData.Status == constants.Common.ContractStatus.CANCELLED {
 		return false, true, nil
 	}
 
 	isContractSigned := false
-	contractActiveResult, err := utils.CompareDates(oldContractData.StartDate.String(), time.Now().Format("2006-01-02"))
+	contractActiveResult, err := utils.CompareDates(oldContractData.StartDate.Format("2006-01-02"), time.Now().Format("2006-01-02"))
 
 	if err != nil {
 		return true, true, err
 	}
-	isContractActive := contractActiveResult == 0 || contractActiveResult == 1
+	isContractActive := contractActiveResult == 0 || contractActiveResult == -1
 
 	if oldContractData.SignDate.Valid {
 		if contract.NewSignDate != "" {
@@ -360,7 +363,7 @@ func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.Edi
 		isContractSigned = true
 	} else {
 		if contract.NewSignDate != "" {
-			result, err := utils.CompareDates(contract.NewSignDate, oldContractData.StartDate.String())
+			result, err := utils.CompareDates(contract.NewSignDate, oldContractData.StartDate.Format("2006-01-02"))
 			if err != nil {
 				return true, true, err
 			}
@@ -375,6 +378,10 @@ func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.Edi
 
 	if isContractSigned && isContractActive {
 		if contract.Status != constants.Common.ContractStatus.ACTIVE && contract.Status != constants.Common.ContractStatus.EXPIRED && contract.Status != constants.Common.ContractStatus.CANCELLED {
+			return true, false, nil
+		}
+
+		if oldContractData.Type == constants.Common.ContractType.BUY {
 			return true, false, nil
 		}
 	} else if isContractSigned && !isContractActive {
@@ -404,7 +411,7 @@ func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.Edi
 		newContractFiles := []models.ContractFileModel{}
 
 		for index, file := range contract.NewFiles {
-			filePath, err := utils.StoreFile(file.File, "files/contracts/"+contractIDStr+"/")
+			filePath, err := utils.StoreFile(file.File, constants.GetContractFileURL("files", contractIDStr, ""))
 			if err != nil {
 				return err
 			}
@@ -431,13 +438,87 @@ func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.Edi
 			}
 		}
 
-		for _, resident := range contract.Residents {
+		newResidents := []models.RoomResidentModel{}
+		updateResidents := []models.RoomResidentModel{}
 
+		for _, resident := range contract.Residents {
+			var residentData *models.RoomResidentModel
+
+			if resident.UserAccountID != 0 {
+				customer := &models.UserModel{}
+				if err := s.userRepository.GetCustomerDetail(ctx, customer, resident.UserAccountID); err != nil {
+					return err
+				}
+
+				if customer.ID == 0 {
+					return errors.New("customer not found")
+				}
+
+				residentData = &models.RoomResidentModel{
+					FirstName:               customer.FirstName,
+					LastName:                customer.LastName,
+					MiddleName:              customer.MiddleName,
+					SSN:                     customer.SSN,
+					OldSSN:                  customer.OldSSN,
+					DOB:                     customer.DOB,
+					POB:                     customer.POB,
+					Phone:                   sql.NullString{String: customer.Phone, Valid: customer.Phone != ""},
+					Email:                   sql.NullString{String: customer.Email, Valid: customer.Email != ""},
+					Gender:                  customer.Gender,
+					RelationWithHouseholder: resident.RelationWithHouseholder,
+					UserAccountID:           sql.NullInt64{Int64: customer.ID, Valid: true},
+				}
+			} else {
+				residentData = &models.RoomResidentModel{
+					FirstName:               resident.FirstName,
+					LastName:                resident.LastName,
+					MiddleName:              sql.NullString{String: resident.MiddleName, Valid: resident.MiddleName != ""},
+					SSN:                     resident.SSN,
+					OldSSN:                  sql.NullString{String: resident.OldSSN, Valid: resident.OldSSN != ""},
+					DOB:                     resident.DOB,
+					POB:                     resident.POB,
+					Phone:                   sql.NullString{String: resident.Phone, Valid: resident.Phone != ""},
+					Email:                   sql.NullString{String: resident.Email, Valid: resident.Email != ""},
+					Gender:                  resident.Gender,
+					RelationWithHouseholder: resident.RelationWithHouseholder,
+					UserAccountID:           sql.NullInt64{Int64: 0, Valid: false},
+				}
+			}
+
+			if resident.ID != 0 {
+				residentData.ID = resident.ID
+				updateResidents = append(updateResidents, *residentData)
+			} else {
+				newResidents = append(newResidents, *residentData)
+			}
+		}
+
+		if len(newResidents) > 0 {
+			for _, newResident := range newResidents {
+				if err := s.contractRepository.AddNewRoomResident(ctx, tx, &newResident, contractID); err != nil {
+					return err
+				}
+			}
+		}
+
+		if len(updateResidents) > 0 {
+			for _, updateResident := range updateResidents {
+				if err := s.contractRepository.UpdateRoomResident(ctx, tx, &updateResident); err != nil {
+					return err
+				}
+			}
 		}
 
 		updatedContractData.Status = contract.Status
 		if contract.NewSignDate != "" {
 			updatedContractData.SignDate = utils.StringToNullTime(contract.NewSignDate)
+		}
+
+		if contract.Status == constants.Common.ContractStatus.EXPIRED || contract.Status == constants.Common.ContractStatus.CANCELLED {
+			updatedContractData.EndDate = sql.NullTime{
+				Time:  time.Now(),
+				Valid: true,
+			}
 		}
 
 		if err := s.contractRepository.UpdateContract(ctx, tx, updatedContractData); err != nil {

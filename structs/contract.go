@@ -47,17 +47,17 @@ type EditContract struct {
 }
 
 type ContractResidents struct {
-	FirstName               string `form:"firstName" validate:"required_unless=UserAccountID 0,omitempty"`
-	LastName                string `form:"lastName" validate:"required_unless=UserAccountID 0,omitempty"`
-	MiddleName              string `form:"middleName"`
-	SSN                     string `form:"ssn" validate:"required_unless=UserAccountID 0,omitempty,alphanum,len=12"`
+	UserAccountID           int64  `form:"userAccountID" validate:"omitempty"`
+	FirstName               string `form:"firstName" validate:"required_if=UserAccountID 0,omitempty"`
+	LastName                string `form:"lastName" validate:"required_if=UserAccountID 0,omitempty"`
+	MiddleName              string `form:"middleName" validate:"omitempty"`
+	SSN                     string `form:"ssn" validate:"required_if=UserAccountID 0,omitempty,alphanum,len=12"`
 	OldSSN                  string `form:"oldSSN" validate:"omitempty,alphanum,len=9"`
-	Dob                     string `form:"dob" validate:"required_unless=UserAccountID 0,omitempty,datetime=2006-01-02,dob_18"`
-	Pob                     string `form:"pob" validate:"required_unless=UserAccountID 0,omitempty"`
+	DOB                     string `form:"dob" validate:"required_if=UserAccountID 0,omitempty,datetime=2006-01-02,dob_18"`
+	POB                     string `form:"pob" validate:"required_if=UserAccountID 0,omitempty"`
 	Phone                   string `form:"phone" validate:"omitempty,alphanum,len=10"`
 	Email                   string `form:"email" validate:"omitempty,email"`
-	Gender                  int    `form:"gender" validate:"required_unless=UserAccountID 0,omitempty,min=1,max=3"`
-	UserAccountID           int64  `form:"userAccountID" validate:"omitempty"`
+	Gender                  int    `form:"gender" validate:"required_if=UserAccountID 0,omitempty,min=1,max=3"`
 	RelationWithHouseholder int    `form:"relationWithHouseholder" validate:"required,min=1,max=4"`
 	ID                      int64  `form:"id" validate:"omitempty"` // For existing residents, this is the ID of the resident record. For new residents, this is 0.
 }
