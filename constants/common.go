@@ -132,3 +132,19 @@ var Common = struct {
 		MaxFileSizeStr:  "10MB",
 	},
 }
+
+func GetRoomImageURL(imagePrefix, buildingID, roomNo, fileName string) string {
+	return fmt.Sprintf("%s/buildings/%s/rooms/%s/%s", imagePrefix, buildingID, roomNo, fileName)
+}
+
+func GetBuildingImageURL(imagePrefix, buildingID, fileName string) string {
+	return fmt.Sprintf("%s/buildings/%s/%s", imagePrefix, buildingID, fileName)
+}
+
+func GetUserImageURL(imagePrefix, userID, fileName string) string {
+	return fmt.Sprintf("%s/users/%s/%s", imagePrefix, userID, fileName)
+}
+
+func GetContractFileURL(filePrefix, contractID, fileName string) string {
+	return fmt.Sprintf("%s/contracts/%s/%s", filePrefix, contractID, fileName)
+}

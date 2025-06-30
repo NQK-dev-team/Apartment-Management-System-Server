@@ -78,7 +78,7 @@ func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.New
 		newBuildingIDStr := strconv.Itoa(int(newBuilding.ID))
 		newImages := []models.BuildingImageModel{}
 		for index, image := range building.Images {
-			filePath, err := utils.StoreFile(image, "images/buildings/"+newBuildingIDStr+"/")
+			filePath, err := utils.StoreFile(image, constants.GetBuildingImageURL("images", newBuildingIDStr, ""))
 			if err != nil {
 				return err
 			}
@@ -156,7 +156,7 @@ func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.New
 				roomNoStr := strconv.Itoa(int(targetRoom.No))
 
 				for index, image := range room.Images {
-					filePath, err := utils.StoreFile(image, "images/buildings/"+newBuildingIDStr+"/"+"rooms/"+roomNoStr+"/")
+					filePath, err := utils.StoreFile(image, constants.GetRoomImageURL("images", newBuildingIDStr, roomNoStr, ""))
 					if err != nil {
 						return err
 					}
@@ -353,7 +353,7 @@ func (s *BuildingService) UpdateBuilding(ctx *gin.Context, building *structs.Edi
 				}
 				newImage := []models.BuildingImageModel{}
 				for index, image := range building.NewBuildingImages {
-					filePath, err := utils.StoreFile(image, "images/buildings/"+buildingIDStr+"/")
+					filePath, err := utils.StoreFile(image, constants.GetBuildingImageURL("images", buildingIDStr, ""))
 					if err != nil {
 						return err
 					}
@@ -414,7 +414,7 @@ func (s *BuildingService) UpdateBuilding(ctx *gin.Context, building *structs.Edi
 					roomNoStr := strconv.Itoa(int(targetRoom.No))
 
 					for index, image := range room.Images {
-						filePath, err := utils.StoreFile(image, "images/buildings/"+buildingIDStr+"/"+"rooms/"+roomNoStr+"/")
+						filePath, err := utils.StoreFile(image, constants.GetRoomImageURL("images", buildingIDStr, roomNoStr, ""))
 						if err != nil {
 							return err
 						}
@@ -553,7 +553,7 @@ func (s *BuildingService) UpdateBuilding(ctx *gin.Context, building *structs.Edi
 				}
 
 				for index, image := range room.NewImages {
-					filePath, err := utils.StoreFile(image, "images/buildings/"+buildingIDStr+"/"+"rooms/"+roomNoStr+"/")
+					filePath, err := utils.StoreFile(image, constants.GetRoomImageURL("images", buildingIDStr, roomNoStr, ""))
 					if err != nil {
 						return err
 					}

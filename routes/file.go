@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"api/constants"
 	"api/controllers"
 
 	"github.com/gin-gonic/gin"
@@ -11,9 +12,9 @@ func InitFileRoutes(router *gin.RouterGroup) {
 	fileRoutes := router.Group("/files")
 	fileController := controllers.NewFileController()
 
-	imageRoutes.GET("/buildings/:buildingID/rooms/:roomNo/:fileName", fileController.GetRoomImage)
-	imageRoutes.GET("/buildings/:buildingID/:fileName", fileController.GetBuildingImage)
-	imageRoutes.GET("/users/:userID/:fileName", fileController.GetUserImage)
+	imageRoutes.GET(constants.GetRoomImageURL("", ":buildingID", ":roomNo", ":fileName"), fileController.GetRoomImage)
+	imageRoutes.GET(constants.GetBuildingImageURL("", ":buildingID", ":fileName"), fileController.GetBuildingImage)
+	imageRoutes.GET(constants.GetUserImageURL("", ":userID", ":fileName"), fileController.GetUserImage)
 
-	fileRoutes.GET("/:contractID/:fileName", fileController.GetContractFile)
+	fileRoutes.GET(constants.GetContractFileURL("", ":contractID", ":fileName"), fileController.GetContractFile)
 }

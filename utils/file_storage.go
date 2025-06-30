@@ -135,6 +135,10 @@ func saveFileToLocal(file *multipart.FileHeader, filePath string) error {
 }
 
 func StoreFile(file *multipart.FileHeader, folder string) (string, error) {
+	if folder == "" {
+		return "", errors.New("folder cannot be empty")
+	}
+
 	fileName := generateUniqueFileName() + filepath.Ext(file.Filename)
 	if folder[len(folder)-1:] != "/" {
 		folder = folder + "/"
@@ -157,6 +161,10 @@ func StoreFile(file *multipart.FileHeader, folder string) (string, error) {
 }
 
 func removeFileFromS3(filePath string) error {
+	if filePath == "" {
+		return nil
+	}
+
 	_, err := s3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
 		Bucket: aws.String(appConfig.GetEnv("AWS_BUCKET")),
 		Key:    aws.String(filePath),
@@ -340,6 +348,10 @@ func getFileFromLocal(ctx *gin.Context, filePath string) error {
 // }
 
 func GetFile(ctx *gin.Context, filePath string) error {
+	if filePath == "" {
+		return errors.New("file path cannot be empty")
+	}
+
 	if checkS3Connection() && fileExistsInS3(filePath) {
 		if err := getFileFromS3(ctx, filePath); err != nil {
 			return getFileFromLocal(ctx, filePath)

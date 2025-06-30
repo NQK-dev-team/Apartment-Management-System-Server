@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"api/config"
+	"api/constants"
 	"api/services"
 	"api/structs"
 	"api/utils"
@@ -53,7 +54,7 @@ func (c *FileController) GetBuildingImage(ctx *gin.Context) {
 	// 	return
 	// }
 
-	if err := utils.GetFile(ctx, "images/buildings/"+buildingID+"/"+filename); err != nil {
+	if err := utils.GetFile(ctx, constants.GetBuildingImageURL("images", buildingID, filename)); err != nil {
 		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
 		ctx.JSON(http.StatusNotFound, response)
 		return
@@ -92,7 +93,7 @@ func (c *FileController) GetRoomImage(ctx *gin.Context) {
 	// 	return
 	// }
 
-	if err := utils.GetFile(ctx, "images/buildings/"+buildingID+"/rooms/"+roomNo+"/"+filename); err != nil {
+	if err := utils.GetFile(ctx, constants.GetRoomImageURL("images", buildingID, roomNo, filename)); err != nil {
 		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
 		ctx.JSON(http.StatusNotFound, response)
 		return
@@ -130,7 +131,7 @@ func (c *FileController) GetUserImage(ctx *gin.Context) {
 	// 	return
 	// }
 
-	if err := utils.GetFile(ctx, "images/users/"+userID+"/"+filename); err != nil {
+	if err := utils.GetFile(ctx, constants.GetUserImageURL("images", userID, filename)); err != nil {
 		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
 		ctx.JSON(http.StatusNotFound, response)
 		return
@@ -165,7 +166,7 @@ func (c *FileController) GetContractFile(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.GetFile(ctx, "files/contracts/"+contractIDStr+"/"+filename); err != nil {
+	if err := utils.GetFile(ctx, constants.GetContractFileURL("files", contractIDStr, filename)); err != nil {
 		response.Message = config.GetMessageCode("FILE_NOT_FOUND")
 		ctx.JSON(http.StatusNotFound, response)
 		return

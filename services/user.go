@@ -90,17 +90,17 @@ func (s *UserService) CreateStaff(ctx *gin.Context, newStaff *structs.NewStaff) 
 
 	newIDStr := strconv.FormatInt(newID, 10)
 
-	profilePath, err := utils.StoreFile(newStaff.ProfileImage, "images/users/"+newIDStr+"/")
+	profilePath, err := utils.StoreFile(newStaff.ProfileImage, constants.GetUserImageURL("images", newIDStr, ""))
 	if err != nil {
 		return err
 	}
 
-	frontSSNPath, err := utils.StoreFile(newStaff.FrontSSNImage, "images/users/"+newIDStr+"/")
+	frontSSNPath, err := utils.StoreFile(newStaff.FrontSSNImage, constants.GetUserImageURL("images", newIDStr, ""))
 	if err != nil {
 		return err
 	}
 
-	backSSNPath, err := utils.StoreFile(newStaff.BackSSNImage, "images/users/"+newIDStr+"/")
+	backSSNPath, err := utils.StoreFile(newStaff.BackSSNImage, constants.GetUserImageURL("images", newIDStr, ""))
 	if err != nil {
 		return err
 	}
@@ -413,17 +413,17 @@ func (s *UserService) CreateCustomer(ctx *gin.Context, newCustomer *structs.NewC
 
 	newIDStr := strconv.FormatInt(newID, 10)
 
-	profilePath, err := utils.StoreFile(newCustomer.ProfileImage, "images/users/"+newIDStr+"/")
+	profilePath, err := utils.StoreFile(newCustomer.ProfileImage, constants.GetUserImageURL("images", newIDStr, ""))
 	if err != nil {
 		return err
 	}
 
-	frontSSNPath, err := utils.StoreFile(newCustomer.FrontSSNImage, "images/users/"+newIDStr+"/")
+	frontSSNPath, err := utils.StoreFile(newCustomer.FrontSSNImage, constants.GetUserImageURL("images", newIDStr, ""))
 	if err != nil {
 		return err
 	}
 
-	backSSNPath, err := utils.StoreFile(newCustomer.BackSSNImage, "images/users/"+newIDStr+"/")
+	backSSNPath, err := utils.StoreFile(newCustomer.BackSSNImage, constants.GetUserImageURL("images", newIDStr, ""))
 	if err != nil {
 		return err
 	}

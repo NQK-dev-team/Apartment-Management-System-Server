@@ -2,6 +2,7 @@ package services
 
 import (
 	"api/config"
+	"api/constants"
 	"api/models"
 	"api/repositories"
 	"api/structs"
@@ -122,7 +123,7 @@ func (s *RoomService) UpdateRoomByRoomIDAndBuildingID(ctx *gin.Context, oldRoomD
 		}
 
 		for index, image := range room.NewRoomImages {
-			filePath, err := utils.StoreFile(image, "images/buildings/"+buildingIDStr+"/"+"rooms/"+roomNoStr+"/")
+			filePath, err := utils.StoreFile(image, constants.GetRoomImageURL("images", buildingIDStr, roomNoStr, ""))
 			if err != nil {
 				return err
 			}
