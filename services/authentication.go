@@ -104,12 +104,16 @@ func (s *AuthenticationService) CreateRefreshToken(ctx *gin.Context, userID int6
 		UserID: userID,
 	}
 
-	err = config.DB.Transaction(func(tx *gorm.DB) error {
-		if err := s.refreshTokenRepository.Create(ctx, tx, &refreshToken); err != nil {
-			return err
-		}
-		return nil
-	})
+	// err = config.DB.Transaction(func(tx *gorm.DB) error {
+	// 	if err := s.refreshTokenRepository.Create(ctx, tx, &refreshToken); err != nil {
+	// 		return err
+	// 	}
+	// 	return nil
+	// })
+
+	if err := s.refreshTokenRepository.Create(&refreshToken); err != nil {
+		return "", err
+	}
 
 	if err != nil {
 		return "", err
@@ -257,23 +261,36 @@ func (s *AuthenticationService) VerifyEmail(ctx *gin.Context, verifyEmailToken s
 		if err := s.userRepository.Update(ctx, tx, user); err != nil {
 			return err
 		}
-		if err := s.emailVerifyTokenRepository.Delete(ctx, tx, verifyEmailToken.Email); err != nil {
-			return err
-		}
+		// if err := s.emailVerifyTokenRepository.Delete(ctx, tx, verifyEmailToken.Email); err != nil {
+		// 	return err
+		// }
 		return nil
 	})
+
+	if err != nil {
+		return err
+	}
+
+	if err := s.emailVerifyTokenRepository.Delete(verifyEmailToken.Email); err != nil {
+		return err
+	}
 
 	return err
 }
 
 func (s *AuthenticationService) DeleteRefreshToken(ctx *gin.Context, userID int64) error {
-	err := config.DB.Transaction(func(tx *gorm.DB) error {
-		if err := s.refreshTokenRepository.Delete(ctx, tx, userID); err != nil {
-			return err
-		}
-		return nil
-	})
-	return err
+	// err := config.DB.Transaction(func(tx *gorm.DB) error {
+	// 	if err := s.refreshTokenRepository.Delete(ctx, tx, userID); err != nil {
+	// 		return err
+	// 	}
+	// 	return nil
+	// })
+	// return err
+
+	if err := s.refreshTokenRepository.Delete(userID); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *AuthenticationService) DeletePasswordResetToken(ctx *gin.Context, email string) error {

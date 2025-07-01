@@ -9,6 +9,7 @@ import (
 )
 
 var DB *gorm.DB
+var DBNoLog *gorm.DB
 
 func InitDB() error {
 	host := GetEnv("DB_HOST")
@@ -18,15 +19,15 @@ func InitDB() error {
 	dbName := GetEnv("DB_NAME")
 	ssh := GetEnv("DB_SSH")
 	timeZone := GetEnv("APP_TIME_ZONE")
-	// appEnv := GetEnv("APP_ENV")
+	appEnv := GetEnv("APP_ENV")
 
-	// var logMode logger.LogLevel
+	var logMode logger.LogLevel
 
-	// if appEnv == "production" {
-	// 	logMode = logger.Silent
-	// } else {
-	// 	logMode = logger.Info
-	// }
+	if appEnv == "production" {
+		logMode = logger.Silent
+	} else {
+		logMode = logger.Info
+	}
 
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s timeZone=%s", host, port, user, password, dbName, ssh, timeZone)
 
@@ -34,6 +35,15 @@ func InitDB() error {
 
 	DB, err = gorm.Open(postgresDriver.Open(dsn), &gorm.Config{
 		Logger:      NewModelFileLogger("assets/logs", logger.Info),
+		PrepareStmt: true,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	DBNoLog, err = gorm.Open(postgresDriver.Open(dsn), &gorm.Config{
+		Logger:      logger.Default.LogMode(logMode),
 		PrepareStmt: true,
 	})
 
