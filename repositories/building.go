@@ -17,14 +17,14 @@ func NewBuildingRepository() *BuildingRepository {
 }
 
 func (r *BuildingRepository) Get(ctx *gin.Context, building *[]models.BuildingModel) error {
-	if err := config.DB.Model(&models.BuildingModel{}).Preload("Images").Order("id asc").Find(building).Error; err != nil {
+	if err := config.DB.Model(&models.BuildingModel{}).Preload("Images").Preload("Rooms").Order("id asc").Find(building).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r *BuildingRepository) GetBuildingBaseOnSchedule(ctx *gin.Context, building *[]models.BuildingModel, userID int64) error {
-	if err := config.DB.Model(&models.BuildingModel{}).Preload("Images").
+	if err := config.DB.Model(&models.BuildingModel{}).Preload("Images").Preload("Rooms").
 		Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id").
 		Where("manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ? AND building.deleted_at IS NULL AND manager_schedule.deleted_at IS NULL", userID).Order("id asc").
 		Find(building).Error; err != nil {
