@@ -538,6 +538,12 @@ func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.Edi
 	return true, true, nil
 }
 
+func (s *ContractService) UpdateContractStatus() error {
+	return config.DBNoLog.Transaction(func(tx *gorm.DB) error {
+		return s.contractRepository.UpdateContractStatus(tx)
+	})
+}
+
 // func (s *ContractService) DeleteWithoutTransaction(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 // 	contracts := []models.ContractModel{}
 // 	if err := s.contractRepository.GetContractByIDs(ctx, &contracts, id); err != nil {

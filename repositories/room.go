@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"api/config"
+	"api/constants"
 	"api/models"
 	"time"
 
@@ -147,5 +148,19 @@ func (r *RoomRepository) GetRoomByRoomIDAndBuildingID(ctx *gin.Context, room *mo
 		Where("room.id = ? AND room.building_id = ? AND room.deleted_at IS NULL", roomID, buildingID).Preload("Images").Preload("Contracts").Find(room).Error; err != nil {
 		return err
 	}
+	return nil
+}
+
+func (r *RoomRepository) UpdateRoomStatus(tx *gorm.DB) error {
+	if err := tx.Exec("UPDATE room SET status = contract.type FROM contract WHERE contract.room_id = room.id AND contract.deleted_at IS NULL AND contract.status = ? AND room.status NOT IN ?",
+		constants.Common.ContractStatus.ACTIVE, []int{constants.Common.RoomStatus.RENTED, constants.Common.RoomStatus.SOLD}).Error; err != nil {
+		return err
+	}
+
+	if err := tx.Exec("UPDATE room SET status = ? WHERE NOT EXISTS (SELECT * FROM contract WHERE contract.room_id = room.id AND contract.deleted_at IS NULL AND contract.status = ?) AND room.status IN ?",
+		constants.Common.RoomStatus.AVAILABLE, constants.Common.ContractStatus.ACTIVE, []int{constants.Common.RoomStatus.RENTED, constants.Common.RoomStatus.SOLD}).Error; err != nil {
+		return err
+	}
+
 	return nil
 }
