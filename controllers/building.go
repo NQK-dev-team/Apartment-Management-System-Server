@@ -121,12 +121,15 @@ func (c *BuildingController) CreateBuilding(ctx *gin.Context) {
 		return
 	}
 
-	if err := c.buildingService.CreateBuilding(ctx, building); err != nil {
+	var newBuildingID int64
+
+	if err := c.buildingService.CreateBuilding(ctx, building, &newBuildingID); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
+	response.Data = newBuildingID
 	response.Message = config.GetMessageCode("CREATE_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }

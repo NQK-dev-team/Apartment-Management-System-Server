@@ -69,7 +69,7 @@ func (s *UserService) GetUserByID(ctx *gin.Context, id int64, user *models.UserM
 // 	return err
 // }
 
-func (s *UserService) CreateStaff(ctx *gin.Context, newStaff *structs.NewStaff) error {
+func (s *UserService) CreateStaff(ctx *gin.Context, newStaff *structs.NewStaff, newStaffID *int64) error {
 
 	newPassword, err := utils.GeneratePassword(constants.Common.NewPasswordLength)
 	if err != nil {
@@ -166,6 +166,8 @@ func (s *UserService) CreateStaff(ctx *gin.Context, newStaff *structs.NewStaff) 
 		if err := s.emailService.SendAccountCreationEmail(ctx, newUser.Email, fullName, newPassword); err != nil {
 			return err
 		}
+
+		*newStaffID = newUser.ID
 
 		return nil
 	})
@@ -393,7 +395,7 @@ func (s *UserService) GetCustomerTicket(ctx *gin.Context, tickets *[]structs.Sup
 	return nil
 }
 
-func (s *UserService) CreateCustomer(ctx *gin.Context, newCustomer *structs.NewCustomer) error {
+func (s *UserService) CreateCustomer(ctx *gin.Context, newCustomer *structs.NewCustomer, newCustomerID *int64) error {
 	newPassword, err := utils.GeneratePassword(constants.Common.NewPasswordLength)
 	if err != nil {
 		return err
@@ -472,6 +474,8 @@ func (s *UserService) CreateCustomer(ctx *gin.Context, newCustomer *structs.NewC
 		if err := s.emailService.SendAccountCreationEmail(ctx, newUser.Email, fullName, newPassword); err != nil {
 			return err
 		}
+
+		*newCustomerID = newUser.ID
 
 		return nil
 	})

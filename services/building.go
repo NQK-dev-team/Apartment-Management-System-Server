@@ -61,7 +61,7 @@ func (s *BuildingService) GetBuilding(ctx *gin.Context, building *[]models.Build
 	return true, s.buildingRepository.Get(ctx, building)
 }
 
-func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.NewBuilding) error {
+func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.NewBuilding, newBuildingID *int64) error {
 	deleteImageList := []string{}
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
@@ -74,6 +74,8 @@ func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.New
 		if err := s.buildingRepository.Create(ctx, tx, newBuilding); err != nil {
 			return err
 		}
+
+		*newBuildingID = newBuilding.ID
 
 		newBuildingIDStr := strconv.Itoa(int(newBuilding.ID))
 		newImages := []models.BuildingImageModel{}

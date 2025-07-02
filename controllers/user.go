@@ -250,12 +250,15 @@ func (c *UserController) AddStaff(ctx *gin.Context) {
 		return
 	}
 
-	if err := c.userService.CreateStaff(ctx, newStaff); err != nil {
+var newStaffID int64
+
+	if err := c.userService.CreateStaff(ctx, newStaff, &newStaffID); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
+	response.Data = newStaffID
 	response.Message = config.GetMessageCode("CREATE_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }
@@ -502,12 +505,15 @@ func (c *UserController) AddCustomer(ctx *gin.Context) {
 		return
 	}
 
-	if err := c.userService.CreateCustomer(ctx, newCustomer); err != nil {
+	var newCustomerID int64
+
+	if err := c.userService.CreateCustomer(ctx, newCustomer, &newCustomerID); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
+	response.Data = newCustomerID
 	response.Message = config.GetMessageCode("CREATE_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }
