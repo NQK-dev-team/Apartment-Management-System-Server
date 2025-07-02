@@ -7,6 +7,7 @@ type JWTPayload struct {
 	IsCustomer bool   `json:"isCustomer"`
 	IsManager  bool   `json:"isManager"`
 	IsOwner    bool   `json:"isOwner"`
+	UserNo     string `json:"userNo"`
 }
 
 type JTWClaim struct {
@@ -16,6 +17,7 @@ type JTWClaim struct {
 	IsCustomer   bool   `json:"isCustomer"`
 	IsManager    bool   `json:"isManager"`
 	IsOwner      bool   `json:"isOwner"`
+	UserNo       string `json:"userNo"`
 	ServiceToken string `json:"serviceToken"`
 	IAT          int64  `json:"iat"`
 	EXP          int64  `json:"exp"`

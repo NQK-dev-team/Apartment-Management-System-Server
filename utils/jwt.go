@@ -31,6 +31,7 @@ func GenerateJWTToken(claim structs.JWTPayload) (string, error) {
 		"isCustomer": claim.IsCustomer,
 		"isManager":  claim.IsManager,
 		"isOwner":    claim.IsOwner,
+		"userNo":     claim.UserNo,
 		"iat":        time.Now().Unix(),
 		"exp":        time.Now().Add(time.Second * time.Duration(expireTime)).Unix(),
 	})
@@ -63,6 +64,7 @@ func ExtractJWTClaim(token *jwt.Token, outputClaim *structs.JTWClaim) {
 	outputClaim.IsCustomer = claims["isCustomer"].(bool)
 	outputClaim.IsManager = claims["isManager"].(bool)
 	outputClaim.IsOwner = claims["isOwner"].(bool)
+	outputClaim.UserNo = claims["userNo"].(string)
 	outputClaim.ServiceToken = token.Raw
 	outputClaim.IAT = int64(claims["iat"].(float64))
 	outputClaim.EXP = int64(claims["exp"].(float64))
