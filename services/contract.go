@@ -381,7 +381,7 @@ func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.Edi
 			return true, false, nil
 		}
 
-		if oldContractData.Type == constants.Common.ContractType.BUY {
+		if oldContractData.Type == constants.Common.ContractType.BUY && contract.Status == constants.Common.ContractStatus.EXPIRED {
 			return true, false, nil
 		}
 	} else if isContractSigned && !isContractActive {
