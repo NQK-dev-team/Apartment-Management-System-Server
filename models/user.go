@@ -18,7 +18,7 @@ type UserModel struct {
 	SSN              string         `json:"ssn" gorm:"column:ssn;type:varchar(12);not null;uniqueIndex:idx_ssn;"`
 	OldSSN           sql.NullString `json:"oldSSN" gorm:"column:old_ssn;type:varchar(9);"`
 	DOB              string         `json:"dob" gorm:"column:dob;type:date;not null;"`
-	POB              string         `json:"pob" gorm:"column:pob;type:varchar(255);"`
+	POB              sql.NullString         `json:"pob" gorm:"column:pob;type:varchar(255);"`
 	Email            string         `json:"email" gorm:"column:email;type:varchar(255);not null;uniqueIndex:idx_email;"`
 	Password         string         `json:"-" gorm:"column:password;type:varchar(255);not null;"`
 	Phone            string         `json:"phone" gorm:"column:phone;type:varchar(10);not null;uniqueIndex:idx_phone;"`
