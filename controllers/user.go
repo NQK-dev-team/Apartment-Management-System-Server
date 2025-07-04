@@ -250,7 +250,7 @@ func (c *UserController) AddStaff(ctx *gin.Context) {
 		return
 	}
 
-var newStaffID int64
+	var newStaffID int64
 
 	if err := c.userService.CreateStaff(ctx, newStaff, &newStaffID); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")

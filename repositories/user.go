@@ -92,12 +92,12 @@ func (r *UserRepository) Create(ctx *gin.Context, tx *gorm.DB, user *models.User
 	return nil
 }
 
-func (r *UserRepository) Update(ctx *gin.Context, tx *gorm.DB, user *models.UserModel) error {
+func (r *UserRepository) Update(ctx *gin.Context, tx *gorm.DB, user *models.UserModel, isQuiet bool) error {
 	userID, exists := ctx.Get("userID")
 	if !exists {
 		userID = 0
 	}
-	if err := tx.Set("userID", userID).Updates(user).Error; err != nil {
+	if err := tx.Set("userID", userID).Set("isQuiet", isQuiet).Updates(user).Error; err != nil {
 		return err
 	}
 

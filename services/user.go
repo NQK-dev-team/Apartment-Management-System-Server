@@ -82,62 +82,67 @@ func (s *UserService) CreateStaff(ctx *gin.Context, newStaff *structs.NewStaff, 
 		return err
 	}
 
-	newID, err := s.userRepository.GetNewID(ctx)
-
-	if err != nil {
-		return err
-	}
-
-	newIDStr := strconv.FormatInt(newID, 10)
-
-	profilePath, err := utils.StoreFile(newStaff.ProfileImage, constants.GetUserImageURL("images", newIDStr, ""))
-	if err != nil {
-		return err
-	}
-
-	frontSSNPath, err := utils.StoreFile(newStaff.FrontSSNImage, constants.GetUserImageURL("images", newIDStr, ""))
-	if err != nil {
-		return err
-	}
-
-	backSSNPath, err := utils.StoreFile(newStaff.BackSSNImage, constants.GetUserImageURL("images", newIDStr, ""))
-	if err != nil {
-		return err
-	}
-
-	newUser := &models.UserModel{
-		LastName:  newStaff.LastName,
-		FirstName: newStaff.FirstName,
-		MiddleName: sql.NullString{
-			String: newStaff.MiddleName,
-			Valid:  newStaff.MiddleName != "",
-		},
-		DOB:    newStaff.Dob,
-		POB:    sql.NullString{
-			String: newStaff.Pob,
-			Valid:  newStaff.Pob != "",
-		},
-		Gender: newStaff.Gender,
-		SSN:    newStaff.SSN,
-		OldSSN: sql.NullString{
-			String: newStaff.OldSSN,
-			Valid:  newStaff.OldSSN != "",
-		},
-		Email:            newStaff.Email,
-		Phone:            newStaff.Phone,
-		PermanentAddress: newStaff.PermanentAddress,
-		TemporaryAddress: newStaff.TemporaryAddress,
-		Password:         hashedPassword,
-		IsOwner:          false,
-		IsManager:        true,
-		IsCustomer:       false,
-		ProfileFilePath:  profilePath,
-		SSNFrontFilePath: frontSSNPath,
-		SSNBackFilePath:  backSSNPath,
-	}
+	profilePath := ""
+	frontSSNPath := ""
+	backSSNPath := ""
 
 	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		newUser := &models.UserModel{
+			LastName:  newStaff.LastName,
+			FirstName: newStaff.FirstName,
+			MiddleName: sql.NullString{
+				String: newStaff.MiddleName,
+				Valid:  newStaff.MiddleName != "",
+			},
+			DOB: newStaff.Dob,
+			POB: sql.NullString{
+				String: newStaff.Pob,
+				Valid:  newStaff.Pob != "",
+			},
+			Gender: newStaff.Gender,
+			SSN:    newStaff.SSN,
+			OldSSN: sql.NullString{
+				String: newStaff.OldSSN,
+				Valid:  newStaff.OldSSN != "",
+			},
+			Email:            newStaff.Email,
+			Phone:            newStaff.Phone,
+			PermanentAddress: newStaff.PermanentAddress,
+			TemporaryAddress: newStaff.TemporaryAddress,
+			Password:         hashedPassword,
+			IsOwner:          false,
+			IsManager:        true,
+			IsCustomer:       false,
+		}
+
 		if err := s.userRepository.Create(ctx, tx, newUser); err != nil {
+			return err
+		}
+
+		newID := newUser.ID
+
+		newIDStr := strconv.FormatInt(newID, 10)
+
+		profilePath, err = utils.StoreFile(newStaff.ProfileImage, constants.GetUserImageURL("images", newIDStr, ""))
+		if err != nil {
+			return err
+		}
+
+		frontSSNPath, err = utils.StoreFile(newStaff.FrontSSNImage, constants.GetUserImageURL("images", newIDStr, ""))
+		if err != nil {
+			return err
+		}
+
+		backSSNPath, err = utils.StoreFile(newStaff.BackSSNImage, constants.GetUserImageURL("images", newIDStr, ""))
+		if err != nil {
+			return err
+		}
+
+		newUser.ProfileFilePath = profilePath
+		newUser.SSNFrontFilePath = frontSSNPath
+		newUser.SSNBackFilePath = backSSNPath
+
+		if err := s.userRepository.Update(ctx, tx, newUser, false); err != nil {
 			return err
 		}
 
@@ -248,7 +253,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context, user *models.UserModel) error
 			}
 			user.Password = hashedPassword
 		}
-		if err := s.userRepository.Update(ctx, tx, user); err != nil {
+		if err := s.userRepository.Update(ctx, tx, user, true); err != nil {
 			return err
 		}
 		return nil
@@ -410,62 +415,65 @@ func (s *UserService) CreateCustomer(ctx *gin.Context, newCustomer *structs.NewC
 		return err
 	}
 
-	newID, err := s.userRepository.GetNewID(ctx)
-
-	if err != nil {
-		return err
-	}
-
-	newIDStr := strconv.FormatInt(newID, 10)
-
-	profilePath, err := utils.StoreFile(newCustomer.ProfileImage, constants.GetUserImageURL("images", newIDStr, ""))
-	if err != nil {
-		return err
-	}
-
-	frontSSNPath, err := utils.StoreFile(newCustomer.FrontSSNImage, constants.GetUserImageURL("images", newIDStr, ""))
-	if err != nil {
-		return err
-	}
-
-	backSSNPath, err := utils.StoreFile(newCustomer.BackSSNImage, constants.GetUserImageURL("images", newIDStr, ""))
-	if err != nil {
-		return err
-	}
-
-	newUser := &models.UserModel{
-		LastName:  newCustomer.LastName,
-		FirstName: newCustomer.FirstName,
-		MiddleName: sql.NullString{
-			String: newCustomer.MiddleName,
-			Valid:  newCustomer.MiddleName != "",
-		},
-		DOB:    newCustomer.Dob,
-		POB:    sql.NullString{
-			String: newCustomer.Pob,
-			Valid:  newCustomer.Pob != "",
-		},
-		Gender: newCustomer.Gender,
-		SSN:    newCustomer.SSN,
-		OldSSN: sql.NullString{
-			String: newCustomer.OldSSN,
-			Valid:  newCustomer.OldSSN != "",
-		},
-		Email:            newCustomer.Email,
-		Phone:            newCustomer.Phone,
-		PermanentAddress: newCustomer.PermanentAddress,
-		TemporaryAddress: newCustomer.TemporaryAddress,
-		Password:         hashedPassword,
-		IsOwner:          false,
-		IsManager:        false,
-		IsCustomer:       true,
-		ProfileFilePath:  profilePath,
-		SSNFrontFilePath: frontSSNPath,
-		SSNBackFilePath:  backSSNPath,
-	}
+	profilePath := ""
+	frontSSNPath := ""
+	backSSNPath := ""
 
 	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		newUser := &models.UserModel{
+			LastName:  newCustomer.LastName,
+			FirstName: newCustomer.FirstName,
+			MiddleName: sql.NullString{
+				String: newCustomer.MiddleName,
+				Valid:  newCustomer.MiddleName != "",
+			},
+			DOB: newCustomer.Dob,
+			POB: sql.NullString{
+				String: newCustomer.Pob,
+				Valid:  newCustomer.Pob != "",
+			},
+			Gender: newCustomer.Gender,
+			SSN:    newCustomer.SSN,
+			OldSSN: sql.NullString{
+				String: newCustomer.OldSSN,
+				Valid:  newCustomer.OldSSN != "",
+			},
+			Email:            newCustomer.Email,
+			Phone:            newCustomer.Phone,
+			PermanentAddress: newCustomer.PermanentAddress,
+			TemporaryAddress: newCustomer.TemporaryAddress,
+			Password:         hashedPassword,
+			IsOwner:          false,
+			IsManager:        false,
+			IsCustomer:       true,
+		}
+
 		if err := s.userRepository.Create(ctx, tx, newUser); err != nil {
+			return err
+		}
+
+		newID := newUser.ID
+		newIDStr := strconv.FormatInt(newID, 10)
+
+		profilePath, err = utils.StoreFile(newCustomer.ProfileImage, constants.GetUserImageURL("images", newIDStr, ""))
+		if err != nil {
+			return err
+		}
+
+		frontSSNPath, err = utils.StoreFile(newCustomer.FrontSSNImage, constants.GetUserImageURL("images", newIDStr, ""))
+		if err != nil {
+			return err
+		}
+
+		backSSNPath, err = utils.StoreFile(newCustomer.BackSSNImage, constants.GetUserImageURL("images", newIDStr, ""))
+		if err != nil {
+			return err
+		}
+		newUser.ProfileFilePath = profilePath
+		newUser.SSNFrontFilePath = frontSSNPath
+		newUser.SSNBackFilePath = backSSNPath
+
+		if err := s.userRepository.Update(ctx, tx, newUser, false); err != nil {
 			return err
 		}
 

@@ -260,7 +260,7 @@ func (s *AuthenticationService) VerifyEmail(ctx *gin.Context, verifyEmailToken s
 	user.EmailVerifiedAt = sql.NullTime{Time: time.Now(), Valid: true}
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
-		if err := s.userRepository.Update(ctx, tx, user); err != nil {
+		if err := s.userRepository.Update(ctx, tx, user, true); err != nil {
 			return err
 		}
 		// if err := s.emailVerifyTokenRepository.Delete(ctx, tx, verifyEmailToken.Email); err != nil {
