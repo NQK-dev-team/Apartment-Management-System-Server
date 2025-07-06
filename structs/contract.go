@@ -51,9 +51,9 @@ type ContractResidents struct {
 	FirstName               string `form:"firstName" validate:"required_if=UserAccountID 0,omitempty"`
 	LastName                string `form:"lastName" validate:"required_if=UserAccountID 0,omitempty"`
 	MiddleName              string `form:"middleName" validate:"omitempty"`
-	SSN                     string `form:"ssn" validate:"required_if=UserAccountID 0,omitempty,alphanum,len=12"`
+	SSN                     string `form:"ssn" validate:"omitempty,omitempty,alphanum,len=12"`
 	OldSSN                  string `form:"oldSSN" validate:"omitempty,alphanum,len=9"`
-	DOB                     string `form:"dob" validate:"required_if=UserAccountID 0,omitempty,datetime=2006-01-02,dob_18"`
+	DOB                     string `form:"dob" validate:"required_if=UserAccountID 0,omitempty,datetime=2006-01-02"`
 	POB                     string `form:"pob" validate:"required_if=UserAccountID 0,omitempty"`
 	Phone                   string `form:"phone" validate:"omitempty,alphanum,len=10"`
 	Email                   string `form:"email" validate:"omitempty,email"`
