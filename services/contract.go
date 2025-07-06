@@ -412,25 +412,31 @@ func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.Edi
 	}
 
 	err = config.DB.Transaction(func(tx *gorm.DB) error {
-		newContractFiles := []models.ContractFileModel{}
+		if len(contract.NewFiles) > 0 {
+			newFileNo, err := s.contractRepository.GetNewFileNo(ctx, contractID)
 
-		for index, file := range contract.NewFiles {
-			filePath, err := utils.StoreFile(file.File, constants.GetContractFileURL("files", contractIDStr, ""))
 			if err != nil {
 				return err
 			}
-			newContractFiles = append(newContractFiles, models.ContractFileModel{
-				ContractID: contractID,
-				DefaultFileModel: models.DefaultFileModel{
-					Path:  filePath,
-					No:    index + 1,
-					Title: file.Title,
-				},
-			})
-			deleteFileList = append(deleteFileList, filePath)
-		}
 
-		if len(newContractFiles) > 0 {
+			newContractFiles := []models.ContractFileModel{}
+
+			for index, file := range contract.NewFiles {
+				filePath, err := utils.StoreFile(file.File, constants.GetContractFileURL("files", contractIDStr, ""))
+				if err != nil {
+					return err
+				}
+				newContractFiles = append(newContractFiles, models.ContractFileModel{
+					ContractID: contractID,
+					DefaultFileModel: models.DefaultFileModel{
+						Path:  filePath,
+						No:    index + 1 + newFileNo,
+						Title: file.Title,
+					},
+				})
+				deleteFileList = append(deleteFileList, filePath)
+			}
+
 			if err := s.contractRepository.AddFile(ctx, tx, &newContractFiles); err != nil {
 				return err
 			}
@@ -518,7 +524,7 @@ func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.Edi
 			updatedContractData.SignDate = utils.StringToNullTime(contract.NewSignDate)
 		}
 
-		if contract.Status == constants.Common.ContractStatus.EXPIRED || contract.Status == constants.Common.ContractStatus.CANCELLED {
+		if (contract.Status == constants.Common.ContractStatus.EXPIRED || contract.Status == constants.Common.ContractStatus.CANCELLED) && updatedContractData.Type == constants.Common.ContractType.RENT {
 			updatedContractData.EndDate = sql.NullTime{
 				Time:  time.Now(),
 				Valid: true,
