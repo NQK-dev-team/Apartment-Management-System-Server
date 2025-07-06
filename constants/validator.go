@@ -21,6 +21,7 @@ func InitCustomValidationRules() {
 	Validate.RegisterValidation("check_date_equal_or_after", CheckDateEqualOrAfter)
 	Validate.RegisterValidation("check_date_equal_or_before", CheckDateEqualOrBefore)
 	Validate.RegisterValidation("contract_type_and_end_date", ValidateContractTypeAndEndDate)
+	Validate.RegisterValidation("not_after_current_date", ValidateNotAfterCurrentDate)
 }
 
 func customPasswordRule(password string) bool {
@@ -178,4 +179,19 @@ func ValidateContractTypeAndEndDate(fl validator.FieldLevel) bool {
 	}
 
 	return true
+}
+
+func ValidateNotAfterCurrentDate(fl validator.FieldLevel) bool {
+	dateStr := fl.Field().String()
+	if dateStr == "" {
+		return true // If the field is empty, we consider it valid
+	}
+
+	date, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return false // Invalid date format
+	}
+
+	currentDate := time.Now().UTC()
+	return !date.UTC().After(currentDate)
 }
