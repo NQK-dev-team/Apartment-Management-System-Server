@@ -18,7 +18,8 @@ func InitCustomValidationRules() {
 	Validate.RegisterValidation("file_type", ValidateFileType)
 	Validate.RegisterValidation("image_size", ValidateImageSize)
 	Validate.RegisterValidation("file_size", ValidateFileSize)
-	Validate.RegisterValidation("schedule_end_date", ScheduleEndDate)
+	Validate.RegisterValidation("check_date_equal_or_after", CheckDateEqualOrAfter)
+	Validate.RegisterValidation("check_date_equal_or_before", CheckDateEqualOrBefore)
 }
 
 func customPasswordRule(password string) bool {
@@ -132,7 +133,7 @@ func GetValidateErrorMessage(err error) string {
 	return ""
 }
 
-func ScheduleEndDate(fl validator.FieldLevel) bool {
+func CheckDateEqualOrAfter(fl validator.FieldLevel) bool {
 	fieldName := fl.Param() // Get the referenced field (StartDate)
 	startField := fl.Parent().FieldByName(fieldName)
 	endStr := fl.Field().String()
@@ -146,4 +147,20 @@ func ScheduleEndDate(fl validator.FieldLevel) bool {
 	}
 
 	return !startDate.After(endDate)
+}
+
+func CheckDateEqualOrBefore(fl validator.FieldLevel) bool {
+	fieldName := fl.Param() // Get the referenced field (EndDate)
+	endField := fl.Parent().FieldByName(fieldName)
+	startStr := fl.Field().String()
+	endStr := endField.String()
+
+	startDate, err1 := time.Parse("2006-01-02", startStr)
+	endDate, err2 := time.Parse("2006-01-02", endStr)
+
+	if err1 != nil || err2 != nil {
+		return false
+	}
+
+	return !endDate.Before(startDate)
 }

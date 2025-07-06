@@ -18,7 +18,7 @@ type NewStaff struct {
 	Schedules        []struct {
 		BuildingID int64  `form:"buildingID"  validate:"required"`
 		StartDate  string `form:"startDate"  validate:"required,datetime=2006-01-02"`
-		EndDate    string `form:"endDate" validate:"omitempty,datetime=2006-01-02,schedule_end_date=StartDate"`
+		EndDate    string `form:"endDate" validate:"omitempty,datetime=2006-01-02,check_date_equal_or_after=StartDate"`
 	} `form:"schedules[]" validate:"dive"`
 	ProfileImage  *multipart.FileHeader `validate:"required"`
 	FrontSSNImage *multipart.FileHeader `validate:"required"`
@@ -49,12 +49,12 @@ type EditStaff struct {
 		ID         int64  `form:"id" validate:"required"`
 		BuildingID int64  `form:"buildingID"  validate:"required"`
 		StartDate  string `form:"startDate"  validate:"required,datetime=2006-01-02"`
-		EndDate    string `form:"endDate" validate:"omitempty,datetime=2006-01-02,schedule_end_date=StartDate"`
+		EndDate    string `form:"endDate" validate:"omitempty,datetime=2006-01-02,check_date_equal_or_after=StartDate"`
 	} `form:"schedules[]" validate:"dive"`
 	NewSchedules []struct {
 		BuildingID int64  `form:"buildingID"  validate:"required"`
 		StartDate  string `form:"startDate"  validate:"required,datetime=2006-01-02"`
-		EndDate    string `form:"endDate" validate:"omitempty,datetime=2006-01-02,schedule_end_date=StartDate"`
+		EndDate    string `form:"endDate" validate:"omitempty,datetime=2006-01-02,check_date_equal_or_after=StartDate"`
 	} `form:"newSchedules[]" validate:"dive"`
 	DeletedSchedules []int64 `form:"deletedSchedules[]"`
 }
