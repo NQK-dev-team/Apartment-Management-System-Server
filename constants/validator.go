@@ -147,7 +147,7 @@ func CheckDateEqualOrAfter(fl validator.FieldLevel) bool {
 		return false
 	}
 
-	return !startDate.After(endDate)
+	return !startDate.UTC().After(endDate.UTC())
 }
 
 func CheckDateEqualOrBefore(fl validator.FieldLevel) bool {
@@ -163,7 +163,7 @@ func CheckDateEqualOrBefore(fl validator.FieldLevel) bool {
 		return false
 	}
 
-	return !endDate.Before(startDate)
+	return !endDate.UTC().Before(startDate.UTC())
 }
 
 func ValidateContractTypeAndEndDate(fl validator.FieldLevel) bool {
