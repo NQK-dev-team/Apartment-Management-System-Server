@@ -410,19 +410,19 @@ func (r *ContractRepository) UpdateRoomResident(ctx *gin.Context, tx *gorm.DB, r
 
 func (r *ContractRepository) UpdateContractStatus(tx *gorm.DB) error {
 	if err := tx.Model(&models.ContractModel{}).
-		Where("sign_date IS NOT NULL AND sign_date <= now() AND end_date >= now() AND status NOT IN ?", []int{constants.Common.ContractStatus.ACTIVE, constants.Common.ContractStatus.EXPIRED, constants.Common.ContractStatus.CANCELLED}).
+		Where("sign_date IS NOT NULL AND start_date <= now() AND COALESCE(end_date,now()) >= now() AND status NOT IN ?", []int{constants.Common.ContractStatus.ACTIVE, constants.Common.ContractStatus.EXPIRED, constants.Common.ContractStatus.CANCELLED}).
 		Update("status", constants.Common.ContractStatus.ACTIVE).Error; err != nil {
 		return err
 	}
 
 	if err := tx.Model(&models.ContractModel{}).
-		Where("sign_date IS NOT NULL AND sign_date <= now() AND end_date < now() AND status NOT IN ?", []int{constants.Common.ContractStatus.EXPIRED}).
+		Where("sign_date IS NOT NULL AND type = 1 AND start_date <= now() AND end_date < now() AND status NOT IN ?", []int{constants.Common.ContractStatus.EXPIRED}).
 		Update("status", constants.Common.ContractStatus.EXPIRED).Error; err != nil {
 		return err
 	}
 
 	if err := tx.Model(&models.ContractModel{}).
-		Where("sign_date IS NULL AND sign_date <= now() AND status NOT IN ?", []int{constants.Common.ContractStatus.CANCELLED}).
+		Where("sign_date IS NULL AND start_date <= now() AND status NOT IN ?", []int{constants.Common.ContractStatus.CANCELLED}).
 		Update("status", constants.Common.ContractStatus.CANCELLED).Error; err != nil {
 		return err
 	}
