@@ -61,3 +61,18 @@ type ContractResidents struct {
 	RelationWithHouseholder int    `form:"relationWithHouseholder" validate:"required,min=1,max=4"`
 	ID                      int64  `form:"id" validate:"omitempty"` // For existing residents, this is the ID of the resident record. For new residents, this is 0.
 }
+
+type NewContract struct {
+	BuildingID    int64               `form:"buildingID" validate:"required"`
+	RoomID        int64               `form:"roomID" validate:"required"`
+	HouseholderID int64               `form:"householderID" validate:"required"`
+	ContractType  int                 `form:"contractType" validate:"required,min=1,max=2"` // 1: Rent, 2: Buy
+	ContractValue float64             `form:"contractValue" validate:"required,min=0"`
+	CreatedAt     string              `form:"createdAt" validate:"required,datetime=2006-01-02,check_date_equal_or_before=StartDate"`
+	StartDate     string              `form:"startDate" validate:"required,datetime=2006-01-02,check_date_equal_or_after=CreatedAt"`
+	EndDate       string              `form:"endDate" validate:"contract_type_and_end_date=ContractType,omitempty,datetime=2006-01-02,check_date_equal_or_after=StartDate"`
+	SignDate      string              `form:"signDate" validate:"omitempty,datetime=2006-01-02,check_date_equal_or_before=StartDate,check_date_equal_or_after=CreatedAt"`
+	TotalNewfiles int                 `form:"totalNewFiles" validate:"min=0"`
+	NewFiles      []ContractFile      `form:"newFiles[]" validate:"omitempty,dive"`
+	Residents     []ContractResidents `form:"residents[]" validate:"dive"`
+}

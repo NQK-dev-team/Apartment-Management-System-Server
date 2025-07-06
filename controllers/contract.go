@@ -230,3 +230,78 @@ func (c *ContractController) UpdateContract(ctx *gin.Context) {
 	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }
+
+func (c *ContractController) AddContract(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	contract := structs.NewContract{}
+
+	if err := ctx.ShouldBind(&contract); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	for idx := range contract.TotalNewfiles {
+		fileStr := fmt.Sprintf("file[%d]file", idx)
+		titleStr := fmt.Sprintf("file[%d]title", idx)
+
+		fileHeader, _ := ctx.FormFile(fileStr)
+		title := ctx.PostForm(titleStr)
+
+		contract.NewFiles = append(contract.NewFiles, structs.ContractFile{
+			File:  fileHeader,
+			Title: title,
+		})
+	}
+
+	if err := constants.Validate.Struct(contract); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	validateContractFiles := &structs.ValidateEditContractFile{
+		NewFiles: []structs.FileValidation{},
+	}
+
+	for _, file := range contract.NewFiles {
+		validateContractFiles.NewFiles = append(validateContractFiles.NewFiles, structs.FileValidation{
+			Type: file.File.Header.Get("Content-Type"),
+			Size: file.File.Size,
+		})
+	}
+
+	if err := constants.Validate.Struct(validateContractFiles); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	var newContractID int64
+
+	isAllowed, isValid, err := c.contractService.CreateContract(ctx, &contract,&newContractID)
+	if err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if !isAllowed {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(http.StatusForbidden, response)
+		return
+	}
+
+	if !isValid {
+		response.Message = config.GetMessageCode("CREATE_FAILED")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	response.Data = newContractID
+	response.Message = config.GetMessageCode("CREATE_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}

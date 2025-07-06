@@ -429,3 +429,11 @@ func (r *ContractRepository) UpdateContractStatus(tx *gorm.DB) error {
 
 	return nil
 }
+
+func (r *ContractRepository) CreateContract(ctx *gin.Context, tx *gorm.DB, contract *models.ContractModel) error {
+	if err := tx.Model(&models.ContractModel{}).Omit("ID").Create(contract).Error; err != nil {
+		return err
+	}
+
+	return nil
+}

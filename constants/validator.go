@@ -20,6 +20,7 @@ func InitCustomValidationRules() {
 	Validate.RegisterValidation("file_size", ValidateFileSize)
 	Validate.RegisterValidation("check_date_equal_or_after", CheckDateEqualOrAfter)
 	Validate.RegisterValidation("check_date_equal_or_before", CheckDateEqualOrBefore)
+	Validate.RegisterValidation("contract_type_and_end_date", ValidateContractTypeAndEndDate)
 }
 
 func customPasswordRule(password string) bool {
@@ -163,4 +164,18 @@ func CheckDateEqualOrBefore(fl validator.FieldLevel) bool {
 	}
 
 	return !endDate.Before(startDate)
+}
+
+func ValidateContractTypeAndEndDate(fl validator.FieldLevel) bool {
+	fieldName := fl.Param()
+	contractType := fl.Parent().FieldByName(fieldName).Int()
+	endDate := fl.Field().String()
+
+	if int(contractType) == Common.ContractType.RENT && endDate == "" {
+		return false // EndDate is required for Rent contracts
+	} else if int(contractType) == Common.ContractType.BUY && endDate != "" {
+		return false // EndDate should not be provided for Buy contracts
+	}
+
+	return true
 }

@@ -548,6 +548,218 @@ func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.Edi
 	return true, true, nil
 }
 
+func (s *ContractService) CreateContract(ctx *gin.Context, contract *structs.NewContract, newContractID *int64) (bool, bool, error) {
+	role, exists := ctx.Get("role")
+	if !exists {
+		return true, true, errors.New("role not found")
+	}
+
+	jwt, exists := ctx.Get("jwt")
+	if !exists {
+		return true, true, errors.New("jwt not found")
+	}
+
+	token, err := utils.ValidateJWTToken(jwt.(string))
+	if err != nil {
+		return true, true, err
+	}
+
+	claim := &structs.JTWClaim{}
+	utils.ExtractJWTClaim(token, claim)
+
+	room := models.RoomModel{}
+
+	if err := s.roomRepository.GetRoomByRoomIDAndBuildingID(ctx, &room, contract.RoomID, contract.BuildingID); err != nil {
+		return true, true, err
+	}
+
+	if room.ID == 0 {
+		return true, false, nil
+	}
+
+	if room.Status != constants.Common.RoomStatus.AVAILABLE {
+		return true, false, nil
+	}
+
+	if role.(string) == constants.Roles.Manager {
+		isAllowed := s.buildingService.CheckManagerPermission(ctx, contract.BuildingID)
+
+		if !isAllowed {
+			return false, true, nil
+		}
+	}
+
+	status := 0
+	currentDate := time.Now().Format("2006-01-02")
+
+	if contract.ContractType == constants.Common.ContractType.BUY {
+		contract.EndDate = ""
+	}
+
+	if contract.SignDate == "" {
+		result, err := utils.CompareDates(contract.StartDate, currentDate)
+		if err != nil {
+			return true, true, err
+		}
+
+		switch result {
+		case 1:
+			status = constants.Common.ContractStatus.WAITING_FOR_SIGNATURE
+		case 0, -1:
+			status = constants.Common.ContractStatus.CANCELLED
+		}
+	} else {
+		result, err := utils.CompareDates(contract.StartDate, currentDate)
+		if err != nil {
+			return true, true, err
+		}
+
+		switch result {
+		case 1:
+			status = constants.Common.ContractStatus.NOT_IN_EFFECT
+		case 0, -1:
+			if contract.EndDate == "" {
+				status = constants.Common.ContractStatus.ACTIVE
+			} else {
+				result, err := utils.CompareDates(contract.EndDate, currentDate)
+				if err != nil {
+					return true, true, err
+				}
+
+				switch result {
+				case -1:
+					status = constants.Common.ContractStatus.EXPIRED
+				case 0, 1:
+					status = constants.Common.ContractStatus.ACTIVE
+				}
+			}
+		}
+	}
+
+	newcontract := models.ContractModel{
+		DefaultModel: models.DefaultModel{
+			CreatedAt: utils.ParseTime(contract.CreatedAt),
+			CreatedBy: claim.UserID,
+		},
+		RoomID:        contract.RoomID,
+		HouseholderID: contract.HouseholderID,
+		Type:          contract.ContractType,
+		Value:         contract.ContractValue,
+		StartDate:     utils.ParseTime(contract.StartDate),
+		SignDate:      utils.StringToNullTime(contract.SignDate),
+		EndDate:       utils.StringToNullTime(contract.EndDate),
+		CreatorID:     claim.UserID,
+		Status:        status,
+	}
+
+	deleteFileList := []string{}
+
+	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		if err := s.contractRepository.CreateContract(ctx, tx, &newcontract); err != nil {
+			return err
+		}
+
+		*newContractID = newcontract.ID
+
+		if len(contract.NewFiles) > 0 {
+			contractIDStr := strconv.Itoa(int(newcontract.ID))
+			newContractFiles := []models.ContractFileModel{}
+
+			for index, file := range contract.NewFiles {
+				filePath, err := utils.StoreFile(file.File, constants.GetContractFileURL("files", contractIDStr, ""))
+				if err != nil {
+					return err
+				}
+				newContractFiles = append(newContractFiles, models.ContractFileModel{
+					ContractID: *newContractID,
+					DefaultFileModel: models.DefaultFileModel{
+						Path:  filePath,
+						No:    index + 1,
+						Title: file.Title,
+					},
+				})
+				deleteFileList = append(deleteFileList, filePath)
+			}
+
+			if err := s.contractRepository.AddFile(ctx, tx, &newContractFiles); err != nil {
+				return err
+			}
+		}
+
+		if len(contract.Residents) > 0 {
+			newResidents := []models.RoomResidentModel{}
+
+			for _, resident := range contract.Residents {
+				var residentData *models.RoomResidentModel
+
+				if resident.UserAccountID != 0 {
+					customer := &models.UserModel{}
+					if err := s.userRepository.GetCustomerDetail(ctx, customer, resident.UserAccountID); err != nil {
+						return err
+					}
+
+					if customer.ID == 0 {
+						return errors.New("customer not found")
+					}
+
+					residentData = &models.RoomResidentModel{
+						FirstName:               customer.FirstName,
+						LastName:                customer.LastName,
+						MiddleName:              customer.MiddleName,
+						SSN:                     sql.NullString{String: customer.SSN, Valid: customer.SSN != ""},
+						OldSSN:                  customer.OldSSN,
+						DOB:                     customer.DOB,
+						POB:                     customer.POB,
+						Phone:                   sql.NullString{String: customer.Phone, Valid: customer.Phone != ""},
+						Email:                   sql.NullString{String: customer.Email, Valid: customer.Email != ""},
+						Gender:                  customer.Gender,
+						RelationWithHouseholder: resident.RelationWithHouseholder,
+						UserAccountID:           sql.NullInt64{Int64: customer.ID, Valid: true},
+					}
+				} else {
+					residentData = &models.RoomResidentModel{
+						FirstName:               resident.FirstName,
+						LastName:                resident.LastName,
+						MiddleName:              sql.NullString{String: resident.MiddleName, Valid: resident.MiddleName != ""},
+						SSN:                     sql.NullString{String: resident.SSN, Valid: resident.SSN != ""},
+						OldSSN:                  sql.NullString{String: resident.OldSSN, Valid: resident.OldSSN != ""},
+						DOB:                     resident.DOB,
+						POB:                     sql.NullString{String: resident.POB, Valid: resident.POB != ""},
+						Phone:                   sql.NullString{String: resident.Phone, Valid: resident.Phone != ""},
+						Email:                   sql.NullString{String: resident.Email, Valid: resident.Email != ""},
+						Gender:                  resident.Gender,
+						RelationWithHouseholder: resident.RelationWithHouseholder,
+						UserAccountID:           sql.NullInt64{Int64: 0, Valid: false},
+					}
+				}
+
+				if resident.ID == 0 {
+					newResidents = append(newResidents, *residentData)
+				}
+			}
+
+			if len(newResidents) > 0 {
+				for _, newResident := range newResidents {
+					if err := s.contractRepository.AddNewRoomResident(ctx, tx, &newResident, *newContractID); err != nil {
+						return err
+					}
+				}
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		for _, path := range deleteFileList {
+			utils.RemoveFile(path)
+		}
+		return true, true, err
+	}
+
+	return true, true, nil
+}
+
 func (s *ContractService) UpdateContractStatus() error {
 	return config.DBNoLog.Transaction(func(tx *gorm.DB) error {
 		return s.contractRepository.UpdateContractStatus(tx)

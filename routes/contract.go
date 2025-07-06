@@ -20,5 +20,6 @@ func InitContractRoutes(router *gin.RouterGroup) {
 	{
 		contractRoutes.POST("/delete-many", contractController.DeleteManyContracts)
 		contractRoutes.POST("/:id/update", contractController.UpdateContract)
+		contractRoutes.POST("/add", contractController.AddContract)
 	}
 }
