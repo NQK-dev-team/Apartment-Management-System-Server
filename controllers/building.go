@@ -22,7 +22,7 @@ type BuildingController struct {
 
 func NewBuildingController() *BuildingController {
 	return &BuildingController{
-		buildingService: services.NewBuildingService(),
+		buildingService: services.NewBuildingService(false),
 		roomService:     services.NewRoomService(),
 		contractService: services.NewContractService(),
 	}

@@ -23,7 +23,7 @@ type SupportTicketService struct {
 func NewSupportTicketService() *SupportTicketService {
 	return &SupportTicketService{
 		supportTicketRepository: repositories.NewSupportTicketRepository(),
-		buildingService:         NewBuildingService(),
+		buildingService:         NewBuildingService(false),
 	}
 }
 

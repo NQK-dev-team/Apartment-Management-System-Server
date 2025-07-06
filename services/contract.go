@@ -22,6 +22,8 @@ type ContractService struct {
 	ticketRepository   *repositories.SupportTicketRepository
 	buildingRepository *repositories.BuildingRepository
 	userRepository     *repositories.UserRepository
+	roomRepository     *repositories.RoomRepository
+	buildingService    *BuildingService
 }
 
 func NewContractService() *ContractService {
@@ -31,6 +33,8 @@ func NewContractService() *ContractService {
 		ticketRepository:   repositories.NewSupportTicketRepository(),
 		buildingRepository: repositories.NewBuildingRepository(),
 		userRepository:     repositories.NewUserRepository(),
+		roomRepository:     repositories.NewRoomRepository(),
+		buildingService:    NewBuildingService(true),
 	}
 }
 

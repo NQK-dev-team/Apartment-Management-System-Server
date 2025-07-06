@@ -22,7 +22,16 @@ type BuildingService struct {
 	managerScheduleRepository *repositories.ManagerScheduleRepository
 }
 
-func NewBuildingService() *BuildingService {
+func NewBuildingService(noInitRoomService bool) *BuildingService {
+	if noInitRoomService {
+		return &BuildingService{
+			roomService:               nil, // No RoomService initialized
+			buildingRepository:        repositories.NewBuildingRepository(),
+			roomRepository:            repositories.NewRoomRepository(),
+			managerScheduleRepository: repositories.NewManagerScheduleRepository(),
+		}
+	}
+
 	return &BuildingService{
 		roomService:               NewRoomService(),
 		buildingRepository:        repositories.NewBuildingRepository(),
