@@ -18,10 +18,10 @@ func NewContractMigration() *ContractMigration {
 func (m *ContractMigration) Up() {
 	config.DB.AutoMigrate(&models.ContractModel{})
 	config.DB.Exec("ALTER TABLE contract ADD CONSTRAINT contract_status CHECK (status >= 1 AND status <= 5);")
-	config.DB.Exec("ALTER TABLE contract ADD CONSTRAINT contract_sign_date CHECK ((status=4 AND sign_date IS NULL) OR (NOT status=4 AND sign_date IS NOT NULL));")
+	config.DB.Exec("ALTER TABLE contract ADD CONSTRAINT contract_sign_date CHECK ((status IN (3,4) AND sign_date IS NULL) OR (NOT status=4 AND sign_date IS NOT NULL));")
 	config.DB.Exec("ALTER TABLE contract ADD CONSTRAINT contract_period CHECK (start_date<=end_date);")
 	config.DB.Exec("ALTER TABLE contract ADD CONSTRAINT contract_type CHECK (type=1 OR type=2);")
-	config.DB.Exec("ALTER TABLE contract ADD CONSTRAINT contract_buy CHECK ((type=2 AND end_date IS NULL) OR type=1);")
+	config.DB.Exec("ALTER TABLE contract ADD CONSTRAINT contract_buy CHECK ((type=2 AND end_date IS NULL) OR (type=1 AND end_date IS NOT NULL));")
 	config.DB.AutoMigrate(&models.ContractFileModel{})
 	// config.DB.Exec("ALTER TABLE contract_file ADD CONSTRAINT contract_file_composite_key UNIQUE (id, contract_id);")
 	m.billMigration.Up()
