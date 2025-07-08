@@ -42,7 +42,7 @@ func (c *SupportTicketController) GetSupportTickets(ctx *gin.Context) {
 	}
 
 	if startDate == "" {
-		startDate = utils.GetFirstDayOfMonth()
+		startDate = utils.GetFirstDayOfMonth("")
 	}
 
 	if endDate == "" {

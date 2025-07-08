@@ -595,7 +595,7 @@ func (c *BuildingController) GetRoomTicket(ctx *gin.Context) {
 	endDate := ctx.Query("endDate")
 
 	if startDate == "" {
-		startDate = utils.GetFirstDayOfMonth()
+		startDate = utils.GetFirstDayOfMonth("")
 	}
 
 	if endDate == "" {

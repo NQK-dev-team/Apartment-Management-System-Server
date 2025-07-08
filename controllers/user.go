@@ -137,7 +137,7 @@ func (c *UserController) GetStaffRelatedTicket(ctx *gin.Context) {
 	}
 
 	if startDate == "" {
-		startDate = utils.GetFirstDayOfMonth()
+		startDate = utils.GetFirstDayOfMonth("")
 	}
 
 	if endDate == "" {
