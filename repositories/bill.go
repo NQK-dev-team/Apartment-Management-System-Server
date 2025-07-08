@@ -4,6 +4,7 @@ import (
 	"api/config"
 	"api/constants"
 	"api/models"
+	"api/structs"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -23,6 +24,17 @@ func (r *BillRepository) GetById(ctx *gin.Context, bill *models.BillModel, id in
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Where("id = ? AND bill.deleted_at IS NULL", id).Preload("Payer").Preload("ExtraPayments").Find(bill).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BillRepository) GetBillList(ctx *gin.Context, bills *[]structs.Bill, startMonth, endMonth string) error {
+	if err := config.DB.Model(&models.BillModel{}).Preload("Payer").Preload("ExtraPayments").Select("bill.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+		Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
+		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
+		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
+		Where("bill.deleted_at IS NULL AND period BETWEEN ? AND ?", startMonth, endMonth).Order("payment_time DESC").Find(bills).Error; err != nil {
 		return err
 	}
 	return nil

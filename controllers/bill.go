@@ -4,7 +4,10 @@ import (
 	"api/config"
 	"api/constants"
 	"api/services"
+	"api/structs"
+	"api/utils"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,6 +20,47 @@ func NewBillController() *BillController {
 	return &BillController{
 		billService: services.NewBillService(),
 	}
+}
+
+func (c *BillController) GetBillList(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	limitStr := ctx.DefaultQuery("limit", "500")
+	offsetStr := ctx.DefaultQuery("offset", "0")
+	startMonth := ctx.Query("startMonth")
+	endMonth := ctx.Query("endMonth")
+
+	limit, err := strconv.ParseInt(limitStr, 10, 64)
+
+	if err != nil {
+		limit = 500
+	}
+
+	offset, err := strconv.ParseInt(offsetStr, 10, 64)
+
+	if err != nil {
+		offset = 0
+	}
+
+	if startMonth == "" {
+		startMonth = utils.GetFirstDayOfQuarter()
+	} else {
+		startMonth = utils.GetFirstDayOfMonth(startMonth)
+	}
+
+	endMonth = utils.GetLastDayOfMonth(endMonth)
+
+	bills := []structs.Bill{}
+
+	if err := c.billService.GetBillList(ctx, &bills, limit, offset, startMonth, endMonth); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = bills
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *BillController) DeleteManyBills(ctx *gin.Context) {

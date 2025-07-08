@@ -12,7 +12,7 @@ func InitBillRoutes(router *gin.RouterGroup) {
 	billController := controllers.NewBillController()
 	authorizationMiddle := middlewares.NewAuthorizationMiddleware()
 
-	// billRoutes.GET("/", billController.GetBillList)
+	billRoutes.GET("/", billController.GetBillList)
 	// billRoutes.GET("/:id", billController.GetBillDetail)
 
 	billRoutes.Use(authorizationMiddle.AuthManagerMiddleware)
