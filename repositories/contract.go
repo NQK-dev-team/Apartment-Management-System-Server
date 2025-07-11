@@ -137,20 +137,6 @@ func (r *ContractRepository) GetContractsByManagerID2(ctx *gin.Context, contract
 		return err
 	}
 
-	// for i := range *contracts {
-	// 	if err := config.DB.Raw("SELECT room.no AS room_no FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*contracts)[i].ID).Scan(&(*contracts)[i].RoomNo).Error; err != nil {
-	// 		return err
-	// 	}
-
-	// 	if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*contracts)[i].ID).Scan(&(*contracts)[i].RoomFloor).Error; err != nil {
-	// 		return err
-	// 	}
-
-	// 	if err := config.DB.Raw("SELECT building.name AS building_name FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*contracts)[i].ID).Scan(&(*contracts)[i].BuildingName).Error; err != nil {
-	// 		return err
-	// 	}
-	// }
-
 	return nil
 }
 
@@ -163,20 +149,6 @@ func (r *ContractRepository) GetContractsByCustomerID(ctx *gin.Context, contract
 		Find(contracts).Error; err != nil {
 		return err
 	}
-
-	// for i := range *contracts {
-	// 	if err := config.DB.Raw("SELECT room.no AS room_no FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*contracts)[i].ID).Scan(&(*contracts)[i].RoomNo).Error; err != nil {
-	// 		return err
-	// 	}
-
-	// 	if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*contracts)[i].ID).Scan(&(*contracts)[i].RoomFloor).Error; err != nil {
-	// 		return err
-	// 	}
-
-	// 	if err := config.DB.Raw("SELECT building.name AS building_name FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*contracts)[i].ID).Scan(&(*contracts)[i].BuildingName).Error; err != nil {
-	// 		return err
-	// 	}
-	// }
 
 	return nil
 }
@@ -191,20 +163,6 @@ func (r *ContractRepository) GetContractsByCustomerID2(ctx *gin.Context, contrac
 		return err
 	}
 
-	// for i := range *contracts {
-	// 	if err := config.DB.Raw("SELECT room.no AS room_no FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*contracts)[i].ID).Scan(&(*contracts)[i].RoomNo).Error; err != nil {
-	// 		return err
-	// 	}
-
-	// 	if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*contracts)[i].ID).Scan(&(*contracts)[i].RoomFloor).Error; err != nil {
-	// 		return err
-	// 	}
-
-	// 	if err := config.DB.Raw("SELECT building.name AS building_name FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*contracts)[i].ID).Scan(&(*contracts)[i].BuildingName).Error; err != nil {
-	// 		return err
-	// 	}
-	// }
-
 	return nil
 }
 
@@ -218,20 +176,6 @@ func (r *ContractRepository) GetContractByRoomIDAndBuildingID(ctx *gin.Context, 
 		return err
 	}
 
-	// for i := range *contracts {
-	// 	if err := config.DB.Raw("SELECT room.no AS room_no FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*contracts)[i].ID).Scan(&(*contracts)[i].RoomNo).Error; err != nil {
-	// 		return err
-	// 	}
-
-	// 	if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*contracts)[i].ID).Scan(&(*contracts)[i].RoomFloor).Error; err != nil {
-	// 		return err
-	// 	}
-
-	// 	if err := config.DB.Raw("SELECT building.name AS building_name FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*contracts)[i].ID).Scan(&(*contracts)[i].BuildingName).Error; err != nil {
-	// 		return err
-	// 	}
-	// }
-
 	return nil
 }
 
@@ -244,20 +188,6 @@ func (r *ContractRepository) GetContractByRoomIDAndBuildingIDAndManagerID(ctx *g
 		Find(contracts).Error; err != nil {
 		return err
 	}
-
-	// for i := range *contracts {
-	// 	if err := config.DB.Raw("SELECT room.no AS room_no FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*contracts)[i].ID).Scan(&(*contracts)[i].RoomNo).Error; err != nil {
-	// 		return err
-	// 	}
-
-	// 	if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*contracts)[i].ID).Scan(&(*contracts)[i].RoomFloor).Error; err != nil {
-	// 		return err
-	// 	}
-
-	// 	if err := config.DB.Raw("SELECT building.name AS building_name FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*contracts)[i].ID).Scan(&(*contracts)[i].BuildingName).Error; err != nil {
-	// 		return err
-	// 	}
-	// }
 
 	return nil
 }

@@ -66,20 +66,6 @@ func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[
 		}
 	}
 
-	// for i := range *tickets {
-	// 	if err := config.DB.Raw("SELECT room.no AS room_no FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomNo).Error; err != nil {
-	// 		return err
-	// 	}
-
-	// 	if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomFloor).Error; err != nil {
-	// 		return err
-	// 	}
-
-	// 	if err := config.DB.Raw("SELECT building.name AS building_name FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].BuildingName).Error; err != nil {
-	// 		return err
-	// 	}
-	// }
-
 	return nil
 }
 
@@ -94,20 +80,6 @@ func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, ticket
 		return err
 	}
 
-	// for i := range *tickets {
-	// 	if err := config.DB.Raw("SELECT room.no AS room_no FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomNo).Error; err != nil {
-	// 		return err
-	// 	}
-
-	// 	if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomFloor).Error; err != nil {
-	// 		return err
-	// 	}
-
-	// 	if err := config.DB.Raw("SELECT building.name AS building_name FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].BuildingName).Error; err != nil {
-	// 		return err
-	// 	}
-	// }
-
 	return nil
 }
 
@@ -121,20 +93,6 @@ func (r *SupportTicketRepository) GetTicketsByCustomerID(ctx *gin.Context, ticke
 		Find(tickets).Error; err != nil {
 		return err
 	}
-
-	// for i := range *tickets {
-	// 	if err := config.DB.Raw("SELECT room.no AS room_no FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomNo).Error; err != nil {
-	// 		return err
-	// 	}
-
-	// 	if err := config.DB.Raw("SELECT room.floor AS room_floor FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].RoomFloor).Error; err != nil {
-	// 		return err
-	// 	}
-
-	// 	if err := config.DB.Raw("SELECT building.name AS building_name FROM building JOIN room ON building.id = room.building_id JOIN contract ON contract.room_id = room.id WHERE contract.id = ? AND room.deleted_at IS NULL AND building.deleted_at IS NULL AND contract.deleted_at IS NULL", (*tickets)[i].ContractID).Scan(&(*tickets)[i].BuildingName).Error; err != nil {
-	// 		return err
-	// 	}
-	// }
 
 	return nil
 }
