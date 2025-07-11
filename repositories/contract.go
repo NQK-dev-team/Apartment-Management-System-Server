@@ -85,18 +85,32 @@ func (r *ContractRepository) GetContracts(ctx *gin.Context, contracts *[]structs
 }
 
 func (r *ContractRepository) GetContractsByManagerID2(ctx *gin.Context, contracts *[]structs.Contract, managerID int64, limit int64, offset int64) error {
-	query1 := config.DB.Model(&models.ContractModel{}).Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address").
-		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
-		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
-		Where("creator_id = ? AND contract.deleted_at IS NULL", managerID)
-	query2 := config.DB.Model(&models.ContractModel{}).Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address").
+	// query1 := config.DB.Model(&models.ContractModel{}).Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address").
+	// 	Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
+	// 	Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
+	// 	Where("creator_id = ? AND contract.deleted_at IS NULL", managerID)
+	// query2 := config.DB.Model(&models.ContractModel{}).Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address").
+	// 	Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
+	// 	Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
+	// 	Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id AND manager_schedule.deleted_at IS NULL").
+	// 	Where("creator_id != ? AND contract.deleted_at IS NULL AND manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ?", managerID, managerID)
+
+	// if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").
+	// 	Table("((?) UNION ALL (?)) as all_contracts", query1, query2).
+	// 	Select("all_contracts.*").
+	// 	Limit(int(limit)).Offset(int(offset)).Order("all_contracts.start_date DESC, all_contracts.end_date DESC, all_contracts.sign_date DESC").
+	// 	Find(contracts).Error; err != nil {
+	// 	return err
+	// }
+
+	query := config.DB.Model(&models.ContractModel{}).Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id AND manager_schedule.deleted_at IS NULL").
-		Where("creator_id != ? AND contract.deleted_at IS NULL AND manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ?", managerID, managerID)
+		Where("contract.deleted_at IS NULL AND manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ?", managerID)
 
 	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").
-		Table("((?) UNION ALL (?)) as all_contracts", query1, query2).
+		Table("(?) as all_contracts", query).
 		Select("all_contracts.*").
 		Limit(int(limit)).Offset(int(offset)).Order("all_contracts.start_date DESC, all_contracts.end_date DESC, all_contracts.sign_date DESC").
 		Find(contracts).Error; err != nil {
