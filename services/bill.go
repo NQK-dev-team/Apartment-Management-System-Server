@@ -44,13 +44,17 @@ func (s *BillService) GetBillList(ctx *gin.Context, bills *[]structs.Bill, limit
 		utils.ExtractJWTClaim(token, claim)
 
 		if role.(string) == constants.Roles.Manager {
-
+			if err := s.billRepository.GetBillListForManager(ctx, bills, startMonth, endMonth, limit, offset, claim.UserID); err != nil {
+				return err
+			}
 		} else {
-
+			if err := s.billRepository.GetBillListForCustomer(ctx, bills, startMonth, endMonth, limit, offset, claim.UserID); err != nil {
+				return err
+			}
 		}
 
 	} else if role.(string) == constants.Roles.Owner {
-		if err := s.billRepository.GetBillList(ctx, bills, startMonth, endMonth); err != nil {
+		if err := s.billRepository.GetBillList(ctx, bills, startMonth, endMonth, limit, offset); err != nil {
 			return err
 		}
 	}
