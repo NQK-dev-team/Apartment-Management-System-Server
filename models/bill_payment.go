@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type ExtraPaymentModel struct {
+type BillPaymentModel struct {
 	DefaultModel
 	Name   string  `json:"name" gorm:"column:name;not null;type:varchar(255);"`
 	Amount float64 `json:"amount" gorm:"column:amount;not null;type:numeric;"`
@@ -16,11 +16,11 @@ type ExtraPaymentModel struct {
 	// Bill       BillModel `json:"bill" gorm:"foreignKey:bill_id,contract_id;references:id,contract_id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
-func (u *ExtraPaymentModel) TableName() string {
-	return "extra_payment"
+func (u *BillPaymentModel) TableName() string {
+	return "bill_payment"
 }
 
-func (u *ExtraPaymentModel) BeforeCreate(tx *gorm.DB) error {
+func (u *BillPaymentModel) BeforeCreate(tx *gorm.DB) error {
 	userID, _ := tx.Get("userID")
 	if userID != nil {
 		u.CreatedBy = userID.(int64)
@@ -32,7 +32,7 @@ func (u *ExtraPaymentModel) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-func (u *ExtraPaymentModel) BeforeUpdate(tx *gorm.DB) error {
+func (u *BillPaymentModel) BeforeUpdate(tx *gorm.DB) error {
 	// if tx.Statement.Changed("UpdatedAt", "UpdatedBy") {
 	// 	return errors.New(config.GetMessageCode("CONCURRENCY_ERROR"))
 	// }

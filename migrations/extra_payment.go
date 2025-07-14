@@ -5,18 +5,18 @@ import (
 	"api/models"
 )
 
-type ExtraPaymentMigration struct {
+type BillPaymentMigration struct {
 }
 
-func NewExtraPaymentMigration() *ExtraPaymentMigration {
-	return &ExtraPaymentMigration{}
+func NewBillPaymentMigration() *BillPaymentMigration {
+	return &BillPaymentMigration{}
 }
 
-func (m *ExtraPaymentMigration) Up() {
-	config.DB.AutoMigrate(&models.ExtraPaymentModel{})
+func (m *BillPaymentMigration) Up() {
+	config.DB.AutoMigrate(&models.BillPaymentModel{})
 	// config.DB.Exec("ALTER TABLE extra_payment ADD CONSTRAINT extra_payment_composite_key UNIQUE (bill_id, contract_id);")
 }
 
-func (m *ExtraPaymentMigration) Down() {
-	config.DB.Migrator().DropTable(&models.ExtraPaymentModel{})
+func (m *BillPaymentMigration) Down() {
+	config.DB.Migrator().DropTable(&models.BillPaymentModel{})
 }
