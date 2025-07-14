@@ -14,12 +14,14 @@ import (
 )
 
 type BillService struct {
-	billRepository *repositories.BillRepository
+	billRepository  *repositories.BillRepository
+	buildingService *BuildingService
 }
 
 func NewBillService() *BillService {
 	return &BillService{
-		billRepository: repositories.NewBillRepository(),
+		billRepository:  repositories.NewBillRepository(),
+		buildingService: NewBuildingService(true),
 	}
 }
 
@@ -107,4 +109,64 @@ func (s *BillService) DeleteBill(ctx *gin.Context, IDs []int64) (bool, error) {
 	return true, config.DB.Transaction(func(tx *gorm.DB) error {
 		return s.billRepository.Delete(ctx, tx, IDs)
 	})
+}
+
+func (s *BillService) GetBillDetail(ctx *gin.Context, bill *structs.Bill, billID int64) (bool, error) {
+	role, exists := ctx.Get("role")
+	if !exists {
+		return true, errors.New("role not found")
+	}
+
+	if role.(string) == constants.Roles.Manager || role.(string) == constants.Roles.Customer {
+		if role.(string) == constants.Roles.Manager {
+			if isAllowed := s.CheckManagerPermission(ctx, billID); !isAllowed {
+				return false, nil
+			}
+		} else {
+			if isAllowed := s.CheckCustomerPermission(ctx, billID); !isAllowed {
+				return false, nil
+			}
+		}
+	}
+
+	if err := s.billRepository.GetById(ctx, bill, billID); err != nil {
+		return true, err
+	}
+
+	return true, nil
+}
+
+func (s *BillService) CheckManagerPermission(ctx *gin.Context, billID int64) bool {
+	var buildingID int64
+	if err := s.billRepository.GetBillBuildingID(ctx, billID, &buildingID); err != nil {
+		return false
+	}
+
+	return s.buildingService.CheckManagerPermission(ctx, buildingID)
+}
+
+func (s *BillService) CheckCustomerPermission(ctx *gin.Context, billID int64) bool {
+	jwt, exists := ctx.Get("jwt")
+	if !exists {
+		return false
+	}
+
+	token, err := utils.ValidateJWTToken(jwt.(string))
+	if err != nil {
+		return false
+	}
+
+	claim := &structs.JTWClaim{}
+	utils.ExtractJWTClaim(token, claim)
+
+	bill := &structs.Bill{}
+	if err := s.billRepository.GetBillByIDForCustomer(ctx, bill, claim.UserID, billID); err != nil {
+		return false
+	}
+
+	if bill.ID != billID {
+		return false
+	}
+
+	return true
 }

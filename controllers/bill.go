@@ -101,3 +101,33 @@ func (c *BillController) DeleteManyBills(ctx *gin.Context) {
 	response.Message = config.GetMessageCode("DELETE_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }
+
+func (c *BillController) GetBillDetail(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+
+	if err != nil {
+		id = 0
+	}
+
+	bill := &structs.Bill{}
+
+	isAllowed, err := c.billService.GetBillDetail(ctx, bill, id)
+
+	if err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if !isAllowed {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(http.StatusForbidden, response)
+		return
+	}
+
+	response.Data = bill
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}

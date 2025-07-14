@@ -18,12 +18,12 @@ func NewBillRepository() *BillRepository {
 	return &BillRepository{}
 }
 
-func (r *BillRepository) GetById(ctx *gin.Context, bill *models.BillModel, id int64) error {
-	if err := config.DB.Model(&models.BillModel{}).
+func (r *BillRepository) GetById(ctx *gin.Context, bill *structs.Bill, id int64) error {
+	if err := config.DB.Model(&models.BillModel{}).Preload("Contract").Preload("Payer").Preload("ExtraPayments").Select("bill.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 		Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
-		Where("id = ? AND bill.deleted_at IS NULL", id).Preload("Payer").Preload("ExtraPayments").Find(bill).Error; err != nil {
+		Where("bill.id = ? AND bill.deleted_at IS NULL", id).Find(bill).Error; err != nil {
 		return err
 	}
 	return nil
@@ -146,5 +146,36 @@ func (r *BillRepository) GetDeletableBills(ctx *gin.Context, bills *[]models.Bil
 		}
 	}
 
+	return nil
+}
+
+func (r *BillRepository) GetBillBuildingID(ctx *gin.Context, billID int64, buildingID *int64) error {
+	if err := config.DB.Model(&models.BillModel{}).
+		Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
+		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
+		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
+		Where("bill.id = ? AND bill.deleted_at IS NULL", billID).Select("building.id").Scan(buildingID).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BillRepository) GetBillByIDForCustomer(ctx *gin.Context, bill *structs.Bill, customerID, billID int64) error {
+	contractQuery := config.DB.Model(&models.ContractModel{}).Select("contract.id").Distinct("contract.id").
+		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
+		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
+		Joins("LEFT JOIN room_resident_list ON room_resident_list.contract_id = contract.id").
+		Joins("JOIN room_resident ON room_resident.id = room_resident_list.resident_id AND room_resident.deleted_at IS NULL").
+		Where("contract.deleted_at IS NULL AND (contract.householder_id = ? OR room_resident.user_account_id = ?)", customerID, customerID)
+
+	if err := config.DB.Model(&models.BillModel{}).Preload("Contract").Preload("Payer").Preload("ExtraPayments").Select("bill.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+		Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
+		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
+		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
+		Where("bill.deleted_at IS NULL AND bill.id = ? AND contract.id IN (?)", billID, contractQuery).
+		Order("payment_time DESC").
+		Find(bill).Error; err != nil {
+		return err
+	}
 	return nil
 }
