@@ -43,6 +43,7 @@ type billStatusStruct struct {
 	PAID       int
 	OVERDUE    int
 	PROCESSING int
+	CANCELLED  int
 }
 
 type residentRelationshipStruct struct {
@@ -119,6 +120,7 @@ var Common = struct {
 		PAID:       2,
 		OVERDUE:    3,
 		PROCESSING: 4,
+		CANCELLED:  5,
 	},
 	ResidentRelationship: residentRelationshipStruct{
 		SPOUSE: 1,

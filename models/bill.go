@@ -11,7 +11,7 @@ type BillModel struct {
 	DefaultModel
 	Title        string             `json:"title" gorm:"column:title;not null;type:varchar(255);"`
 	Period       time.Time          `json:"period" gorm:"column:period;not null;type:date;"`
-	Status       int                `json:"status" gorm:"column:status;not null;type:int;"` // 1: Unpaid, 2: Paid, 3: Overdue, 4: Processing
+	Status       int                `json:"status" gorm:"column:status;not null;type:int;"` // 1: Unpaid, 2: Paid, 3: Overdue, 4: Processing, 5: Cancelled
 	Note         string             `json:"note" gorm:"column:note;type:varchar(255);"`
 	PaymentTime  sql.NullTime       `json:"paymentTime" gorm:"column:payment_time;type:timestamp with time zone;"`
 	Amount       float64            `json:"amount" gorm:"column:amount;not null;type:numeric;"`
