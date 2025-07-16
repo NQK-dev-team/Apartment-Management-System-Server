@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -8,9 +9,9 @@ import (
 
 type BillPaymentModel struct {
 	DefaultModel
-	Name   string  `json:"name" gorm:"column:name;not null;type:varchar(255);"`
-	Amount float64 `json:"amount" gorm:"column:amount;not null;type:numeric;"`
-	Note   string  `json:"note" gorm:"column:note;type:varchar(255);"`
+	Name   string         `json:"name" gorm:"column:name;not null;type:varchar(255);"`
+	Amount float64        `json:"amount" gorm:"column:amount;not null;type:numeric;"`
+	Note   sql.NullString `json:"note" gorm:"column:note;type:varchar(255);"`
 	// ContractID int64     `json:"contractID" gorm:"column:contract_id;not null;"`
 	BillID int64 `json:"billID" gorm:"column:bill_id;not null;"`
 	// Bill       BillModel `json:"bill" gorm:"foreignKey:bill_id,contract_id;references:id,contract_id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
