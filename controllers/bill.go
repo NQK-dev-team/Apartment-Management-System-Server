@@ -131,3 +131,37 @@ func (c *BillController) GetBillDetail(ctx *gin.Context) {
 	response.Message = config.GetMessageCode("GET_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }
+
+func (c *BillController) UpdateBill(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	bill := structs.UpdateBill{}
+
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+
+	if err != nil {
+		id = 0
+	}
+
+	if err := ctx.ShouldBindJSON(&bill); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	isValid, err := c.billService.UpdateBill(ctx, &bill, id)
+	if err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if !isValid {
+		response.Message = config.GetMessageCode("UPDATE_FAILED")
+		ctx.JSON(http.StatusForbidden, response)
+		return
+	}
+
+	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}

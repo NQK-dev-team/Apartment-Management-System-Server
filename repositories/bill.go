@@ -29,6 +29,17 @@ func (r *BillRepository) GetById(ctx *gin.Context, bill *structs.Bill, id int64)
 	return nil
 }
 
+func (r *BillRepository) GetById2(ctx *gin.Context, bill *models.BillModel, id int64) error {
+	if err := config.DB.Model(&models.BillModel{}).Preload("Contract").Preload("Contract.Householder").Preload("Payer").Preload("BillPayments").
+		Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
+		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
+		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
+		Where("bill.id = ? AND bill.deleted_at IS NULL", id).Find(bill).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *BillRepository) GetBillList(ctx *gin.Context, bills *[]structs.Bill, startMonth, endMonth string, limit, offset int64) error {
 	if err := config.DB.Model(&models.BillModel{}).Preload("Contract").Preload("Payer").Preload("BillPayments").Select("bill.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 		Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
@@ -175,6 +186,48 @@ func (r *BillRepository) GetBillByIDForCustomer(ctx *gin.Context, bill *structs.
 		Where("bill.deleted_at IS NULL AND bill.id = ? AND contract.id IN (?)", billID, contractQuery).
 		Order("payment_time DESC").
 		Find(bill).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BillRepository) DeletePayment(ctx *gin.Context, tx *gorm.DB, id []int64) error {
+	now := time.Now()
+	userID := ctx.GetInt64("userID")
+
+	if err := tx.Set("isQuiet", true).Model(&models.BillPaymentModel{}).Where("id in ?", id).UpdateColumns(models.BillPaymentModel{
+		DefaultModel: models.DefaultModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BillRepository) AddNewPayment(ctx *gin.Context, tx *gorm.DB, payment *[]models.BillPaymentModel) error {
+	userID := ctx.GetInt64("userID")
+	if err := tx.Set("userID", userID).Model(&models.BillPaymentModel{}).Omit("ID").Save(payment).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BillRepository) UpdatePayment(ctx *gin.Context, tx *gorm.DB, payment *[]models.BillPaymentModel) error {
+	userID := ctx.GetInt64("userID")
+	if err := tx.Set("userID", userID).Model(&models.BillPaymentModel{}).Omit("CreatedAt", "CreatedBy", "UpdatedAt", "UpdatedBy", "DeletedAt", "DeletedBy").Save(payment).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BillRepository) UpdateBill(ctx *gin.Context, tx *gorm.DB, bill *models.BillModel, id int64) error {
+	userID := ctx.GetInt64("userID")
+	if err := tx.Set("userID", userID).Model(&models.BillModel{}).Omit("PayerID").Where("id = ?", id).Save(bill).Error; err != nil {
 		return err
 	}
 	return nil

@@ -18,5 +18,6 @@ func InitBillRoutes(router *gin.RouterGroup) {
 	billRoutes.Use(authorizationMiddle.AuthManagerMiddleware)
 	{
 		billRoutes.POST("/delete-many", billController.DeleteManyBills)
+		billRoutes.POST("/:id/update", billController.UpdateBill)
 	}
 }

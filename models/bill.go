@@ -15,7 +15,7 @@ type BillModel struct {
 	Note         sql.NullString     `json:"note" gorm:"column:note;type:varchar(255);"`
 	PaymentTime  sql.NullTime       `json:"paymentTime" gorm:"column:payment_time;type:timestamp with time zone;"`
 	Amount       float64            `json:"amount" gorm:"column:amount;not null;type:numeric;"`
-	PayerID      int64              `json:"payerID" gorm:"column:payer_id;"`
+	PayerID      sql.NullInt64      `json:"payerID" gorm:"column:payer_id;"`
 	Payer        UserModel          `json:"payer" gorm:"foreignKey:payer_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	ContractID   int64              `json:"contractID" gorm:"column:contract_id;not null;"`
 	BillPayments []BillPaymentModel `json:"billPayments" gorm:"foreignKey:bill_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`

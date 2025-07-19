@@ -7,6 +7,7 @@ import (
 	"api/repositories"
 	"api/structs"
 	"api/utils"
+	"database/sql"
 	"errors"
 
 	"github.com/gin-gonic/gin"
@@ -169,4 +170,96 @@ func (s *BillService) CheckCustomerPermission(ctx *gin.Context, billID int64) bo
 	}
 
 	return true
+}
+
+func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID int64) (bool, error) {
+	oldBill := &models.BillModel{}
+	if err := s.billRepository.GetById2(ctx, oldBill, ID); err != nil {
+		return true, err
+	}
+
+	if oldBill.ID == 0 {
+		return true, errors.New("bill not found")
+	}
+
+	if oldBill.Status == constants.Common.BillStatus.PAID || oldBill.Status == constants.Common.BillStatus.PROCESSING {
+		return false, nil
+	}
+
+	if oldBill.Status != bill.Status && bill.Status != constants.Common.BillStatus.CANCELLED {
+		return false, nil
+	}
+
+	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		if len(bill.DeletedPayments) > 0 {
+			if err := s.billRepository.DeletePayment(ctx, tx, bill.DeletedPayments); err != nil {
+				return err
+			}
+		}
+
+		if len(bill.NewPayments) > 0 {
+			newPaymentModels := []models.BillPaymentModel{}
+			for _, payment := range bill.NewPayments {
+				newPaymentModels = append(newPaymentModels, models.BillPaymentModel{
+					BillID: ID,
+					Name:   payment.Name,
+					Amount: payment.Amount,
+					Note: sql.NullString{
+						String: payment.Note,
+						Valid:  payment.Note != "",
+					},
+				})
+			}
+
+			if err := s.billRepository.AddNewPayment(ctx, tx, &newPaymentModels); err != nil {
+				return err
+			}
+		}
+
+		if len(bill.Payments) > 0 {
+			paymentModels := []models.BillPaymentModel{}
+			for _, payment := range bill.Payments {
+				paymentModels = append(paymentModels, models.BillPaymentModel{
+					BillID: ID,
+					Name:   payment.Name,
+					Amount: payment.Amount,
+					Note: sql.NullString{
+						String: payment.Note,
+						Valid:  payment.Note != "",
+					},
+					DefaultModel: models.DefaultModel{
+						ID: payment.ID,
+					},
+				})
+			}
+
+			if err := s.billRepository.UpdatePayment(ctx, tx, &paymentModels); err != nil {
+				return err
+			}
+		}
+
+		var totalAmount float64 = 0
+		for _, payment := range bill.NewPayments {
+			totalAmount += payment.Amount
+		}
+		for _, payment := range bill.Payments {
+			totalAmount += payment.Amount
+		}
+
+		oldBill.Title = bill.Title
+		oldBill.Note = sql.NullString{
+			String: bill.Note,
+			Valid:  bill.Note != "",
+		}
+		oldBill.Status = bill.Status
+		oldBill.Amount = totalAmount
+
+		if err := s.billRepository.UpdateBill(ctx, tx, oldBill, ID); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return true, err
 }
