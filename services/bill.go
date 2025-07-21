@@ -197,7 +197,7 @@ func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID 
 			return false, nil
 		}
 
-		if payTime.Before(utils.ParseTimeWithZone(oldBill.Period.String())) {
+		if payTime.Before(utils.ParseTimeWithZone(oldBill.Period.Format("2006-01-02 15:04:05"))) {
 			return false, nil
 		}
 	}
