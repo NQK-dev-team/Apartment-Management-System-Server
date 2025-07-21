@@ -9,6 +9,7 @@ import (
 	"api/utils"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -188,6 +189,17 @@ func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID 
 
 	if oldBill.Status != bill.Status && bill.Status != constants.Common.BillStatus.CANCELLED && bill.Status != constants.Common.BillStatus.PAID {
 		return false, nil
+	}
+
+	if bill.PaymentTime != "" {
+		payTime := utils.ParseTimeWithZone(bill.PaymentTime + " 00:00:00")
+		if payTime.After(time.Now()) {
+			return false, nil
+		}
+
+		// if payTime.Before(oldBill.Period) {
+		// 	return false, nil
+		// }
 	}
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
