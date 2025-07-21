@@ -11,7 +11,7 @@ package models
 // type MessageModel struct {
 // 	DefaultModel
 // 	Content    string             `json:"content" gorm:"column:content;type:text;not null;"`
-// 	SendAt     time.Time          `json:"sendAt" gorm:"column:send_at;type:timestamp;not null;default:now();"`
+// 	SendAt     time.Time          `json:"sendAt" gorm:"column:send_at;type:timestamp with time zone;not null;default:now();"`
 // 	Sender     int                `json:"sender" gorm:"column:sender;not null;type:int;"` // 0: Manager, 1: Customer
 // 	ManagerID  int64              `json:"managerID" gorm:"column:manager_id;not null;"`
 // 	Manager    UserModel          `json:"manager" gorm:"foreignKey:manager_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`

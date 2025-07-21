@@ -16,7 +16,7 @@ package models
 // 	ManagerID       int64              `json:"managerID" gorm:"column:manager_id;not null;"`
 // 	Manager         UserModel          `json:"manager" gorm:"foreignKey:manager_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 // 	Result          bool               `json:"result" gorm:"column:result;type:bool;not null;"` // 0: Rejected, 1: Approved
-// 	ResolveTime     time.Time          `json:"resolveTime" gorm:"column:resolve_time;type:timestamp;not null;default:now()"`
+// 	ResolveTime     time.Time          `json:"resolveTime" gorm:"column:resolve_time;type:timestamp with time zone;not null;default:now()"`
 // }
 
 // func (u *ManagerResolveSupportTicketModel) TableName() string {
