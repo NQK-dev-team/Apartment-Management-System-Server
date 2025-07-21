@@ -12,7 +12,7 @@ type Bill struct {
 	Period          time.Time                 `json:"period" gorm:"column:period;not null;type:date;"`
 	Status          int                       `json:"status" gorm:"column:status;not null;type:int;"` // 1: Unpaid, 2: Paid, 3: Overdue, 4: Processing
 	Note            sql.NullString            `json:"note" gorm:"column:note;type:varchar(255);"`
-	PaymentTime     sql.NullTime              `json:"paymentTime" gorm:"column:payment_time;type:timestamp with time zone;default:now();"`
+	PaymentTime     sql.NullTime              `json:"paymentTime" gorm:"column:payment_time;type:timestamp;default:now();"`
 	Amount          float64                   `json:"amount" gorm:"column:amount;not null;type:numeric;"`
 	PayerID         sql.NullInt64             `json:"payerID" gorm:"column:payer_id;"`
 	Payer           models.UserModel          `json:"payer" gorm:"foreignKey:payer_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
@@ -44,5 +44,7 @@ type UpdateBill struct {
 	Note            string       `json:"note"`
 	Payments        []OldPayment `json:"payments" validation:"dive"`
 	NewPayments     []NewPayment `json:"newPayments" validation:"dive"`
-	DeletedPayments []int64      `json:"deletedPayments"`
+	DeletedPayments []int64      `json:"deletedPaymILLents"`
+	PayerID         int64        `json:"payerID"`
+	PaymentTime     string       `json:"paymentTime"`
 }

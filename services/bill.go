@@ -186,7 +186,7 @@ func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID 
 		return false, nil
 	}
 
-	if oldBill.Status != bill.Status && bill.Status != constants.Common.BillStatus.CANCELLED {
+	if oldBill.Status != bill.Status && bill.Status != constants.Common.BillStatus.CANCELLED && bill.Status != constants.Common.BillStatus.PAID {
 		return false, nil
 	}
 
@@ -251,8 +251,15 @@ func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID 
 			String: bill.Note,
 			Valid:  bill.Note != "",
 		}
-		oldBill.Status = bill.Status
 		oldBill.Amount = totalAmount
+		if oldBill.Status != constants.Common.BillStatus.PAID && bill.Status == constants.Common.BillStatus.PAID && bill.PayerID != 0 && bill.PaymentTime != "" {
+			oldBill.PayerID = sql.NullInt64{
+				Int64: bill.PayerID,
+				Valid: bill.PayerID != 0,
+			}
+			oldBill.PaymentTime = utils.StringToNullTime(bill.PaymentTime)
+		}
+		oldBill.Status = bill.Status
 
 		if err := s.billRepository.UpdateBill(ctx, tx, oldBill, ID); err != nil {
 			return err

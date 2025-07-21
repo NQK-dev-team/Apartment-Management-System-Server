@@ -158,7 +158,7 @@ func (c *BillController) UpdateBill(ctx *gin.Context) {
 
 	if !isValid {
 		response.Message = config.GetMessageCode("UPDATE_FAILED")
-		ctx.JSON(http.StatusForbidden, response)
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 

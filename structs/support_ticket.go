@@ -18,11 +18,11 @@ type SupportTicket struct {
 	ManagerID          int64                           `json:"managerID" gorm:"column:manager_id;"`
 	Manager            models.UserModel                `json:"manager" gorm:"foreignKey:manager_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	ManagerResult      bool                            `json:"managerResult" gorm:"column:manager_result;type:bool;"` // 0: Rejected, 1: Approved
-	ManagerResolveTime sql.NullTime                    `json:"managerResolveTime" gorm:"column:manager_resolve_time;type:timestamp with time zone;"`
+	ManagerResolveTime sql.NullTime                    `json:"managerResolveTime" gorm:"column:manager_resolve_time;type:timestamp;"`
 	OwnerID            int64                           `json:"ownerID" gorm:"column:owner_id;"`
 	Owner              models.UserModel                `json:"owner" gorm:"foreignKey:owner_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	OwnerResult        bool                            `json:"ownerResult" gorm:"column:owner_result;type:bool;"` // 0: Rejected, 1: Approved
-	OwnerResolveTime   sql.NullTime                    `json:"ownerResolveTime" gorm:"column:owner_resolve_time;type:timestamp with time zone;"`
+	OwnerResolveTime   sql.NullTime                    `json:"ownerResolveTime" gorm:"column:owner_resolve_time;type:timestamp;"`
 	BuildingName       string                          `json:"buildingName" gorm:"building_name"`
 	RoomNo             int                             `json:"roomNo" gorm:"room_no"`
 	RoomFloor          int                             `json:"roomFloor" gorm:"room_floor"`
