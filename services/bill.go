@@ -197,9 +197,9 @@ func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID 
 			return false, nil
 		}
 
-		// if payTime.Before(oldBill.Period) {
-		// 	return false, nil
-		// }
+		if payTime.Before(utils.ParseTimeWithZone(oldBill.Period.String())) {
+			return false, nil
+		}
 	}
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
