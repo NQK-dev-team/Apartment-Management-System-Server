@@ -8,10 +8,10 @@ import (
 
 type PasswordResetTokenModel struct {
 	ID        int64     `json:"ID" gorm:"primaryKey; column:id; autoIncrement; not null;"`
-	CreatedAt time.Time `json:"createdAt" gorm:"column:created_at;type:timestamp with time zone;not null;default:now();"`
+	CreatedAt time.Time `json:"createdAt" gorm:"column:created_at;type:timestamp;not null;default:now();"`
 	Token     string    `json:"token" gorm:"column:token;type:varchar(255);not null;"`
 	Email     string    `json:"email" gorm:"column:email;type:varchar(255);not null;"`
-	ExpiresAt time.Time `json:"expiresAt" gorm:"column:expires_at;type:timestamp with time zone;not null;"`
+	ExpiresAt time.Time `json:"expiresAt" gorm:"column:expires_at;type:timestamp;not null;"`
 }
 
 func (u *PasswordResetTokenModel) TableName() string {

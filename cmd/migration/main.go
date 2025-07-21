@@ -15,7 +15,8 @@ var emailVerifyTokenMigration *migrations.EmailVerifyTokenMigration
 var passwordResetTokenMigration *migrations.PasswordResetTokenMigration
 var buildingMigration *migrations.BuildingMigration
 var contractMigration *migrations.ContractMigration
-var messageMigration *migrations.MessageMigration
+
+// var messageMigration *migrations.MessageMigration
 var notificationMigration *migrations.NotificationMigration
 var supportTicketMigration *migrations.SupportTicketMigration
 var emailQueueMigration *migrations.EmailQueueMigration
@@ -28,7 +29,7 @@ func migrateUp() {
 	passwordResetTokenMigration.Up()
 	buildingMigration.Up()
 	contractMigration.Up()
-	messageMigration.Up()
+	// messageMigration.Up()
 	notificationMigration.Up()
 	supportTicketMigration.Up()
 	emailQueueMigration.Up()
@@ -39,7 +40,7 @@ func migrateDown() {
 	fmt.Println("--------- Migrating Down Start ---------")
 	supportTicketMigration.Down()
 	notificationMigration.Down()
-	messageMigration.Down()
+	// messageMigration.Down()
 	contractMigration.Down()
 	buildingMigration.Down()
 	passwordResetTokenMigration.Down()
@@ -57,7 +58,7 @@ func initMigrations() {
 	passwordResetTokenMigration = migrations.NewPasswordResetTokenMigration()
 	buildingMigration = migrations.NewBuildingMigration()
 	contractMigration = migrations.NewContractMigration()
-	messageMigration = migrations.NewMessageMigration()
+	// messageMigration = migrations.NewMessageMigration()
 	notificationMigration = migrations.NewNotificationMigration()
 	supportTicketMigration = migrations.NewSupportTicketMigration()
 	emailQueueMigration = migrations.NewEmailQueueMigration()
