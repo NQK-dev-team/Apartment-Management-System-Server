@@ -257,7 +257,10 @@ func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID 
 				Int64: bill.PayerID,
 				Valid: bill.PayerID != 0,
 			}
-			oldBill.PaymentTime = utils.StringToNullTime(bill.PaymentTime)
+			oldBill.PaymentTime = sql.NullTime{
+				Time:  utils.ParseTimeWithZone(bill.PaymentTime + " 00:00:00"),
+				Valid: bill.PaymentTime != "",
+			}
 		}
 		oldBill.Status = bill.Status
 

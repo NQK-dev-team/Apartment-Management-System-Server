@@ -227,8 +227,14 @@ func (r *BillRepository) UpdatePayment(ctx *gin.Context, tx *gorm.DB, payment *[
 
 func (r *BillRepository) UpdateBill(ctx *gin.Context, tx *gorm.DB, bill *models.BillModel, id int64) error {
 	userID := ctx.GetInt64("userID")
-	if err := tx.Set("userID", userID).Model(&models.BillModel{}).Omit("PayerID").Where("id = ?", id).Save(bill).Error; err != nil {
-		return err
+	if bill.PayerID.Int64 == 0 || !bill.PayerID.Valid {
+		if err := tx.Set("userID", userID).Model(&models.BillModel{}).Omit("PayerID").Where("id = ?", id).Save(bill).Error; err != nil {
+			return err
+		}
+	} else {
+		if err := tx.Set("userID", userID).Model(&models.BillModel{}).Where("id = ?", id).Save(bill).Error; err != nil {
+			return err
+		}
 	}
 	return nil
 }
