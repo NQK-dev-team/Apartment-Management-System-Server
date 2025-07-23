@@ -54,6 +54,37 @@ func (c *ContractController) GetContractList(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
+func (c *ContractController) GetActiveContractList(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	contracts := []structs.Contract{}
+
+	limitStr := ctx.DefaultQuery("limit", "500")
+	offsetStr := ctx.DefaultQuery("offset", "0")
+
+	limit, err := strconv.ParseInt(limitStr, 10, 64)
+
+	if err != nil {
+		limit = 500
+	}
+
+	offset, err := strconv.ParseInt(offsetStr, 10, 64)
+
+	if err != nil {
+		offset = 0
+	}
+
+	if err := c.contractService.GetActiveContractList(ctx, &contracts, limit, offset); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = contracts
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
 func (c *ContractController) GetContractDetail(ctx *gin.Context) {
 	response := config.NewDataResponse(ctx)
 
@@ -282,7 +313,7 @@ func (c *ContractController) AddContract(ctx *gin.Context) {
 
 	var newContractID int64
 
-	isAllowed, isValid, err := c.contractService.CreateContract(ctx, &contract,&newContractID)
+	isAllowed, isValid, err := c.contractService.CreateContract(ctx, &contract, &newContractID)
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(http.StatusInternalServerError, response)

@@ -73,6 +73,39 @@ func (s *ContractService) GetContractList(ctx *gin.Context, contracts *[]structs
 	return s.contractRepository.GetContracts(ctx, contracts, limit, offset)
 }
 
+func (s *ContractService) GetActiveContractList(ctx *gin.Context, contracts *[]structs.Contract, limit int64, offset int64) error {
+	role, exists := ctx.Get("role")
+
+	if !exists {
+		return errors.New("role not found")
+	}
+
+	if role.(string) == constants.Roles.Manager {
+		jwt, exists := ctx.Get("jwt")
+
+		if !exists {
+			return errors.New("jwt not found")
+		}
+
+		token, err := utils.ValidateJWTToken(jwt.(string))
+
+		if err != nil {
+			return err
+		}
+
+		claim := &structs.JTWClaim{}
+
+		utils.ExtractJWTClaim(token, claim)
+
+		if role.(string) == constants.Roles.Manager {
+			return s.contractRepository.GetActiveContractsByManagerID(ctx, contracts, claim.UserID, limit, offset)
+		}
+
+	}
+
+	return s.contractRepository.GetActiveContracts(ctx, contracts, limit, offset)
+}
+
 func (s *ContractService) GetContractDetail(ctx *gin.Context, contract *structs.Contract, id int64) (bool, error) {
 	if err := s.contractRepository.GetContractByID(ctx, contract, id); err != nil {
 		return false, err
