@@ -61,7 +61,7 @@ func (r *ContractRepository) GetContractByID(ctx *gin.Context, contract *structs
 		return err
 	}
 
-	if err := config.DB.Model(&models.RoomResidentModel{}).Preload("UserAccount").
+	if err := config.DB.Model(&models.RoomResidentModel{}).Preload("UserAccount").Distinct().
 		Joins("JOIN room_resident_list ON room_resident_list.resident_id = room_resident.ID").
 		Where("room_resident_list.contract_id = ? AND room_resident.deleted_at IS NULL", (*contract).ID).
 		Find(&(*contract).Residents).Error; err != nil {
@@ -85,7 +85,7 @@ func (r *ContractRepository) GetContracts(ctx *gin.Context, contracts *[]structs
 }
 
 func (r *ContractRepository) GetActiveContracts(ctx *gin.Context, contracts *[]structs.Contract, limit int64, offset int64) error {
-	if err := config.DB.Model(&models.ContractModel{}).Preload("Bills").Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address").
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Bills").Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address, building.id AS building_id").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Where("contract.deleted_at IS NULL AND contract.status = ?", constants.Common.ContractStatus.ACTIVE).
@@ -93,6 +93,15 @@ func (r *ContractRepository) GetActiveContracts(ctx *gin.Context, contracts *[]s
 		Find(contracts).Error; err != nil {
 		return err
 	}
+
+	// for i := range *contracts {
+	// 	if err := config.DB.Model(&models.RoomResidentModel{}).Preload("UserAccount").Distinct().
+	// 		Joins("JOIN room_resident_list ON room_resident_list.resident_id = room_resident.ID").
+	// 		Where("room_resident_list.contract_id = ? AND room_resident.deleted_at IS NULL", (*contracts)[i].ID).
+	// 		Find(&(*contracts)[i].Residents).Error; err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	return nil
 }
@@ -134,19 +143,28 @@ func (r *ContractRepository) GetContractsByManagerID2(ctx *gin.Context, contract
 }
 
 func (r *ContractRepository) GetActiveContractsByManagerID(ctx *gin.Context, contracts *[]structs.Contract, managerID int64, limit int64, offset int64) error {
-	query := config.DB.Model(&models.ContractModel{}).Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address").
+	query := config.DB.Model(&models.ContractModel{}).Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address, building.id AS building_id").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id AND manager_schedule.deleted_at IS NULL").
 		Where("contract.deleted_at IS NULL AND manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ? AND contract.status = ?", managerID, constants.Common.ContractStatus.ACTIVE)
 
-	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Bills").
 		Table("(?) as all_contracts", query).
 		Select("all_contracts.*").
 		Limit(int(limit)).Offset(int(offset)).Order("all_contracts.start_date DESC, all_contracts.end_date DESC, all_contracts.sign_date DESC").
 		Find(contracts).Error; err != nil {
 		return err
 	}
+
+	// for i := range *contracts {
+	// 	if err := config.DB.Model(&models.RoomResidentModel{}).Preload("UserAccount").Distinct().
+	// 		Joins("JOIN room_resident_list ON room_resident_list.resident_id = room_resident.ID").
+	// 		Where("room_resident_list.contract_id = ? AND room_resident.deleted_at IS NULL", (*contracts)[i].ID).
+	// 		Find(&(*contracts)[i].Residents).Error; err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	return nil
 }

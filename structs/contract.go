@@ -30,6 +30,7 @@ type Contract struct {
 	BuildingAddress string `json:"buildingAddress" gorm:"building_address"`
 	RoomNo          int    `json:"roomNo" gorm:"room_no"`
 	RoomFloor       int    `json:"roomFloor" gorm:"room_floor"`
+	BuildingID      int64  `json:"buildingID" gorm:"column:building_id;"`
 }
 
 type ContractFile struct {
