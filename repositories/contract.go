@@ -85,7 +85,7 @@ func (r *ContractRepository) GetContracts(ctx *gin.Context, contracts *[]structs
 }
 
 func (r *ContractRepository) GetActiveContracts(ctx *gin.Context, contracts *[]structs.Contract, limit int64, offset int64) error {
-	if err := config.DB.Model(&models.ContractModel{}).Preload("Bills").Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address, building.id AS building_id").
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Householder").Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address, building.id AS building_id").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Where("contract.deleted_at IS NULL AND contract.status = ?", constants.Common.ContractStatus.ACTIVE).
@@ -149,7 +149,7 @@ func (r *ContractRepository) GetActiveContractsByManagerID(ctx *gin.Context, con
 		Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id AND manager_schedule.deleted_at IS NULL").
 		Where("contract.deleted_at IS NULL AND manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ? AND contract.status = ?", managerID, constants.Common.ContractStatus.ACTIVE)
 
-	if err := config.DB.Model(&models.ContractModel{}).Preload("Bills").
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Householder").
 		Table("(?) as all_contracts", query).
 		Select("all_contracts.*").
 		Limit(int(limit)).Offset(int(offset)).Order("all_contracts.start_date DESC, all_contracts.end_date DESC, all_contracts.sign_date DESC").
