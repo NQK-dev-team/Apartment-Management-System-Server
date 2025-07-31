@@ -669,16 +669,26 @@ func (s *ContractService) CreateContract(ctx *gin.Context, contract *structs.New
 		}
 	}
 
+	createdAt, err := utils.ParseTime(contract.CreatedAt)
+	if err != nil {
+		return true, true, err
+	}
+
+	startDate, err := utils.ParseTime(contract.StartDate)
+	if err != nil {
+		return true, true, err
+	}
+
 	newcontract := models.ContractModel{
 		DefaultModel: models.DefaultModel{
-			CreatedAt: utils.ParseTime(contract.CreatedAt),
+			CreatedAt: createdAt,
 			CreatedBy: claim.UserID,
 		},
 		RoomID:        contract.RoomID,
 		HouseholderID: contract.HouseholderID,
 		Type:          contract.ContractType,
 		Value:         contract.ContractValue,
-		StartDate:     utils.ParseTime(contract.StartDate),
+		StartDate:     startDate,
 		SignDate:      utils.StringToNullTime(contract.SignDate),
 		EndDate:       utils.StringToNullTime(contract.EndDate),
 		CreatorID:     claim.UserID,

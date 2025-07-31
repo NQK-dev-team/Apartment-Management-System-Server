@@ -148,7 +148,11 @@ func (s *UserService) CreateStaff(ctx *gin.Context, newStaff *structs.NewStaff, 
 
 		schedules := []models.ManagerScheduleModel{}
 		for _, val := range newStaff.Schedules {
-			startDate := utils.ParseTime(val.StartDate)
+			startDate, err := utils.ParseTime(val.StartDate)
+			if err != nil {
+				return err
+			}
+
 			endDate := utils.StringToNullTime(val.EndDate)
 			schedules = append(schedules, models.ManagerScheduleModel{
 				BuildingID: val.BuildingID,
@@ -201,10 +205,14 @@ func (s *UserService) UpdateStaff(ctx *gin.Context, editStaff *structs.EditStaff
 		if len(editStaff.NewSchedules) > 0 {
 			schedules := []models.ManagerScheduleModel{}
 			for _, schedule := range editStaff.NewSchedules {
+				startDate, err := utils.ParseTime(schedule.StartDate)
+				if err != nil {
+					return err
+				}
 				schedules = append(schedules, models.ManagerScheduleModel{
 					BuildingID: schedule.BuildingID,
 					ManagerID:  editStaff.ID,
-					StartDate:  utils.ParseTime(schedule.StartDate),
+					StartDate:  startDate,
 					EndDate:    utils.StringToNullTime(schedule.EndDate),
 				})
 			}
@@ -225,8 +233,12 @@ func (s *UserService) UpdateStaff(ctx *gin.Context, editStaff *structs.EditStaff
 			for index, schedule := range schedules {
 				for _, val := range editStaff.Schedules {
 					if val.ID == schedule.ID {
+						startDate, err := utils.ParseTime(val.StartDate)
+						if err != nil {
+							return err
+						}
 						schedules[index].BuildingID = val.BuildingID
-						schedules[index].StartDate = utils.ParseTime(val.StartDate)
+						schedules[index].StartDate = startDate
 						schedules[index].EndDate = utils.StringToNullTime(val.EndDate)
 						break
 					}

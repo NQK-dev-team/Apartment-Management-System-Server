@@ -124,7 +124,10 @@ func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.New
 		}
 		schedules := []models.ManagerScheduleModel{}
 		for _, val := range building.Schedules {
-			startDate := utils.ParseTime(val.StartDate)
+			startDate, err := utils.ParseTime(val.StartDate)
+			if err != nil {
+				return err
+			}
 			endDate := utils.StringToNullTime(val.EndDate)
 			schedules = append(schedules, models.ManagerScheduleModel{
 				BuildingID: newBuilding.ID,
@@ -386,10 +389,15 @@ func (s *BuildingService) UpdateBuilding(ctx *gin.Context, building *structs.Edi
 			if len(building.NewSchedules) > 0 {
 				schedules := []models.ManagerScheduleModel{}
 				for _, schedule := range building.NewSchedules {
+					startDate, err := utils.ParseTime(schedule.StartDate)
+					if err != nil {
+						return err
+					}
+
 					schedules = append(schedules, models.ManagerScheduleModel{
 						BuildingID: building.ID,
 						ManagerID:  schedule.ManagerID,
-						StartDate:  utils.ParseTime(schedule.StartDate),
+						StartDate:  startDate,
 						EndDate:    utils.StringToNullTime(schedule.EndDate),
 					})
 				}
@@ -458,8 +466,12 @@ func (s *BuildingService) UpdateBuilding(ctx *gin.Context, building *structs.Edi
 				for index, schedule := range schedules {
 					for _, val := range building.Schedules {
 						if val.ID == schedule.ID {
+							startDate, err := utils.ParseTime(val.StartDate)
+							if err != nil {
+								return err
+							}
 							schedules[index].ManagerID = val.ManagerID
-							schedules[index].StartDate = utils.ParseTime(val.StartDate)
+							schedules[index].StartDate = startDate
 							schedules[index].EndDate = utils.StringToNullTime(val.EndDate)
 							break
 						}

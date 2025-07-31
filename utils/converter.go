@@ -13,18 +13,27 @@ func StringToNullTime(str string) sql.NullTime {
 			Valid: false,
 		}
 	}
+
+	parsedTime, err := ParseTime(str)
+	if err != nil {
+		return sql.NullTime{
+			Time:  time.Time{},
+			Valid: false,
+		}
+	}
+
 	return sql.NullTime{
-		Time:  ParseTime(str),
+		Time:  parsedTime,
 		Valid: true,
 	}
 }
 
-func ParseTime(str string) time.Time {
+func ParseTime(str string) (time.Time, error) {
 	const layout = "2006-01-02"
-	parsedTime, _ := time.Parse(layout, str)
-	return parsedTime
+	return time.Parse(layout, str)
 }
 
+func ParseTimeWithZone(str string) (time.Time, error) {
 	const layout = "2006-01-02 15:04:05"
 
 	timeZone := config.GetEnv("APP_TIMEZONE")
