@@ -47,4 +47,7 @@ type UpdateBill struct {
 	DeletedPayments []int64      `json:"deletedPaymILLents"`
 	PayerID         int64        `json:"payerID"`
 	PaymentTime     string       `json:"paymentTime"`
+	DeletedPayments []int64      `json:"deletedPayments"`
+	PayerID         int64        `json:"payerID" validation:"required_if=Status 2"`
+	PaymentTime     string       `json:"paymentTime" validation:"required_unless=PayerID 0,datetime=2006-01-02"`
 }

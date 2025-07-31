@@ -25,7 +25,6 @@ func ParseTime(str string) time.Time {
 	return parsedTime
 }
 
-func ParseTimeWithZone(str string) time.Time {
 	const layout = "2006-01-02 15:04:05"
 
 	timeZone := config.GetEnv("APP_TIMEZONE")
@@ -39,7 +38,5 @@ func ParseTimeWithZone(str string) time.Time {
 		timeLocation = time.Local // Fallback to local time if loading the specified timezone fails
 	}
 
-	parsedTime, _ := time.ParseInLocation(layout, str, timeLocation)
-
-	return parsedTime
+	return time.ParseInLocation(layout, str, timeLocation)
 }

@@ -149,10 +149,16 @@ func (c *BillController) UpdateBill(ctx *gin.Context) {
 		return
 	}
 
-	isValid, err := c.billService.UpdateBill(ctx, &bill, id)
+	isAllowed, isValid, err := c.billService.UpdateBill(ctx, &bill, id)
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if !isAllowed {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(http.StatusForbidden, response)
 		return
 	}
 

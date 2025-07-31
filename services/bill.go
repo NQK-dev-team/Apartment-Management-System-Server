@@ -173,32 +173,52 @@ func (s *BillService) CheckCustomerPermission(ctx *gin.Context, billID int64) bo
 	return true
 }
 
-func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID int64) (bool, error) {
+func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID int64) (bool, bool, error) {
+	role, exists := ctx.Get("role")
+	if !exists {
+		return true, true, errors.New("role not found")
+	}
+
+	if role.(string) == constants.Roles.Manager {
+		if isAllowed := s.CheckManagerPermission(ctx, ID); !isAllowed {
+			return false, true, nil
+		}
+	}
+
 	oldBill := &models.BillModel{}
 	if err := s.billRepository.GetById2(ctx, oldBill, ID); err != nil {
-		return true, err
+		return true, true, err
 	}
 
 	if oldBill.ID == 0 {
-		return true, errors.New("bill not found")
+		return true, true, errors.New("bill not found")
 	}
 
 	if oldBill.Status == constants.Common.BillStatus.PAID || oldBill.Status == constants.Common.BillStatus.PROCESSING {
-		return false, nil
+		return true, false, nil
 	}
 
 	if oldBill.Status != bill.Status && bill.Status != constants.Common.BillStatus.CANCELLED && bill.Status != constants.Common.BillStatus.PAID {
-		return false, nil
+		return true, false, nil
 	}
 
 	if bill.PaymentTime != "" {
-		payTime := utils.ParseTimeWithZone(bill.PaymentTime + " 00:00:00")
-		if payTime.After(time.Now()) {
-			return false, nil
+		payTime, err := utils.ParseTimeWithZone(bill.PaymentTime + " 00:00:00")
+		if err != nil {
+			return true, true, err
 		}
 
-		if payTime.Before(utils.ParseTimeWithZone(oldBill.Period.Format("2006-01-02 15:04:05"))) {
-			return false, nil
+		if payTime.After(time.Now()) {
+			return true, false, nil
+		}
+
+		periodTime, err := utils.ParseTimeWithZone(oldBill.Period.Format("2006-01-02 15:04:05"))
+		if err != nil {
+			return true, true, err
+		}
+
+		if payTime.Before(periodTime) {
+			return true, false, nil
 		}
 	}
 
@@ -269,8 +289,14 @@ func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID 
 				Int64: bill.PayerID,
 				Valid: bill.PayerID != 0,
 			}
+
+			paymentTime, err := utils.ParseTimeWithZone(bill.PaymentTime + " 00:00:00")
+			if err != nil {
+				return err
+			}
+
 			oldBill.PaymentTime = sql.NullTime{
-				Time:  utils.ParseTimeWithZone(bill.PaymentTime + " 00:00:00"),
+				Time:  paymentTime,
 				Valid: bill.PaymentTime != "",
 			}
 		}
@@ -284,4 +310,5 @@ func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID 
 	})
 
 	return true, err
+	return true, true, err
 }
