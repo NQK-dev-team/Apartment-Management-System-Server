@@ -171,3 +171,44 @@ func (c *BillController) UpdateBill(ctx *gin.Context) {
 	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }
+
+func (c *BillController) AddBill(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	bill := structs.AddBill{}
+
+	if err := ctx.ShouldBindJSON(&bill); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	if err := constants.Validate.Struct(bill); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	isAllowed, isValid, err := c.billService.AddBill(ctx, &bill)
+	if err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if !isAllowed {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(http.StatusForbidden, response)
+		return
+	}
+
+	if !isValid {
+		response.Message = config.GetMessageCode("CREATE_FAILED")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	response.Message = config.GetMessageCode("ADD_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}

@@ -19,5 +19,6 @@ func InitBillRoutes(router *gin.RouterGroup) {
 	{
 		billRoutes.POST("/delete-many", billController.DeleteManyBills)
 		billRoutes.POST("/:id/update", billController.UpdateBill)
+		billRoutes.POST("/add", billController.AddBill)
 	}
 }

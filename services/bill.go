@@ -16,14 +16,18 @@ import (
 )
 
 type BillService struct {
-	billRepository  *repositories.BillRepository
-	buildingService *BuildingService
+	billRepository     *repositories.BillRepository
+	buildingService    *BuildingService
+	contractService    *ContractService
+	contractRepository *repositories.ContractRepository
 }
 
 func NewBillService() *BillService {
 	return &BillService{
-		billRepository:  repositories.NewBillRepository(),
-		buildingService: NewBuildingService(true),
+		billRepository:     repositories.NewBillRepository(),
+		buildingService:    NewBuildingService(true),
+		contractService:    NewContractService(),
+		contractRepository: repositories.NewContractRepository(),
 	}
 }
 
@@ -313,6 +317,117 @@ func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID 
 		return nil
 	})
 
-	return true, err
 	return true, true, err
+}
+
+func (s *BillService) AddBill(ctx *gin.Context, bill *structs.AddBill) (bool, bool, error) {
+	role, exists := ctx.Get("role")
+	if !exists {
+		return true, true, errors.New("role not found")
+	}
+
+	if role.(string) == constants.Roles.Manager {
+		jwt, exists := ctx.Get("jwt")
+		if !exists {
+			return true, true, errors.New("jwt not found")
+		}
+
+		token, err := utils.ValidateJWTToken(jwt.(string))
+		if err != nil {
+			return true, true, err
+		}
+
+		claim := &structs.JTWClaim{}
+		utils.ExtractJWTClaim(token, claim)
+
+		isAllowed, err := s.contractService.CheckManagerContractPermission(ctx, claim.UserID, bill.ContractID)
+		if err != nil {
+			return true, true, err
+		}
+
+		if !isAllowed {
+			return false, true, nil
+		}
+
+	}
+
+	contract := &structs.Contract{}
+	if err := s.contractRepository.GetContractByID(ctx, contract, bill.ContractID); err != nil {
+		return true, true, err
+	}
+
+	if contract.Status != constants.Common.ContractStatus.ACTIVE {
+		return true, false, nil
+	}
+
+	if bill.Status == constants.Common.BillStatus.PAID {
+		if bill.PayerID == 0 || bill.PaymentTime == "" {
+			return true, false, nil
+		}
+	}
+
+	if bill.PayerID != 0 && bill.PaymentTime != "" {
+		if bill.Status != constants.Common.BillStatus.PAID && bill.Status != constants.Common.BillStatus.CANCELLED {
+			return true, false, nil
+		}
+	}
+
+	billPeriod, err := utils.ParseTime(bill.Period + "-01")
+	if err != nil {
+		return true, true, err
+	}
+
+	newBill := &models.BillModel{
+		Title:      bill.Title,
+		Note:       sql.NullString{String: bill.Note, Valid: bill.Note != ""},
+		Status:     bill.Status,
+		ContractID: bill.ContractID,
+		Period:     billPeriod,
+	}
+
+	if bill.PayerID != 0 && bill.PaymentTime != "" {
+		paymentTime, err := utils.ParseTimeWithZone(bill.PaymentTime + " 00:00:00")
+		if err != nil {
+			return true, true, err
+		}
+
+		newBill.PayerID = sql.NullInt64{
+			Int64: bill.PayerID,
+			Valid: bill.PayerID != 0,
+		}
+		newBill.PaymentTime = sql.NullTime{
+			Time:  paymentTime,
+			Valid: bill.PaymentTime != "",
+		}
+	} else {
+		newBill.PayerID = sql.NullInt64{Valid: false}
+		newBill.PaymentTime = sql.NullTime{Valid: false}
+	}
+
+	return true, true, config.DB.Transaction(func(tx *gorm.DB) error {
+		// if err := s.billRepository.Add(ctx, tx, newBill); err != nil {
+		// 	return err
+		// }
+
+		// if len(bill.BillPayments) > 0 {
+		// 	paymentModels := []models.BillPaymentModel{}
+		// 	for _, payment := range bill.BillPayments {
+		// 		paymentModels = append(paymentModels, models.BillPaymentModel{
+		// 			BillID: newBill.ID,
+		// 			Name:   payment.Name,
+		// 			Amount: payment.Amount,
+		// 			Note: sql.NullString{
+		// 				String: payment.Note,
+		// 				Valid:  payment.Note != "",
+		// 			},
+		// 		})
+		// 	}
+
+		// 	if err := s.billRepository.AddNewPayment(ctx, tx, &paymentModels); err != nil {
+		// 		return err
+		// 	}
+		// }
+
+		return nil
+	})
 }
