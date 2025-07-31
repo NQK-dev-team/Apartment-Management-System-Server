@@ -190,7 +190,9 @@ func (c *BillController) AddBill(ctx *gin.Context) {
 		return
 	}
 
-	isAllowed, isValid, err := c.billService.AddBill(ctx, &bill)
+	var newBillID int64
+
+	isAllowed, isValid, err := c.billService.AddBill(ctx, &bill, &newBillID)
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(http.StatusInternalServerError, response)
@@ -209,6 +211,7 @@ func (c *BillController) AddBill(ctx *gin.Context) {
 		return
 	}
 
+	response.Data = newBillID
 	response.Message = config.GetMessageCode("ADD_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }

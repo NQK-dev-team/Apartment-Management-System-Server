@@ -57,5 +57,5 @@ type AddBill struct {
 	ContractID   int64        `json:"contractID" validation:"required"`
 	PayerID      int64        `json:"payerID" validation:"required_if=Status 2"`
 	PaymentTime  string       `json:"paymentTime" validation:"required_unless=PayerID 0,datetime=2006-01-02"`
-	BillPayments []NewPayment `json:"billPayments" validation:"dive"`
+	BillPayments []NewPayment `json:"billPayments" validation:"min=1,dive"`
 }

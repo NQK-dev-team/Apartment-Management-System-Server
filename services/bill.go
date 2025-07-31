@@ -320,7 +320,7 @@ func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID 
 	return true, true, err
 }
 
-func (s *BillService) AddBill(ctx *gin.Context, bill *structs.AddBill) (bool, bool, error) {
+func (s *BillService) AddBill(ctx *gin.Context, bill *structs.AddBill, newBillID *int64) (bool, bool, error) {
 	role, exists := ctx.Get("role")
 	if !exists {
 		return true, true, errors.New("role not found")
@@ -372,9 +372,19 @@ func (s *BillService) AddBill(ctx *gin.Context, bill *structs.AddBill) (bool, bo
 		}
 	}
 
+	if len(bill.BillPayments) == 0 {
+		return true, false, nil
+	}
+
 	billPeriod, err := utils.ParseTime(bill.Period + "-01")
 	if err != nil {
 		return true, true, err
+	}
+
+	totalAmount := 0.0
+
+	for _, payment := range bill.BillPayments {
+		totalAmount += payment.Amount
 	}
 
 	newBill := &models.BillModel{
@@ -383,6 +393,7 @@ func (s *BillService) AddBill(ctx *gin.Context, bill *structs.AddBill) (bool, bo
 		Status:     bill.Status,
 		ContractID: bill.ContractID,
 		Period:     billPeriod,
+		Amount:     totalAmount,
 	}
 
 	if bill.PayerID != 0 && bill.PaymentTime != "" {
@@ -405,28 +416,11 @@ func (s *BillService) AddBill(ctx *gin.Context, bill *structs.AddBill) (bool, bo
 	}
 
 	return true, true, config.DB.Transaction(func(tx *gorm.DB) error {
-		// if err := s.billRepository.Add(ctx, tx, newBill); err != nil {
-		// 	return err
-		// }
+		if err := s.billRepository.CreateBill(ctx, tx, newBill); err != nil {
+			return err
+		}
 
-		// if len(bill.BillPayments) > 0 {
-		// 	paymentModels := []models.BillPaymentModel{}
-		// 	for _, payment := range bill.BillPayments {
-		// 		paymentModels = append(paymentModels, models.BillPaymentModel{
-		// 			BillID: newBill.ID,
-		// 			Name:   payment.Name,
-		// 			Amount: payment.Amount,
-		// 			Note: sql.NullString{
-		// 				String: payment.Note,
-		// 				Valid:  payment.Note != "",
-		// 			},
-		// 		})
-		// 	}
-
-		// 	if err := s.billRepository.AddNewPayment(ctx, tx, &paymentModels); err != nil {
-		// 		return err
-		// 	}
-		// }
+		*newBillID = newBill.ID
 
 		return nil
 	})
