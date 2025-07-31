@@ -222,6 +222,10 @@ func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID 
 		}
 	}
 
+	if len(bill.NewPayments) == 0 && len(bill.Payments) == 0 {
+		return true, false, nil
+	}
+
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
 		if len(bill.DeletedPayments) > 0 {
 			if err := s.billRepository.DeletePayment(ctx, tx, bill.DeletedPayments); err != nil {
