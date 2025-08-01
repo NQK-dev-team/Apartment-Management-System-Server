@@ -364,6 +364,24 @@ func (s *BillService) AddBill(ctx *gin.Context, bill *structs.AddBill, newBillID
 		if bill.PayerID == 0 || bill.PaymentTime == "" {
 			return true, false, nil
 		}
+
+		paymentTime, err := utils.ParseTimeWithZone(bill.PaymentTime + " 00:00:00")
+		if err != nil {
+			return true, true, err
+		}
+
+		if paymentTime.After(time.Now()) {
+			return true, false, nil
+		}
+
+		periodTime, err := utils.ParseTimeWithZone(bill.Period + "-01 00:00:00")
+		if err != nil {
+			return true, true, err
+		}
+
+		if paymentTime.Before(periodTime) {
+			return true, false, nil
+		}
 	}
 
 	if bill.PayerID != 0 && bill.PaymentTime != "" {
@@ -421,7 +439,6 @@ func (s *BillService) AddBill(ctx *gin.Context, bill *structs.AddBill, newBillID
 		}
 
 		*newBillID = newBill.ID
-
 		return nil
 	})
 }
