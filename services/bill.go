@@ -399,19 +399,13 @@ func (s *BillService) AddBill(ctx *gin.Context, bill *structs.AddBill, newBillID
 		return true, true, err
 	}
 
-	totalAmount := 0.0
-
-	for _, payment := range bill.BillPayments {
-		totalAmount += payment.Amount
-	}
-
 	newBill := &models.BillModel{
 		Title:      bill.Title,
 		Note:       sql.NullString{String: bill.Note, Valid: bill.Note != ""},
 		Status:     bill.Status,
 		ContractID: bill.ContractID,
 		Period:     billPeriod,
-		Amount:     totalAmount,
+		Amount:     0, // Will be calculated later
 	}
 
 	if bill.PayerID != 0 && bill.PaymentTime != "" {
@@ -431,6 +425,18 @@ func (s *BillService) AddBill(ctx *gin.Context, bill *structs.AddBill, newBillID
 	} else {
 		newBill.PayerID = sql.NullInt64{Valid: false}
 		newBill.PaymentTime = sql.NullTime{Valid: false}
+	}
+
+	for _, payment := range bill.BillPayments {
+		newBill.Amount += payment.Amount
+		newBill.BillPayments = append(newBill.BillPayments, models.BillPaymentModel{
+			Name:   payment.Name,
+			Amount: payment.Amount,
+			Note: sql.NullString{
+				String: payment.Note,
+				Valid:  payment.Note != "",
+			},
+		})
 	}
 
 	return true, true, config.DB.Transaction(func(tx *gorm.DB) error {
