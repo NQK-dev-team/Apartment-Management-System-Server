@@ -149,6 +149,13 @@ func (c *BillController) UpdateBill(ctx *gin.Context) {
 		return
 	}
 
+	if err := constants.Validate.Struct(bill); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
 	isAllowed, isValid, err := c.billService.UpdateBill(ctx, &bill, id)
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
