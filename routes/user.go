@@ -10,6 +10,7 @@ import (
 func InitUserRoutes(router *gin.RouterGroup) {
 	staffRoutes := router.Group("/staff")
 	customerRoutes := router.Group("/customer")
+	userRoutes := router.Group("/user")
 	userController := controllers.NewUserController()
 
 	authorizationMiddle := middlewares.NewAuthorizationMiddleware()
@@ -39,4 +40,6 @@ func InitUserRoutes(router *gin.RouterGroup) {
 		customerRoutes.GET("/:id/ticket", userController.GetCustomerTicket)
 		customerRoutes.POST("/add", userController.AddCustomer)
 	}
+
+	userRoutes.GET("/profile", userController.GetUserInfo)
 }

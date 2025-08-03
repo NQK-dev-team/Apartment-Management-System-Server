@@ -517,3 +517,18 @@ func (c *UserController) AddCustomer(ctx *gin.Context) {
 	response.Message = config.GetMessageCode("CREATE_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }
+
+func (c *UserController) GetUserInfo(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	user := &models.UserModel{}
+
+	if err := c.userService.GetUserInfo(ctx, user); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = user
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}

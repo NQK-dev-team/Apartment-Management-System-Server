@@ -515,3 +515,27 @@ func (s *UserService) CreateCustomer(ctx *gin.Context, newCustomer *structs.NewC
 
 	return nil
 }
+
+func (s *UserService) GetUserInfo(ctx *gin.Context, user *models.UserModel) error {
+	jwt, exists := ctx.Get("jwt")
+
+	if !exists {
+		return errors.New("jwt not found")
+	}
+
+	token, err := utils.ValidateJWTToken(jwt.(string))
+
+	if err != nil {
+		return errors.New("jwt not valid")
+	}
+
+	claim := &structs.JTWClaim{}
+
+	utils.ExtractJWTClaim(token, claim)
+
+	if err := s.userRepository.GetByID(ctx, user, claim.UserID); err != nil {
+		return err
+	}
+
+	return nil
+}
