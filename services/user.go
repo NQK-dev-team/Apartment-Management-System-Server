@@ -94,11 +94,8 @@ func (s *UserService) CreateStaff(ctx *gin.Context, newStaff *structs.NewStaff, 
 				String: newStaff.MiddleName,
 				Valid:  newStaff.MiddleName != "",
 			},
-			DOB: newStaff.Dob,
-			POB: sql.NullString{
-				String: newStaff.Pob,
-				Valid:  newStaff.Pob != "",
-			},
+			DOB:    newStaff.Dob,
+			POB:    newStaff.Pob,
 			Gender: newStaff.Gender,
 			SSN:    newStaff.SSN,
 			OldSSN: sql.NullString{
@@ -439,11 +436,8 @@ func (s *UserService) CreateCustomer(ctx *gin.Context, newCustomer *structs.NewC
 				String: newCustomer.MiddleName,
 				Valid:  newCustomer.MiddleName != "",
 			},
-			DOB: newCustomer.Dob,
-			POB: sql.NullString{
-				String: newCustomer.Pob,
-				Valid:  newCustomer.Pob != "",
-			},
+			DOB:    newCustomer.Dob,
+			POB:    newCustomer.Pob,
 			Gender: newCustomer.Gender,
 			SSN:    newCustomer.SSN,
 			OldSSN: sql.NullString{
