@@ -57,7 +57,23 @@ func (c *AuthenticationController) Login(ctx *gin.Context) {
 	}
 
 	if jwtToken == "" && !isEmailVerified {
-		c.emailService.SendEmailVerificationEmail(ctx, account.Email)
+		user := &models.UserModel{}
+
+		if err := c.authenticationService.GetUserDataByEmail(ctx, user, account.Email); err != nil {
+			response.Message = config.GetMessageCode("SYSTEM_ERROR")
+			ctx.JSON(http.StatusInternalServerError, response)
+			return
+		}
+
+		if user.ID == 0 {
+			response.Message = config.GetMessageCode("INVALID_CREDENTIALS")
+			ctx.JSON(http.StatusUnauthorized, response)
+			return
+		}
+
+		if !user.VerifiedAfterCreated {
+			c.emailService.SendAccountCreatedEmailVerificationEmail(ctx, account.Email)
+		}
 		response.Message = config.GetMessageCode("EMAIL_NOT_VERIFIED")
 		ctx.JSON(http.StatusUnauthorized, response)
 		return

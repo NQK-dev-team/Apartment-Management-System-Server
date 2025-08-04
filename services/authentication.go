@@ -316,3 +316,7 @@ func (s *AuthenticationService) GetRefreshToken(ctx *gin.Context, refreshTokenRe
 	}
 	return nil
 }
+
+func (s *AuthenticationService) GetUserDataByEmail(ctx *gin.Context, user *models.UserModel, email string) error {
+	return s.userRepository.GetByEmail(ctx, user, email)
+}

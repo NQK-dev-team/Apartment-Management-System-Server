@@ -120,7 +120,7 @@ func (s *EmailService) SendResetPasswordEmail(ctx *gin.Context, email string) (b
 	return false, nil
 }
 
-func (s *EmailService) SendEmailVerificationEmail(ctx *gin.Context, email string) (bool, error) {
+func (s *EmailService) SendAccountCreatedEmailVerificationEmail(ctx *gin.Context, email string) (bool, error) {
 	tokens := []models.EmailVerifyTokenModel{}
 	s.emailVerifyTokenRepository.GetByEmail(ctx, email, &tokens)
 	isSpam := true
