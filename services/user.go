@@ -703,6 +703,10 @@ func (s *UserService) ChangePassword(ctx *gin.Context, changePassword *structs.C
 		return false, nil
 	}
 
+	if changePassword.OldPassword == changePassword.NewPassword {
+		return true, nil
+	}
+
 	hashedPassword, err := utils.HashPassword(changePassword.NewPassword)
 	if err != nil {
 		return true, err
