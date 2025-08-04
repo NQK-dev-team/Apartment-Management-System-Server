@@ -533,3 +533,93 @@ func (s *UserService) GetUserInfo(ctx *gin.Context, user *models.UserModel) erro
 
 	return nil
 }
+
+func (s *UserService) UpdateProfile(ctx *gin.Context, profile *structs.UpdateProfile) error {
+	jwt, exists := ctx.Get("jwt")
+
+	if !exists {
+		return errors.New("jwt not found")
+	}
+
+	token, err := utils.ValidateJWTToken(jwt.(string))
+
+	if err != nil {
+		return errors.New("jwt not valid")
+	}
+
+	claim := &structs.JTWClaim{}
+
+	utils.ExtractJWTClaim(token, claim)
+
+	deleteFileList := []string{}
+
+	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		user := &models.UserModel{}
+
+		if err := s.userRepository.GetByID(ctx, user, claim.UserID); err != nil {
+			return err
+		}
+
+		user.FirstName = profile.FirstName
+		user.LastName = profile.LastName
+		user.Phone = profile.Phone
+		user.PermanentAddress = profile.PermanentAddress
+		user.TemporaryAddress = profile.TemporaryAddress
+		user.MiddleName = sql.NullString{
+			String: profile.MiddleName,
+			Valid:  profile.MiddleName != "",
+		}
+		user.DOB = profile.Dob
+		user.POB = profile.Pob
+		user.Gender = profile.Gender
+		user.SSN = profile.SSN
+		user.OldSSN = sql.NullString{
+			String: profile.OldSSN,
+			Valid:  profile.OldSSN != "",
+		}
+
+		IDStr := strconv.FormatInt(user.ID, 10)
+
+		if profile.NewProfileImage != nil {
+			profilePath, err := utils.StoreFile(profile.NewProfileImage, constants.GetUserImageURL("images", IDStr, ""))
+			if err != nil {
+				return err
+			}
+			deleteFileList = append(deleteFileList, user.ProfileFilePath)
+			user.ProfileFilePath = profilePath
+		}
+
+		if profile.NewFrontSSNImage != nil {
+			frontSSNPath, err := utils.StoreFile(profile.NewFrontSSNImage, constants.GetUserImageURL("images", IDStr, ""))
+			if err != nil {
+				return err
+			}
+			deleteFileList = append(deleteFileList, user.SSNFrontFilePath)
+			user.SSNFrontFilePath = frontSSNPath
+		}
+
+		if profile.NewBackSSNImage != nil {
+			backSSNPath, err := utils.StoreFile(profile.NewBackSSNImage, constants.GetUserImageURL("images", IDStr, ""))
+			if err != nil {
+				return err
+			}
+			deleteFileList = append(deleteFileList, user.SSNBackFilePath)
+			user.SSNBackFilePath = backSSNPath
+		}
+
+		if err := s.userRepository.Update(ctx, tx, user, false); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		for _, path := range deleteFileList {
+			utils.RemoveFile(path)
+		}
+		return err
+	}
+
+	return nil
+}

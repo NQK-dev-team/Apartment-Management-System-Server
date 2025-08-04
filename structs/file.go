@@ -48,6 +48,12 @@ type ValidateUserFile struct {
 	BackSSNImage  ImageValidation
 }
 
-type ValidateEditContractFile struct{
+type ValidateEditContractFile struct {
 	NewFiles []FileValidation `validate:"dive"`
+}
+
+type ValidateUserFile2 struct {
+	ProfileImage  *ImageValidation
+	FrontSSNImage *ImageValidation
+	BackSSNImage  *ImageValidation
 }

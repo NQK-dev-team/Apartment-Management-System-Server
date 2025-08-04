@@ -532,3 +532,64 @@ func (c *UserController) GetUserInfo(ctx *gin.Context) {
 	response.Message = config.GetMessageCode("GET_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }
+
+func (c *UserController) UpdateUserInfo(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	profile := &structs.UpdateProfile{}
+
+	if err := ctx.ShouldBind(profile); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	profile.NewProfileImage, _ = ctx.FormFile("newProfile")
+	profile.NewFrontSSNImage, _ = ctx.FormFile("newFrontSSN")
+	profile.NewBackSSNImage, _ = ctx.FormFile("newBackSSN")
+
+	if err := constants.Validate.Struct(profile); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	validateCustomerFile := &structs.ValidateUserFile2{}
+
+	if profile.NewProfileImage != nil {
+		validateCustomerFile.ProfileImage = &structs.ImageValidation{
+			Type: profile.NewProfileImage.Header.Get("Content-Type"),
+			Size: profile.NewProfileImage.Size,
+		}
+	}
+
+	if profile.NewFrontSSNImage != nil {
+		validateCustomerFile.FrontSSNImage = &structs.ImageValidation{
+			Type: profile.NewFrontSSNImage.Header.Get("Content-Type"),
+			Size: profile.NewFrontSSNImage.Size,
+		}
+	}
+
+	if profile.NewBackSSNImage != nil {
+		validateCustomerFile.BackSSNImage = &structs.ImageValidation{
+			Type: profile.NewBackSSNImage.Header.Get("Content-Type"),
+			Size: profile.NewBackSSNImage.Size,
+		}
+	}
+
+	if err := constants.Validate.Struct(validateCustomerFile); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	if err := c.userService.UpdateProfile(ctx, profile); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
