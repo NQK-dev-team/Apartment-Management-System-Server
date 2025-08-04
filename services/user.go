@@ -623,3 +623,46 @@ func (s *UserService) UpdateProfile(ctx *gin.Context, profile *structs.UpdatePro
 
 	return nil
 }
+
+func (s *UserService) ChangePassword(ctx *gin.Context, changePassword *structs.ChangePassword) (bool, error) {
+	jwt, exists := ctx.Get("jwt")
+
+	if !exists {
+		return true, errors.New("jwt not found")
+	}
+
+	token, err := utils.ValidateJWTToken(jwt.(string))
+
+	if err != nil {
+		return true, errors.New("jwt not valid")
+	}
+
+	claim := &structs.JTWClaim{}
+
+	utils.ExtractJWTClaim(token, claim)
+
+	user := &models.UserModel{}
+
+	if err := s.userRepository.GetByID(ctx, user, claim.UserID); err != nil {
+		return true, err
+	}
+
+	if !utils.CompareHashPassword(user.Password, changePassword.OldPassword) {
+		return false, nil
+	}
+
+	hashedPassword, err := utils.HashPassword(changePassword.NewPassword)
+	if err != nil {
+		return true, err
+	}
+
+	user.Password = hashedPassword
+
+	return true, config.DB.Transaction(func(tx *gorm.DB) error {
+		if err := s.userRepository.Update(ctx, config.DB, user, false); err != nil {
+			return err
+		}
+
+		return nil
+	})
+}

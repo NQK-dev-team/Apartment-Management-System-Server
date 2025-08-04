@@ -54,6 +54,7 @@ var messageList = map[string]string{
 	"OLD_SSN_ALREADY_EXISTS": "MSG_E0015",
 	"UPDATE_FAILED":          "MSG_E0016",
 	"CREATE_FAILED":          "MSG_E0017",
+	"PASSWORD_INCORRECT":     "MSG_E0018",
 
 	// Parameter error messages
 	"INVALID_PARAMETER":    "MSG_V0001",

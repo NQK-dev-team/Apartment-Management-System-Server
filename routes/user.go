@@ -43,4 +43,5 @@ func InitUserRoutes(router *gin.RouterGroup) {
 
 	userRoutes.GET("/profile", userController.GetUserInfo)
 	userRoutes.POST("/profile/update", userController.UpdateUserInfo)
+	userRoutes.POST("/security/change-password", userController.ChangePassword)
 }

@@ -14,11 +14,13 @@ import (
 )
 
 type UserController struct {
-	userService *services.UserService
+	userService    *services.UserService
 }
 
 func NewUserController() *UserController {
-	return &UserController{userService: services.NewUserService()}
+	return &UserController{
+		userService:    services.NewUserService(),
+	}
 }
 
 func (c *UserController) GetStaffList(ctx *gin.Context) {
@@ -587,6 +589,41 @@ func (c *UserController) UpdateUserInfo(ctx *gin.Context) {
 	if err := c.userService.UpdateProfile(ctx, profile); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) ChangePassword(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	changePassword := &structs.ChangePassword{}
+
+	if err := ctx.ShouldBindJSON(changePassword); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	if err := constants.Validate.Struct(changePassword); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	isPasswordCorrect, err := c.userService.ChangePassword(ctx, changePassword)
+
+	if err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if !isPasswordCorrect {
+		response.Message = config.GetMessageCode("PASSWORD_INCORRECT")
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 

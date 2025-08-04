@@ -75,3 +75,9 @@ type UpdateProfile struct {
 	NewFrontSSNImage *multipart.FileHeader
 	NewBackSSNImage  *multipart.FileHeader
 }
+
+type ChangePassword struct {
+	OldPassword        string `json:"oldPassword" validate:"required"`
+	NewPassword        string `json:"newPassword" validate:"required,password"`
+	ConfirmNewPassword string `json:"confirmNewPassword" validate:"required,eqfield=NewPassword"`
+}
