@@ -225,7 +225,7 @@ func (s *AuthenticationService) CheckResetPasswordToken(ctx *gin.Context, token 
 		return false, nil
 	}
 
-	if passwordResetToken[0].ExpiresAt.Before(time.Now()) {
+	if passwordResetToken[0].ExpiresAt.Add(7 * 24 * time.Hour).Before(time.Now()) {
 		return false, nil
 	}
 
@@ -246,7 +246,7 @@ func (s *AuthenticationService) CheckEmailVerifyToken(ctx *gin.Context, verifyEm
 		return false, nil
 	}
 
-	if emailVerifyToken[0].ExpiresAt.Before(time.Now()) {
+	if emailVerifyToken[0].ExpiresAt.Add(7 * 24 * time.Hour).Before(time.Now()) {
 		return false, nil
 	}
 
