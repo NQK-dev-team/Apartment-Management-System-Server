@@ -48,7 +48,12 @@ func (u *UserModel) BeforeCreate(tx *gorm.DB) error {
 	} else {
 		lastUserNo := lastUser.No
 		lastUserNoInt, _ := strconv.Atoi(lastUserNo)
-		u.No = strconv.Itoa(lastUserNoInt + 1)
+		userNo := strconv.Itoa(lastUserNoInt + 1)
+		if len(userNo) < 8 {
+			// Pad the user number with leading zeros to ensure it is 8 characters long
+			userNo = "00000000"[:8-len(userNo)] + userNo
+		}
+		u.No = userNo
 	}
 
 	userID, _ := tx.Get("userID")
