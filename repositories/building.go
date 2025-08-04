@@ -166,7 +166,7 @@ func (r *BuildingRepository) DeleteServices(ctx *gin.Context, tx *gorm.DB, id []
 
 func (r *BuildingRepository) EditService(ctx *gin.Context, service *models.BuildingServiceModel) error {
 	userID := ctx.GetInt64("userID")
-	if err := config.DB.Set("userID", userID).Updates(service).Error; err != nil {
+	if err := config.DB.Set("userID", userID).Save(service).Error; err != nil {
 		return err
 	}
 	return nil
@@ -222,7 +222,7 @@ func (r *BuildingRepository) UpdateServices(ctx *gin.Context, tx *gorm.DB, servi
 	// }
 
 	for _, service := range *services {
-		if err := tx.Set("userID", userID).Model(&models.BuildingServiceModel{}).Where("id = ?", service.ID).Updates(service).Error; err != nil {
+		if err := tx.Set("userID", userID).Model(&models.BuildingServiceModel{}).Where("id = ?", service.ID).Save(service).Error; err != nil {
 			return err
 		}
 	}

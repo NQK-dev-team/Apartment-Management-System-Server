@@ -56,7 +56,7 @@ func (r *ManagerScheduleRepository) Update(ctx *gin.Context, tx *gorm.DB, schedu
 	// }
 
 	for _, schedule := range *schedules {
-		if err := tx.Set("userID", userID).Model(&models.ManagerScheduleModel{}).Where("id = ?", schedule.ID).Updates(schedule).Error; err != nil {
+		if err := tx.Set("userID", userID).Model(&models.ManagerScheduleModel{}).Where("id = ?", schedule.ID).Save(schedule).Error; err != nil {
 			return err
 		}
 	}
