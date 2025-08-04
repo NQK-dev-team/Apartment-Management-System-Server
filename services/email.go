@@ -39,8 +39,8 @@ func (s *EmailService) SendResetPasswordEmail(ctx *gin.Context, email string) (b
 	if len(tokens) >= constants.Common.EmailTokenLimit {
 		// Check if the 5 most recent tokens are sent within the last 1 hour
 		for i := 0; i < constants.Common.EmailTokenLimit; i++ {
-			if tokens[i].CreatedAt.Add(1 * time.Hour).After(time.Now()) {
-				isSpam = true
+			if !tokens[i].CreatedAt.Add(1 * time.Hour).After(time.Now()) {
+				isSpam = false
 				break
 			}
 		}
@@ -124,8 +124,8 @@ func (s *EmailService) SendAccountCreatedEmailVerificationEmail(ctx *gin.Context
 	if len(tokens) >= constants.Common.EmailTokenLimit {
 		// Check if the 5 most recent tokens are sent within the last 1 hour
 		for i := 0; i < constants.Common.EmailTokenLimit; i++ {
-			if tokens[i].CreatedAt.Add(1 * time.Hour).After(time.Now()) {
-				isSpam = true
+			if !tokens[i].CreatedAt.Add(1 * time.Hour).After(time.Now()) {
+				isSpam = false
 				break
 			}
 		}
