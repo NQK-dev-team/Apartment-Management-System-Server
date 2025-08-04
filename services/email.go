@@ -36,17 +36,13 @@ func (s *EmailService) SendResetPasswordEmail(ctx *gin.Context, email string) (b
 	s.passwordResetTokenRepository.GetByEmail(ctx, email, &tokens)
 	isSpam := true
 
-	if len(tokens) > 0 {
-		if len(tokens) >= constants.Common.EmailTokenLimit {
-			// Check if the 5 most recent tokens are sent within the last 1 hour
-			for i := 0; i < constants.Common.EmailTokenLimit; i++ {
-				if tokens[i].CreatedAt.Add(1 * time.Hour).After(time.Now()) {
-					isSpam = true
-					break
-				}
+	if len(tokens) >= constants.Common.EmailTokenLimit {
+		// Check if the 5 most recent tokens are sent within the last 1 hour
+		for i := 0; i < constants.Common.EmailTokenLimit; i++ {
+			if tokens[i].CreatedAt.Add(1 * time.Hour).After(time.Now()) {
+				isSpam = true
+				break
 			}
-		} else {
-			isSpam = false
 		}
 	} else {
 		isSpam = false
@@ -125,17 +121,13 @@ func (s *EmailService) SendAccountCreatedEmailVerificationEmail(ctx *gin.Context
 	s.emailVerifyTokenRepository.GetByEmail(ctx, email, &tokens)
 	isSpam := true
 
-	if len(tokens) > 0 {
-		if len(tokens) >= constants.Common.EmailTokenLimit {
-			// Check if the 5 most recent tokens are sent within the last 1 hour
-			for i := 0; i < constants.Common.EmailTokenLimit; i++ {
-				if tokens[i].CreatedAt.Add(1 * time.Hour).After(time.Now()) {
-					isSpam = true
-					break
-				}
+	if len(tokens) >= constants.Common.EmailTokenLimit {
+		// Check if the 5 most recent tokens are sent within the last 1 hour
+		for i := 0; i < constants.Common.EmailTokenLimit; i++ {
+			if tokens[i].CreatedAt.Add(1 * time.Hour).After(time.Now()) {
+				isSpam = true
+				break
 			}
-		} else {
-			isSpam = false
 		}
 	} else {
 		isSpam = false
