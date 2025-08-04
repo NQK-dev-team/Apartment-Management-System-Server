@@ -29,17 +29,26 @@ func (s *EmailQueueService) SendEmail() {
 	}
 
 	for _, email := range emails {
+		receiverEmail := email.ReceiverEmail
+		appEnv := config.GetEnv("APP_ENV")
+		if appEnv == "development" {
+			testEmail := config.GetEnv("TEST_MAIL_TO")
+			if testEmail != "" {
+				receiverEmail = testEmail
+			}
+		}
+
 		// Send email
 		message := gomail.NewMessage()
 		message.SetHeader("From", config.MailFromAddress, config.MailFromName)
-		message.SetHeader("To", email.ReceiverEmail)
+		message.SetHeader("To", receiverEmail)
 		message.SetHeader("Subject", email.Subject)
 		message.SetBody("text/html", email.Body)
 
 		if err := config.Mailer.DialAndSend(message); err != nil {
 			// Add to fail queue
 			s.emailQueueFailRepository.Create(&models.EmailQueueFailModel{
-				ReceiverEmail: email.ReceiverEmail,
+				ReceiverEmail: receiverEmail,
 				Subject:       email.Subject,
 				Body:          email.Body,
 				Error:         err.Error(),
