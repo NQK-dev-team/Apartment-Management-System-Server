@@ -139,7 +139,7 @@ func (s *UserService) CreateStaff(ctx *gin.Context, newStaff *structs.NewStaff, 
 		newUser.SSNFrontFilePath = frontSSNPath
 		newUser.SSNBackFilePath = backSSNPath
 
-		if err := s.userRepository.Update(ctx, tx, newUser, false); err != nil {
+		if err := s.userRepository.Update(ctx, tx, newUser, true); err != nil {
 			return err
 		}
 
@@ -262,7 +262,7 @@ func (s *UserService) UpdateUser(ctx *gin.Context, user *models.UserModel) error
 			}
 			user.Password = hashedPassword
 		}
-		if err := s.userRepository.Update(ctx, tx, user, true); err != nil {
+		if err := s.userRepository.Update(ctx, tx, user, false); err != nil {
 			return err
 		}
 		return nil
@@ -479,7 +479,7 @@ func (s *UserService) CreateCustomer(ctx *gin.Context, newCustomer *structs.NewC
 		newUser.SSNFrontFilePath = frontSSNPath
 		newUser.SSNBackFilePath = backSSNPath
 
-		if err := s.userRepository.Update(ctx, tx, newUser, false); err != nil {
+		if err := s.userRepository.Update(ctx, tx, newUser, true); err != nil {
 			return err
 		}
 
