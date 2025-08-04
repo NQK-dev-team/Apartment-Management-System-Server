@@ -73,6 +73,8 @@ func (c *AuthenticationController) Login(ctx *gin.Context) {
 
 		if !user.VerifiedAfterCreated {
 			c.emailService.SendAccountCreatedEmailVerificationEmail(ctx, account.Email)
+		} else {
+			c.emailService.SendAccountChangeEmailVerificationEmail(ctx, account.Email)
 		}
 		response.Message = config.GetMessageCode("EMAIL_NOT_VERIFIED")
 		ctx.JSON(http.StatusUnauthorized, response)
