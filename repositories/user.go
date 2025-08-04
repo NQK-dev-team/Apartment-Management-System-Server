@@ -97,7 +97,7 @@ func (r *UserRepository) Update(ctx *gin.Context, tx *gorm.DB, user *models.User
 	if !exists {
 		userID = 0
 	}
-	if err := tx.Set("userID", userID).Set("isQuiet", isQuiet).Updates(user).Error; err != nil {
+	if err := tx.Set("userID", userID).Set("isQuiet", isQuiet).Save(user).Error; err != nil {
 		return err
 	}
 

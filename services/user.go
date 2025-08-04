@@ -10,6 +10,7 @@ import (
 	"database/sql"
 	"errors"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -716,6 +717,59 @@ func (s *UserService) ChangePassword(ctx *gin.Context, changePassword *structs.C
 
 	return true, config.DB.Transaction(func(tx *gorm.DB) error {
 		if err := s.userRepository.Update(ctx, config.DB, user, false); err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+func (s *UserService) ChangeEmail(ctx *gin.Context, changeEmail *structs.ChangeEmail) (bool, bool, error) {
+	jwt, exists := ctx.Get("jwt")
+	if !exists {
+		return true, true, errors.New("jwt not found")
+	}
+
+	token, err := utils.ValidateJWTToken(jwt.(string))
+	if err != nil {
+		return true, true, errors.New("jwt not valid")
+	}
+
+	claim := &structs.JTWClaim{}
+
+	utils.ExtractJWTClaim(token, claim)
+
+	user := &models.UserModel{}
+	if err := s.userRepository.GetByEmail(ctx, user, changeEmail.NewEmail); err != nil {
+		return true, true, err
+	}
+
+	if user.ID != 0 && user.ID != claim.UserID {
+		return true, false, nil
+	}
+
+	user = &models.UserModel{}
+
+	if err := s.userRepository.GetByID(ctx, user, claim.UserID); err != nil {
+		return true, true, err
+	}
+
+	if !utils.CompareHashPassword(user.Password, changeEmail.Password) {
+		return false, true, nil
+	}
+
+	return true, true, config.DB.Transaction(func(tx *gorm.DB) error {
+		user.Email = changeEmail.NewEmail
+		user.EmailVerifiedAt = sql.NullTime{
+			Valid: false,
+			Time:  time.Time{},
+		}
+
+		if err := s.userRepository.Update(ctx, tx, user, false); err != nil {
+			return err
+		}
+
+		if _, err := s.emailService.SendAccountChangeEmailVerificationEmail(ctx, changeEmail.NewEmail); err != nil {
 			return err
 		}
 

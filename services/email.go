@@ -234,3 +234,75 @@ func (s *EmailService) SendAccountCreationEmail(ctx *gin.Context, email string, 
 
 	return nil
 }
+
+func (s *EmailService) SendAccountChangeEmailVerificationEmail(ctx *gin.Context, email string) (bool, error) {
+	tokens := []models.EmailVerifyTokenModel{}
+	s.emailVerifyTokenRepository.GetByEmail(ctx, email, &tokens)
+	isSpam := true
+
+	if len(tokens) >= constants.Common.EmailTokenLimit {
+		// Check if the 5 most recent tokens are sent within the last 1 hour
+		for i := 0; i < constants.Common.EmailTokenLimit; i++ {
+			if !tokens[i].CreatedAt.Add(1 * time.Hour).After(time.Now()) {
+				isSpam = false
+				break
+			}
+		}
+	} else {
+		isSpam = false
+	}
+
+	if isSpam {
+		return isSpam, nil
+	}
+
+	// Get the current working directory
+	cwd, _ := os.Getwd()
+	emailChangeVerificationTemplate := filepath.Join(cwd, "mails", "email_change_verification.html")
+	template, err := template.ParseFiles(emailChangeVerificationTemplate)
+	if err != nil {
+		return false, err
+	}
+
+	var user models.UserModel
+	s.userRepository.GetByEmail(ctx, &user, email)
+
+	tokenString, err := utils.GenerateString(64)
+
+	if err != nil {
+		return false, err
+	}
+
+	hasedToken, err := utils.HashString(tokenString)
+
+	if err != nil {
+		return false, err
+	}
+
+	var body bytes.Buffer
+	data := structs.VerificationTemplateData{
+		Name:             user.FirstName,
+		VerificationLink: ctx.GetHeader("Origin") + "/verify-email?email=" + email + "&token=" + tokenString,
+	}
+
+	err = template.Execute(&body, data)
+
+	if err != nil {
+		return false, err
+	}
+
+	if err := s.emailQueueRepository.Create(&models.EmailQueueModel{
+		ReceiverEmail: email,
+		Subject:       "Xác thực email - Verify your email",
+		Body:          body.String(),
+	}); err != nil {
+		return false, err
+	}
+
+	s.emailVerifyTokenRepository.Create(ctx, &models.EmailVerifyTokenModel{
+		Email: email,
+		Token: hasedToken,
+	})
+
+	return false, nil
+}

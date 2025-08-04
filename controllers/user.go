@@ -14,12 +14,12 @@ import (
 )
 
 type UserController struct {
-	userService    *services.UserService
+	userService *services.UserService
 }
 
 func NewUserController() *UserController {
 	return &UserController{
-		userService:    services.NewUserService(),
+		userService: services.NewUserService(),
 	}
 }
 
@@ -628,6 +628,47 @@ func (c *UserController) ChangePassword(ctx *gin.Context) {
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if !isPasswordCorrect {
+		response.Message = config.GetMessageCode("PASSWORD_INCORRECT")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) ChangeEmail(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	changeEmail := &structs.ChangeEmail{}
+
+	if err := ctx.ShouldBindJSON(changeEmail); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	if err := constants.Validate.Struct(changeEmail); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	isPasswordCorrect, isEmailNotExist, err := c.userService.ChangeEmail(ctx, changeEmail)
+
+	if err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if !isEmailNotExist {
+		response.Message = config.GetMessageCode("EMAIL_ALREADY_EXISTS")
+		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 

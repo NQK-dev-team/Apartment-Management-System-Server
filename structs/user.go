@@ -81,3 +81,8 @@ type ChangePassword struct {
 	NewPassword        string `json:"newPassword" validate:"required,password"`
 	ConfirmNewPassword string `json:"confirmNewPassword" validate:"required,eqfield=NewPassword"`
 }
+
+type ChangeEmail struct {
+	Password string `json:"password" validate:"required"`
+	NewEmail string `json:"newEmail" validate:"required,email"`
+}
