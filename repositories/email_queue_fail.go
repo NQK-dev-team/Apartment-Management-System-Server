@@ -13,7 +13,7 @@ func NewEmailQueueFailRepository() *EmailQueueFailRepository {
 }
 
 func (r *EmailQueueFailRepository) Create(failedJob *models.EmailQueueFailModel) error {
-	if err := config.DBNoLog.Create(failedJob).Error; err != nil {
+	if err := config.WorkerDB.Create(failedJob).Error; err != nil {
 		return err
 	}
 

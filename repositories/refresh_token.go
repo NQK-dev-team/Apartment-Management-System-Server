@@ -23,7 +23,7 @@ func NewRefreshTokenRepository() *RefreshTokenRepository {
 // }
 
 func (r *RefreshTokenRepository) Create(refreshToken *models.RefreshTokenModel) error {
-	if err := config.DBNoLog.Create(refreshToken).Error; err != nil {
+	if err := config.WorkerDB.Create(refreshToken).Error; err != nil {
 		return err
 	}
 
@@ -31,7 +31,7 @@ func (r *RefreshTokenRepository) Create(refreshToken *models.RefreshTokenModel) 
 }
 
 func (r *RefreshTokenRepository) GetByUserID(ctx *gin.Context, refreshToken *models.RefreshTokenModel, userID int64) error {
-	if err := config.DBNoLog.Where("user_id = ?", userID).Order("created_at DESC").Find(refreshToken).Error; err != nil {
+	if err := config.WorkerDB.Where("user_id = ?", userID).Order("created_at DESC").Find(refreshToken).Error; err != nil {
 		return err
 	}
 
@@ -47,7 +47,7 @@ func (r *RefreshTokenRepository) GetByUserID(ctx *gin.Context, refreshToken *mod
 // }
 
 func (r *RefreshTokenRepository) Delete(userID int64) error {
-	if err := config.DBNoLog.Where("user_id = ?", userID).Delete(&models.RefreshTokenModel{}).Error; err != nil {
+	if err := config.WorkerDB.Where("user_id = ?", userID).Delete(&models.RefreshTokenModel{}).Error; err != nil {
 		return err
 	}
 

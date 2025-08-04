@@ -9,7 +9,7 @@ import (
 )
 
 var DB *gorm.DB
-var DBNoLog *gorm.DB
+var WorkerDB *gorm.DB
 
 func InitDB() error {
 	host := GetEnv("DB_HOST")
@@ -42,7 +42,7 @@ func InitDB() error {
 		return err
 	}
 
-	DBNoLog, err = gorm.Open(postgresDriver.Open(dsn), &gorm.Config{
+	WorkerDB, err = gorm.Open(postgresDriver.Open(dsn), &gorm.Config{
 		Logger:      logger.Default.LogMode(logMode),
 		PrepareStmt: true,
 	})

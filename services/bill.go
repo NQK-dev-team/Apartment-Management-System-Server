@@ -448,3 +448,12 @@ func (s *BillService) AddBill(ctx *gin.Context, bill *structs.AddBill, newBillID
 		return nil
 	})
 }
+
+func (s *BillService) UpdateBillStatus() error {
+	return config.WorkerDB.Transaction(func(tx *gorm.DB) error {
+		if err := s.billRepository.UpdateBillStatus(tx); err != nil {
+			return err
+		}
+		return nil
+	})
+}

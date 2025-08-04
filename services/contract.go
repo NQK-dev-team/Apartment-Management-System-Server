@@ -804,7 +804,7 @@ func (s *ContractService) CreateContract(ctx *gin.Context, contract *structs.New
 }
 
 func (s *ContractService) UpdateContractStatus() error {
-	return config.DBNoLog.Transaction(func(tx *gorm.DB) error {
+	return config.WorkerDB.Transaction(func(tx *gorm.DB) error {
 		return s.contractRepository.UpdateContractStatus(tx)
 	})
 }

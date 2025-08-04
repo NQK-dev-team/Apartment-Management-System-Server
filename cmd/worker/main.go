@@ -9,10 +9,11 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const NUMBER_OF_ROUTINES int = 3 // Number of goroutines to run concurrently
+const NUMBER_OF_ROUTINES int = 4 // Number of goroutines to run concurrently
 var emailService *services.EmailQueueService
 var contractService *services.ContractService
 var roomService *services.RoomService
+var billService *services.BillService
 
 func emailWorker(wg *sync.WaitGroup) {
 	defer wg.Done() // Decrement the counter when this goroutine finishes
@@ -27,6 +28,11 @@ func contractWorker(wg *sync.WaitGroup) {
 func roomWorker(wg *sync.WaitGroup) {
 	defer wg.Done() // Decrement the counter when this goroutine finishes
 	roomService.UpdateRoomStatus()
+}
+
+func billWorker(wg *sync.WaitGroup) {
+	defer wg.Done() // Decrement the counter when this goroutine finishes
+	billService.UpdateBillStatus()
 }
 
 func main() {
@@ -46,6 +52,7 @@ func main() {
 	emailService = services.NewEmailQueueService()
 	contractService = services.NewContractService()
 	roomService = services.NewRoomService()
+	billService = services.NewBillService()
 
 	// for {
 	// 	emailWorker()
@@ -66,6 +73,7 @@ func main() {
 		go emailWorker(&wg)
 		go contractWorker(&wg)
 		go roomWorker(&wg)
+		go billWorker(&wg)
 		// wg.Wait() // Wait for all workers to finish before continuing to the next tick
 	}
 

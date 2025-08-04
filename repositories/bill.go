@@ -239,9 +239,16 @@ func (r *BillRepository) UpdateBill(ctx *gin.Context, tx *gorm.DB, bill *models.
 	return nil
 }
 
-func(r *BillRepository) CreateBill(ctx *gin.Context, tx *gorm.DB, bill *models.BillModel) error{
+func (r *BillRepository) CreateBill(ctx *gin.Context, tx *gorm.DB, bill *models.BillModel) error {
 	userID := ctx.GetInt64("userID")
 	if err := tx.Set("userID", userID).Model(&models.BillModel{}).Omit("ID").Save(bill).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BillRepository) UpdateBillStatus(tx *gorm.DB) error {
+	if err := tx.Exec("UPDATE bill SET status = ? WHERE payer_id IS NULL AND payment_time IS NULL AND deleted_at IS NULL AND (date_trunc('month', period) + INTERVAL '1 month - 1 day')::date < NOW()", constants.Common.BillStatus.OVERDUE).Error; err != nil {
 		return err
 	}
 	return nil

@@ -14,7 +14,7 @@ func NewEmailVerifyTokenRepository() *EmailVerifyTokenRepository {
 }
 
 func (r *EmailVerifyTokenRepository) Create(ctx *gin.Context, verifyToken *models.EmailVerifyTokenModel) error {
-	if err := config.DBNoLog.Create(verifyToken).Error; err != nil {
+	if err := config.WorkerDB.Create(verifyToken).Error; err != nil {
 		return err
 	}
 
@@ -22,7 +22,7 @@ func (r *EmailVerifyTokenRepository) Create(ctx *gin.Context, verifyToken *model
 }
 
 func (r *EmailVerifyTokenRepository) GetByEmail(ctx *gin.Context, email string, tokens *[]models.EmailVerifyTokenModel) error {
-	if err := config.DBNoLog.Where("email = ?", email).Order("created_at DESC").Find(tokens).Error; err != nil {
+	if err := config.WorkerDB.Where("email = ?", email).Order("created_at DESC").Find(tokens).Error; err != nil {
 		return err
 	}
 
@@ -38,7 +38,7 @@ func (r *EmailVerifyTokenRepository) GetByEmail(ctx *gin.Context, email string, 
 // }
 
 func (r *EmailVerifyTokenRepository) Delete(email string) error {
-	if err := config.DBNoLog.Where("email = ?", email).Delete(&models.EmailVerifyTokenModel{}).Error; err != nil {
+	if err := config.WorkerDB.Where("email = ?", email).Delete(&models.EmailVerifyTokenModel{}).Error; err != nil {
 		return err
 	}
 

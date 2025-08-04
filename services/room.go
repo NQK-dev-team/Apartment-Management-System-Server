@@ -170,7 +170,7 @@ func (s *RoomService) UpdateRoomByRoomIDAndBuildingID(ctx *gin.Context, oldRoomD
 }
 
 func (s *RoomService) UpdateRoomStatus() error {
-	return config.DBNoLog.Transaction(func(tx *gorm.DB) error {
+	return config.WorkerDB.Transaction(func(tx *gorm.DB) error {
 		if err := s.roomRepository.UpdateRoomStatus(tx); err != nil {
 			return err
 		}
