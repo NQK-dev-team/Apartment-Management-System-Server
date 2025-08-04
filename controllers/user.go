@@ -586,6 +586,16 @@ func (c *UserController) UpdateUserInfo(ctx *gin.Context) {
 		return
 	}
 
+	if messageCode, err := c.userService.CheckDuplicateData2(ctx, profile.SSN, profile.Phone, profile.OldSSN); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	} else if messageCode != "" {
+		response.Message = messageCode
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
 	if err := c.userService.UpdateProfile(ctx, profile); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(http.StatusInternalServerError, response)

@@ -384,6 +384,58 @@ func (s *UserService) CheckDuplicateData(ctx *gin.Context, email string, ssn str
 	return "", nil
 }
 
+func (s *UserService) CheckDuplicateData2(ctx *gin.Context, ssn string, phone string, oldSSN string) (string, error) {
+	jwt, exists := ctx.Get("jwt")
+
+	if !exists {
+		return "", errors.New("jwt not found")
+	}
+
+	token, err := utils.ValidateJWTToken(jwt.(string))
+
+	if err != nil {
+		return "", errors.New("jwt not valid")
+	}
+
+	claim := &structs.JTWClaim{}
+
+	utils.ExtractJWTClaim(token, claim)
+
+	user := &models.UserModel{}
+
+	if err := s.userRepository.GetBySSN(ctx, user, ssn); err != nil {
+		return "", err
+	}
+
+	if user.ID != 0 && user.ID != claim.UserID {
+		return config.GetMessageCode("SSN_ALREADY_EXISTS"), nil
+	}
+
+	user = &models.UserModel{}
+
+	if err := s.userRepository.GetByPhone(ctx, user, phone); err != nil {
+		return "", err
+	}
+
+	if user.ID != 0 && user.ID != claim.UserID {
+		return config.GetMessageCode("PHONE_ALREADY_EXISTS"), nil
+	}
+
+	user = &models.UserModel{}
+
+	if oldSSN != "" {
+		if err := s.userRepository.GetByOldSSN(ctx, user, oldSSN); err != nil {
+			return "", err
+		}
+
+		if user.ID != 0 && user.ID != claim.UserID {
+			return config.GetMessageCode("OLD_SSN_ALREADY_EXISTS"), nil
+		}
+	}
+
+	return "", nil
+}
+
 func (s *UserService) GetCustomerList(ctx *gin.Context, users *[]models.UserModel, limit int64, offset int64) error {
 	if err := s.userRepository.GetCustomerList(ctx, users, limit, offset); err != nil {
 		return err
