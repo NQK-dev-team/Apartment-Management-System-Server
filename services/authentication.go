@@ -62,9 +62,9 @@ func (s *AuthenticationService) Login(ctx *gin.Context, email string, password s
 	jwtPayload.UserNo = user.No
 
 	if user.MiddleName.Valid {
-		jwtPayload.FullName = user.FirstName + " " + user.MiddleName.String + " " + user.LastName
+		jwtPayload.FullName = user.LastName + " " + user.MiddleName.String + " " + user.FirstName
 	} else {
-		jwtPayload.FullName = user.FirstName + " " + user.LastName
+		jwtPayload.FullName = user.LastName + " " + user.FirstName
 	}
 
 	// Create JWT token
@@ -160,9 +160,9 @@ func (s *AuthenticationService) GetNewToken(ctx *gin.Context, refreshToken strin
 	jwtPayload.UserNo = user.No
 
 	if user.MiddleName.Valid {
-		jwtPayload.FullName = user.FirstName + " " + user.MiddleName.String + " " + user.LastName
+		jwtPayload.FullName = user.LastName + " " + user.MiddleName.String + " " + user.FirstName
 	} else {
-		jwtPayload.FullName = user.FirstName + " " + user.LastName
+		jwtPayload.FullName = user.LastName + " " + user.FirstName
 	}
 
 	// Create JWT token
