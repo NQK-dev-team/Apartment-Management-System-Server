@@ -156,7 +156,17 @@ func (s *ContractService) GetContractDetail(ctx *gin.Context, contract *structs.
 			// return contract.CreatorID == claim.UserID, nil
 			return true, nil
 		} else {
-			return contract.HouseholderID == claim.UserID, nil
+			if contract.HouseholderID == claim.UserID {
+				return true, nil
+			}
+
+			for _, resident := range contract.Residents {
+				if resident.UserAccountID.Int64 == claim.UserID {
+					return true, nil
+				}
+			}
+
+			return false, nil
 		}
 	}
 
