@@ -183,11 +183,13 @@ func (r *ContractRepository) GetContractsByCustomerID(ctx *gin.Context, contract
 }
 
 func (r *ContractRepository) GetContractsByCustomerID2(ctx *gin.Context, contracts *[]structs.Contract, customerID int64, limit int64, offset int64) error {
-	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").Distinct().
 		Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
-		Where("contract.householder_id = ? AND contract.deleted_at IS NULL", customerID).Limit(int(limit)).Offset(int(offset)).Order("contract.start_date DESC, contract.end_date DESC, contract.sign_date DESC").
+		Joins("LEFT JOIN room_resident_list ON room_resident_list.contract_id = contract.id").
+		Joins("JOIN room_resident ON room_resident_list.resident_id = room_resident.id AND room_resident.deleted_at IS NULL").
+		Where("(contract.householder_id = ? OR room_resident.user_account_id = ?) AND contract.deleted_at IS NULL", customerID, customerID).Limit(int(limit)).Offset(int(offset)).Order("contract.start_date DESC, contract.end_date DESC, contract.sign_date DESC").
 		Find(contracts).Error; err != nil {
 		return err
 	}
