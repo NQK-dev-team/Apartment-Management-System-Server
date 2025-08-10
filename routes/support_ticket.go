@@ -8,14 +8,23 @@ import (
 )
 
 func InitSupportTicketRoutes(router *gin.RouterGroup) {
-	r := router.Group("/support-ticket")
+	managerRoutes := router.Group("/support-ticket")
+	customerRoutes := router.Group("/support-ticket")
+	generalRoutes := router.Group("/support-ticket")
+
 	authorizationMiddle := middlewares.NewAuthorizationMiddleware()
 	controller := controllers.NewSupportTicketController()
 
-	r.Use(authorizationMiddle.AuthManagerMiddleware)
+	generalRoutes.GET("/", controller.GetSupportTickets)
+
+	customerRoutes.Use(authorizationMiddle.AuthCustomerMiddleware)
 	{
-		r.GET("/", controller.GetSupportTickets)
-		r.POST("/:id/approve", controller.ApproveSupportTicket)
-		r.POST("/:id/deny", controller.DenySupportTicket)
+		customerRoutes.POST("/delete-many", controller.DeleteManySupportTickets)
+	}
+
+	managerRoutes.Use(authorizationMiddle.AuthManagerMiddleware)
+	{
+		managerRoutes.POST("/:id/approve", controller.ApproveSupportTicket)
+		managerRoutes.POST("/:id/deny", controller.DenySupportTicket)
 	}
 }

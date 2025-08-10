@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"api/config"
+	"api/constants"
 	"api/models"
 	"api/structs"
 	"time"
@@ -171,6 +172,15 @@ func (r *SupportTicketRepository) Update(ctx *gin.Context, tx *gorm.DB, ticket *
 		if err := tx.Set("userID", userID).Model(&models.SupportTicketModel{}).Omit("OwnerID").Where("id = ?", id).Save(ticket).Error; err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (r *SupportTicketRepository) GetDeletableTickets(ctx *gin.Context, tickets *[]models.SupportTicketModel, ids []int64, customerID int64) error {
+	if err := config.DB.Model(&models.SupportTicketModel{}).
+		Where("id IN ? AND status = ? AND manager_id IS NULL AND owner_id IS NULL AND deleted_at IS NULL AND customer_id = ?", ids, constants.Common.SupportTicketStatus.PENDING, customerID).
+		Find(tickets).Error; err != nil {
+		return err
 	}
 	return nil
 }

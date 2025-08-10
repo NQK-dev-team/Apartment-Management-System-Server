@@ -228,3 +228,37 @@ func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int6
 
 	return true, nil
 }
+
+func (s *SupportTicketService) DeleteTickets(ctx *gin.Context, ids []int64) (bool, error) {
+	jwt, exists := ctx.Get("jwt")
+
+	if !exists {
+		return true, errors.New("jwt not found")
+	}
+
+	token, err := utils.ValidateJWTToken(jwt.(string))
+
+	if err != nil {
+		return true, errors.New("jwt not valid")
+	}
+
+	claim := &structs.JTWClaim{}
+
+	utils.ExtractJWTClaim(token, claim)
+
+	deletableTickets := &[]models.SupportTicketModel{}
+	if err := s.supportTicketRepository.GetDeletableTickets(ctx, deletableTickets, ids, claim.UserID); err != nil {
+		return true, err
+	}
+
+	if len(*deletableTickets) != len(ids) {
+		return false, nil
+	}
+
+	return true, config.DB.Transaction(func(tx *gorm.DB) error {
+		if err := s.supportTicketRepository.Delete(ctx, tx, ids); err != nil {
+			return err
+		}
+		return nil
+	})
+}
