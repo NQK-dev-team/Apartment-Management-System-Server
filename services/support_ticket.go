@@ -34,7 +34,7 @@ func (s *SupportTicketService) GetSupportTickets(ctx *gin.Context, tickets *[]st
 		return errors.New("role not found")
 	}
 
-	if role.(string) == constants.Roles.Manager {
+	if role.(string) == constants.Roles.Manager || role.(string) == constants.Roles.Customer {
 		jwt, exists := ctx.Get("jwt")
 
 		if !exists {
@@ -51,7 +51,11 @@ func (s *SupportTicketService) GetSupportTickets(ctx *gin.Context, tickets *[]st
 
 		utils.ExtractJWTClaim(token, claim)
 
-		return s.supportTicketRepository.GetSupportTickets(ctx, tickets, limit, offset, startDate, endDate, &claim.UserID)
+		if role.(string) == constants.Roles.Manager {
+			return s.supportTicketRepository.GetSupportTickets(ctx, tickets, limit, offset, startDate, endDate, &claim.UserID)
+		} else {
+			return s.supportTicketRepository.GetTicketsByCustomerID2(ctx, tickets, limit, offset, startDate, endDate, claim.UserID)
+		}
 	}
 
 	return s.supportTicketRepository.GetSupportTickets(ctx, tickets, limit, offset, startDate, endDate, nil)

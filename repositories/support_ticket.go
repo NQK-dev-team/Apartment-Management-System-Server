@@ -84,12 +84,31 @@ func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, ticket
 }
 
 func (r *SupportTicketRepository) GetTicketsByCustomerID(ctx *gin.Context, tickets *[]structs.SupportTicket, customerID int64) error {
-	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 		Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
+		Joins("LEFT JOIN room_resident_list ON room_resident_list.contract_id = contract.id").
+		Joins("JOIN room_resident ON room_resident_list.resident_id = room_resident.id AND room_resident.deleted_at IS NULL").
 		Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
-		Where("support_ticket.customer_id = ? AND support_ticket.deleted_at IS NULL", customerID).
+		Where("(contract.householder_id = ? OR room_resident.user_account_id = ?) AND support_ticket.deleted_at IS NULL", customerID, customerID).
 		Order("support_ticket.created_at desc, support_ticket.owner_resolve_time desc, support_ticket.manager_resolve_time desc").
+		Find(tickets).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *SupportTicketRepository) GetTicketsByCustomerID2(ctx *gin.Context, tickets *[]structs.SupportTicket, limit, offset int64, startDate string, endDate string, customerID int64) error {
+	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+		Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
+		Joins("LEFT JOIN room_resident_list ON room_resident_list.contract_id = contract.id").
+		Joins("JOIN room_resident ON room_resident_list.resident_id = room_resident.id AND room_resident.deleted_at IS NULL").
+		Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
+		Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
+		Where("(contract.householder_id = ? OR room_resident.user_account_id = ?) AND support_ticket.created_at::timestamp::date >= ? AND support_ticket.created_at::timestamp::date <= ? AND support_ticket.deleted_at IS NULL", customerID, customerID, startDate, endDate).
+		Order("support_ticket.created_at desc, support_ticket.owner_resolve_time desc, support_ticket.manager_resolve_time desc").
+		Limit(int(limit)).Offset(int(offset)).Order("support_ticket.created_at desc, support_ticket.owner_resolve_time desc, support_ticket.manager_resolve_time desc").
 		Find(tickets).Error; err != nil {
 		return err
 	}
