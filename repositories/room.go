@@ -4,6 +4,7 @@ import (
 	"api/config"
 	"api/constants"
 	"api/models"
+	"api/structs"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -159,6 +160,21 @@ func (r *RoomRepository) UpdateRoomStatus(tx *gorm.DB) error {
 
 	if err := tx.Exec("UPDATE room SET status = ? WHERE NOT EXISTS (SELECT * FROM contract WHERE contract.room_id = room.id AND contract.deleted_at IS NULL AND contract.status = ?) AND room.status IN ?",
 		constants.Common.RoomStatus.AVAILABLE, constants.Common.ContractStatus.ACTIVE, []int{constants.Common.RoomStatus.RENTED, constants.Common.RoomStatus.SOLD}).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *RoomRepository) GetRoomList(ctx *gin.Context, rooms *[]structs.BuildingRoom, customerID int64) error {
+	if err := config.DB.Model(&models.RoomModel{}).Preload("Images").Distinct().
+		Select("room.*, building.name AS building_name, building.address AS building_address").
+		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
+		Joins("JOIN contract ON contract.room_id = room.id AND contract.deleted_at IS NULL AND contract.status = ?", constants.Common.ContractStatus.ACTIVE).
+		Joins("LEFT JOIN room_resident_list ON room_resident_list.contract_id = contract.id").
+		Joins("JOIN room_resident ON room_resident_list.resident_id = room_resident.id AND room_resident.deleted_at IS NULL").
+		Where("(contract.householder_id = ? OR room_resident.user_account_id = ?) AND contract.deleted_at IS NULL", customerID, customerID).
+		Find(rooms).Error; err != nil {
 		return err
 	}
 

@@ -7,6 +7,7 @@ import (
 	"api/repositories"
 	"api/structs"
 	"api/utils"
+	"errors"
 	"path/filepath"
 	"strconv"
 
@@ -176,4 +177,28 @@ func (s *RoomService) UpdateRoomStatus() error {
 		}
 		return nil
 	})
+}
+
+func (s *RoomService) GetRoomList(ctx *gin.Context, rooms *[]structs.BuildingRoom) error {
+	jwt, exists := ctx.Get("jwt")
+
+	if !exists {
+		return errors.New("jwt not found")
+	}
+
+	token, err := utils.ValidateJWTToken(jwt.(string))
+
+	if err != nil {
+		return err
+	}
+
+	claim := &structs.JTWClaim{}
+
+	utils.ExtractJWTClaim(token, claim)
+
+	if err := s.roomRepository.GetRoomList(ctx, rooms, claim.UserID); err != nil {
+		return err
+	}
+
+	return nil
 }
