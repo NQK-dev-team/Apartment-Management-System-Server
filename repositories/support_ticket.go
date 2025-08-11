@@ -70,6 +70,33 @@ func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[
 	return nil
 }
 
+func (r *SupportTicketRepository) GetSupportTicket(ctx *gin.Context, ticket *structs.SupportTicket, ticketID int64, managerID *int64) error {
+	if managerID == nil {
+		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+			Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
+			Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
+			Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
+			Where("support_ticket.id = ? AND support_ticket.manager_id IS NOT NULL", ticketID).
+			Find(ticket).Error; err != nil {
+			return err
+		}
+	} else {
+		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+			Joins("JOIN contract ON contract.id = support_ticket.contract_id AND contract.deleted_at IS NULL").
+			Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
+			Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
+			Where("support_ticket.id = ? AND (manager_id = ? OR (manager_id IS NULL AND building.id IN (?))) AND support_ticket.deleted_at IS NULL", ticketID, *managerID,
+				config.DB.Model(&models.BuildingModel{}).
+					Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id AND manager_schedule.deleted_at IS NULL").
+					Where("manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ? AND building.deleted_at IS NULL", *managerID).Select("building.id")).
+			Find(ticket).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, tickets *[]structs.SupportTicket, managerID int64, limit int64, offset int64, startDate string, endDate string) error {
 	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 		Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
@@ -94,6 +121,22 @@ func (r *SupportTicketRepository) GetTicketsByCustomerID(ctx *gin.Context, ticke
 		Where("(contract.householder_id = ? OR room_resident.user_account_id = ?) AND support_ticket.deleted_at IS NULL", customerID, customerID).
 		Order("support_ticket.created_at desc, support_ticket.owner_resolve_time desc, support_ticket.manager_resolve_time desc").
 		Find(tickets).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *SupportTicketRepository) GetTicketByCustomerID(ctx *gin.Context, ticket *structs.SupportTicket, customerID int64, ticketID int64) error {
+	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+		Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
+		Joins("LEFT JOIN room_resident_list ON room_resident_list.contract_id = contract.id").
+		Joins("JOIN room_resident ON room_resident_list.resident_id = room_resident.id AND room_resident.deleted_at IS NULL").
+		Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
+		Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
+		Where("(contract.householder_id = ? OR room_resident.user_account_id = ?) AND support_ticket.deleted_at IS NULL AND support_ticket.id = ?", customerID, customerID, ticketID).
+		Order("support_ticket.created_at desc, support_ticket.owner_resolve_time desc, support_ticket.manager_resolve_time desc").
+		Find(ticket).Error; err != nil {
 		return err
 	}
 

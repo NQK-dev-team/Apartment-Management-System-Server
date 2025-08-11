@@ -15,12 +15,14 @@ import (
 type FileController struct {
 	authenticationService *services.AuthenticationService
 	contractService       *services.ContractService
+	supportTicketService  *services.SupportTicketService
 }
 
 func NewFileController() *FileController {
 	return &FileController{
 		authenticationService: services.NewAuthenticationService(),
 		contractService:       services.NewContractService(),
+		supportTicketService:  services.NewSupportTicketService(),
 	}
 }
 
@@ -168,6 +170,33 @@ func (c *FileController) GetContractFile(ctx *gin.Context) {
 
 	if err := utils.GetFile(ctx, constants.GetContractFileURL("files", contractIDStr, filename)); err != nil {
 		response.Message = config.GetMessageCode("FILE_NOT_FOUND")
+		ctx.JSON(http.StatusNotFound, response)
+		return
+	}
+}
+
+func (c *FileController) GetTicketImage(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	ticketIDStr := ctx.Param("ticketID")
+	ticketID, _ := strconv.ParseInt(ticketIDStr, 10, 64)
+	filename := ctx.Param("fileName")
+
+	if ticketID == 0 || filename == "" {
+		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
+		ctx.JSON(http.StatusNotFound, response)
+		return
+	}
+
+	ticket := &structs.SupportTicket{}
+	if err := c.supportTicketService.GetSupportTicket(ctx, ticket, ticketID); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if err := utils.GetFile(ctx, constants.GetTicketImageURL("images", ticketIDStr, filename)); err != nil {
+		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
 		ctx.JSON(http.StatusNotFound, response)
 		return
 	}

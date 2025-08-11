@@ -61,6 +61,40 @@ func (s *SupportTicketService) GetSupportTickets(ctx *gin.Context, tickets *[]st
 	return s.supportTicketRepository.GetSupportTickets(ctx, tickets, limit, offset, startDate, endDate, nil)
 }
 
+func (s *SupportTicketService) GetSupportTicket(ctx *gin.Context, ticket *structs.SupportTicket, ticketID int64) error {
+	role, exists := ctx.Get("role")
+
+	if !exists {
+		return errors.New("role not found")
+	}
+
+	if role.(string) == constants.Roles.Manager || role.(string) == constants.Roles.Customer {
+		jwt, exists := ctx.Get("jwt")
+
+		if !exists {
+			return errors.New("jwt not found")
+		}
+
+		token, err := utils.ValidateJWTToken(jwt.(string))
+
+		if err != nil {
+			return err
+		}
+
+		claim := &structs.JTWClaim{}
+
+		utils.ExtractJWTClaim(token, claim)
+
+		if role.(string) == constants.Roles.Manager {
+			return s.supportTicketRepository.GetSupportTicket(ctx, ticket, ticketID, &claim.UserID)
+		} else {
+			return s.supportTicketRepository.GetTicketByCustomerID(ctx, ticket, claim.UserID, ticketID)
+		}
+	}
+
+	return s.supportTicketRepository.GetSupportTicket(ctx, ticket, ticketID, nil)
+}
+
 func (s *SupportTicketService) CheckManagerPermission(ctx *gin.Context, ticketID int64, managerID int64) bool {
 	building := &models.BuildingModel{}
 	if err := s.supportTicketRepository.GetTicketBuilding(ctx, ticketID, building); err != nil {

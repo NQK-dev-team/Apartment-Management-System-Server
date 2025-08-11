@@ -162,3 +162,7 @@ func GetUserImageURL(imagePrefix, userID, fileName string) string {
 func GetContractFileURL(filePrefix, contractID, fileName string) string {
 	return fmt.Sprintf("%s/contracts/%s/%s", filePrefix, contractID, fileName)
 }
+
+func GetTicketImageURL(filePrefix, ticketID, fileName string) string {
+	return fmt.Sprintf("%s/tickets/%s/%s", filePrefix, ticketID, fileName)
+}

@@ -15,6 +15,7 @@ func InitFileRoutes(router *gin.RouterGroup) {
 	imageRoutes.GET(constants.GetRoomImageURL("", ":buildingID", ":roomNo", ":fileName"), fileController.GetRoomImage)
 	imageRoutes.GET(constants.GetBuildingImageURL("", ":buildingID", ":fileName"), fileController.GetBuildingImage)
 	imageRoutes.GET(constants.GetUserImageURL("", ":userID", ":fileName"), fileController.GetUserImage)
+	imageRoutes.GET(constants.GetTicketImageURL("", ":ticketID", ":fileName"), fileController.GetTicketImage)
 
 	fileRoutes.GET(constants.GetContractFileURL("", ":contractID", ":fileName"), fileController.GetContractFile)
 }
