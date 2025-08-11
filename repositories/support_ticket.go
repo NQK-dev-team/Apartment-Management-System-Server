@@ -232,3 +232,31 @@ func (r *SupportTicketRepository) GetDeletableTickets(ctx *gin.Context, tickets 
 	}
 	return nil
 }
+
+func (r *SupportTicketRepository) DeleteTicketFiles(ctx *gin.Context, tx *gorm.DB, ticketID int64, fileIDs []int64) error {
+	now := time.Now()
+	userID := ctx.GetInt64("userID")
+
+	if err := tx.Set("isQuiet", true).Model(&models.SupportTicketFileModel{}).Where("id in ? AND support_ticket_id = ?", fileIDs, ticketID).UpdateColumns(models.SupportTicketFileModel{
+		DefaultFileModel: models.DefaultFileModel{
+			DeletedBy: userID,
+			DeletedAt: gorm.DeletedAt{
+				Valid: true,
+				Time:  now,
+			},
+		},
+	}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *SupportTicketRepository) AddFile(ctx *gin.Context, tx *gorm.DB, images *[]models.SupportTicketFileModel) error {
+	userID := ctx.GetInt64("userID")
+	// for _, image := range *images {
+	if err := tx.Set("userID", userID).Model(&models.SupportTicketFileModel{}).Omit("ID").Save(&images).Error; err != nil {
+		return err
+		// }
+	}
+	return nil
+}

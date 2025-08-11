@@ -9,6 +9,8 @@ import (
 	"api/utils"
 	"database/sql"
 	"errors"
+	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -295,4 +297,92 @@ func (s *SupportTicketService) DeleteTickets(ctx *gin.Context, ids []int64) (boo
 		}
 		return nil
 	})
+}
+
+func (s *SupportTicketService) UpdateSupportTicket(ctx *gin.Context, ticketID int64, ticket *structs.UpdateSupportTicketRequest) (bool, bool, error) {
+	jwt, exists := ctx.Get("jwt")
+
+	if !exists {
+		return true, true, errors.New("jwt not found")
+	}
+
+	token, err := utils.ValidateJWTToken(jwt.(string))
+
+	if err != nil {
+		return true, true, err
+	}
+
+	claim := &structs.JTWClaim{}
+
+	utils.ExtractJWTClaim(token, claim)
+
+	structTicket := &structs.SupportTicket{}
+	if err := s.supportTicketRepository.GetTicketByCustomerID(ctx, structTicket, claim.UserID, ticketID); err != nil {
+		return true, true, err
+	}
+
+	if structTicket.ID == 0 {
+		return true, false, nil
+	}
+
+	if !(structTicket.CustomerID == claim.UserID && structTicket.Status == constants.Common.SupportTicketStatus.PENDING && structTicket.OwnerID == 0 && structTicket.ManagerID == 0) {
+		return false, true, nil
+	}
+
+	deleteFileList := []string{}
+
+	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		if len(ticket.DeletedFiles) > 0 {
+			if err := s.supportTicketRepository.DeleteTicketFiles(ctx, tx, ticketID, ticket.DeletedFiles); err != nil {
+				return err
+			}
+		}
+
+		if len(ticket.NewFiles) > 0 {
+			ticketIDStr := strconv.Itoa(int(ticketID))
+			newTicketFiles := []models.SupportTicketFileModel{}
+
+			for _, file := range ticket.NewFiles {
+				filePath, err := utils.StoreFile(file, constants.GetTicketImageURL("images", ticketIDStr, ""))
+				if err != nil {
+					return err
+				}
+				newTicketFiles = append(newTicketFiles, models.SupportTicketFileModel{
+					SupportTicketID: ticketID,
+					DefaultFileModel: models.DefaultFileModel{
+						Path:  filePath,
+						Title: filepath.Base(filePath),
+					},
+				})
+				deleteFileList = append(deleteFileList, filePath)
+			}
+
+			if err := s.supportTicketRepository.AddFile(ctx, tx, &newTicketFiles); err != nil {
+				return err
+			}
+		}
+
+		ticketModel := &models.SupportTicketModel{}
+		if err := s.supportTicketRepository.GetById(ctx, ticketModel, ticketID); err != nil {
+			return err
+		}
+
+		ticketModel.Title = ticket.Title
+		ticketModel.Content = ticket.Content
+
+		if err := s.supportTicketRepository.Update(ctx, tx, ticketModel, ticketID); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		for _, path := range deleteFileList {
+			utils.RemoveFile(path)
+		}
+		return true, true, err
+	}
+
+	return true, true, nil
 }

@@ -20,6 +20,7 @@ func InitSupportTicketRoutes(router *gin.RouterGroup) {
 	customerRoutes.Use(authorizationMiddle.AuthCustomerMiddleware)
 	{
 		customerRoutes.POST("/delete-many", controller.DeleteManySupportTickets)
+		customerRoutes.POST("/:id/update", controller.UpdateSupportTicket)
 	}
 
 	managerRoutes.Use(authorizationMiddle.AuthManagerMiddleware)

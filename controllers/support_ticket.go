@@ -157,3 +157,68 @@ func (c *SupportTicketController) DeleteManySupportTickets(ctx *gin.Context) {
 	response.Message = config.GetMessageCode("DELETE_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }
+
+func (c *SupportTicketController) UpdateSupportTicket(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	ticketID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ticketID = 0
+	}
+
+	ticket := &structs.UpdateSupportTicketRequest{}
+	if err := ctx.ShouldBind(ticket); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	form, _ := ctx.MultipartForm()
+	ticket.NewFiles = form.File["newFiles[]"]
+
+	if err := constants.Validate.Struct(ticket); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	fileValidation := &structs.ValidateSupportTicketFile{
+		Images: []structs.ImageValidation{},
+	}
+
+	for _, file := range ticket.NewFiles {
+		fileValidation.Images = append(fileValidation.Images, structs.ImageValidation{
+			Type: file.Header.Get("Content-Type"),
+			Size: file.Size,
+		})
+	}
+
+	if err := constants.Validate.Struct(fileValidation); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	isAllowed, isFound, err := c.supportTicketService.UpdateSupportTicket(ctx, ticketID, ticket)
+	if err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if !isFound {
+		response.Message = config.GetMessageCode("DATA_NOT_FOUND")
+		ctx.JSON(http.StatusNotFound, response)
+		return
+	}
+
+	if !isAllowed {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(http.StatusForbidden, response)
+		return
+	}
+
+	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}

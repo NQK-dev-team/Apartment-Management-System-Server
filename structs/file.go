@@ -57,3 +57,7 @@ type ValidateUserFile2 struct {
 	FrontSSNImage *ImageValidation
 	BackSSNImage  *ImageValidation
 }
+
+type ValidateSupportTicketFile struct {
+	Images []ImageValidation `validate:"dive"`
+}

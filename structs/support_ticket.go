@@ -3,6 +3,7 @@ package structs
 import (
 	"api/models"
 	"database/sql"
+	"mime/multipart"
 )
 
 type SupportTicket struct {
@@ -26,4 +27,11 @@ type SupportTicket struct {
 	BuildingName       string                          `json:"buildingName" gorm:"building_name"`
 	RoomNo             int                             `json:"roomNo" gorm:"room_no"`
 	RoomFloor          int                             `json:"roomFloor" gorm:"room_floor"`
+}
+
+type UpdateSupportTicketRequest struct {
+	Title        string                  `form:"title" validate:"required"`
+	Content      string                  `form:"content" validate:"required"`
+	DeletedFiles []int64                 `form:"deletedFiles[]"`
+	NewFiles     []*multipart.FileHeader `form:"newFiles[]"`
 }
