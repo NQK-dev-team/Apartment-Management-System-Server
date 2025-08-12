@@ -241,7 +241,7 @@ func (r *BillRepository) UpdateBill(ctx *gin.Context, tx *gorm.DB, bill *models.
 
 func (r *BillRepository) CreateBill(ctx *gin.Context, tx *gorm.DB, bill *models.BillModel) error {
 	userID := ctx.GetInt64("userID")
-	if err := tx.Set("userID", userID).Model(&models.BillModel{}).Omit("ID").Save(bill).Error; err != nil {
+	if err := tx.Set("userID", userID).Model(&models.BillModel{}).Omit("ID").Create(bill).Error; err != nil {
 		return err
 	}
 	return nil
