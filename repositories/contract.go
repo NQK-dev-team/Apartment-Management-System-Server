@@ -33,6 +33,24 @@ func (r *ContractRepository) GetContractByIDs(ctx *gin.Context, contract *[]mode
 	return nil
 }
 
+func (r *ContractRepository) GetRoomActiveContract(ctx *gin.Context, contract *structs.Contract, roomID int64) error {
+	if err := config.DB.Model(&models.ContractModel{}).
+		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
+		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
+		Where("contract.room_id = ? AND contract.status = ? AND contract.deleted_at IS NULL", roomID, constants.Common.ContractStatus.ACTIVE).Find(contract).Error; err != nil {
+		return err
+	}
+
+	if err := config.DB.Model(&models.RoomResidentModel{}).Preload("UserAccount").Distinct().
+		Joins("JOIN room_resident_list ON room_resident_list.resident_id = room_resident.ID").
+		Where("room_resident_list.contract_id = ? AND room_resident.deleted_at IS NULL", (*contract).ID).
+		Find(&(*contract).Residents).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *ContractRepository) GetContractByRoomID(ctx *gin.Context, contract *[]models.ContractModel, roomIDs []int64) error {
 	if err := config.DB.Model(&models.ContractModel{}).
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").

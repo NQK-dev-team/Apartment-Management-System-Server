@@ -20,12 +20,14 @@ import (
 type SupportTicketService struct {
 	supportTicketRepository *repositories.SupportTicketRepository
 	buildingService         *BuildingService
+	contractRepository      *repositories.ContractRepository
 }
 
 func NewSupportTicketService() *SupportTicketService {
 	return &SupportTicketService{
 		supportTicketRepository: repositories.NewSupportTicketRepository(),
 		buildingService:         NewBuildingService(false),
+		contractRepository:      repositories.NewContractRepository(),
 	}
 }
 
@@ -385,4 +387,99 @@ func (s *SupportTicketService) UpdateSupportTicket(ctx *gin.Context, ticketID in
 	}
 
 	return true, true, nil
+}
+
+func (s *SupportTicketService) AddSupportTicket(ctx *gin.Context, ticket *structs.CreateSupportTicketRequest) (bool, error) {
+	jwt, exists := ctx.Get("jwt")
+
+	if !exists {
+		return true, errors.New("jwt not found")
+	}
+
+	token, err := utils.ValidateJWTToken(jwt.(string))
+
+	if err != nil {
+		return true, err
+	}
+
+	claim := &structs.JTWClaim{}
+
+	utils.ExtractJWTClaim(token, claim)
+
+	contract := &structs.Contract{}
+
+	if err := s.contractRepository.GetRoomActiveContract(ctx, contract, ticket.RoomID); err != nil {
+		return true, err
+	}
+
+	if contract.ID == 0 {
+		return false, nil
+	}
+
+	isAllowed := false
+
+	if contract.HouseholderID == claim.UserID {
+		isAllowed = true
+	}
+
+	for _, resident := range contract.Residents {
+		if resident.UserAccountID.Int64 == claim.UserID {
+			isAllowed = true
+			break
+		}
+	}
+
+	if !isAllowed {
+		return false, nil
+	}
+
+	newTicket := &models.SupportTicketModel{
+		Title:      ticket.Title,
+		Content:    ticket.Content,
+		CustomerID: claim.UserID,
+		ContractID: contract.ID,
+	}
+
+	deleteFileList := []string{}
+
+	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		if err := s.supportTicketRepository.Add(ctx, tx, newTicket); err != nil {
+			return err
+		}
+
+		if len(ticket.Files) > 0 {
+			ticketIDStr := strconv.Itoa(int(newTicket.ID))
+			newTicketFiles := []models.SupportTicketFileModel{}
+
+			for _, file := range ticket.Files {
+				filePath, err := utils.StoreFile(file, constants.GetTicketImageURL("images", ticketIDStr, ""))
+				if err != nil {
+					return err
+				}
+				newTicketFiles = append(newTicketFiles, models.SupportTicketFileModel{
+					SupportTicketID: newTicket.ID,
+					DefaultFileModel: models.DefaultFileModel{
+						Path:  filePath,
+						Title: filepath.Base(filePath),
+					},
+				})
+				deleteFileList = append(deleteFileList, filePath)
+			}
+
+			if err := s.supportTicketRepository.AddFile(ctx, tx, &newTicketFiles); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		for _, path := range deleteFileList {
+			utils.RemoveFile(path)
+		}
+		return true, err
+	}
+
+	return true, nil
 }

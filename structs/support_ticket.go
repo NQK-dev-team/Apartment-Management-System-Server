@@ -35,3 +35,10 @@ type UpdateSupportTicketRequest struct {
 	DeletedFiles []int64                 `form:"deletedFiles[]"`
 	NewFiles     []*multipart.FileHeader `form:"newFiles[]"`
 }
+
+type CreateSupportTicketRequest struct {
+	Title   string                  `form:"title" validate:"required"`
+	Content string                  `form:"content" validate:"required"`
+	RoomID  int64                   `form:"roomID" validate:"required"`
+	Files   []*multipart.FileHeader `form:"files[]"`
+}

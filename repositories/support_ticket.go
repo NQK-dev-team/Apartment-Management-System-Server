@@ -260,3 +260,12 @@ func (r *SupportTicketRepository) AddFile(ctx *gin.Context, tx *gorm.DB, images 
 	}
 	return nil
 }
+
+func (r *SupportTicketRepository) Add(ctx *gin.Context, tx *gorm.DB, ticket *models.SupportTicketModel) error {
+	userID := ctx.GetInt64("userID")
+	if err := tx.Set("userID", userID).Model(&models.SupportTicketModel{}).Omit("ID", "ManagerID", "OwnerID").Create(ticket).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
