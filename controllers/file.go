@@ -195,6 +195,12 @@ func (c *FileController) GetTicketImage(ctx *gin.Context) {
 		return
 	}
 
+	if ticket.ID == 0 {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(http.StatusForbidden, response)
+		return
+	}
+
 	if err := utils.GetFile(ctx, constants.GetTicketImageURL("images", ticketIDStr, filename)); err != nil {
 		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
 		ctx.JSON(http.StatusNotFound, response)
