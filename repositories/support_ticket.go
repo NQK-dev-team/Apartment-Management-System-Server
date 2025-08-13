@@ -269,3 +269,16 @@ func (r *SupportTicketRepository) Add(ctx *gin.Context, tx *gorm.DB, ticket *mod
 
 	return nil
 }
+
+func (r *SupportTicketRepository) GetSupportTicketsByContractID(ctx *gin.Context, tickets *[]structs.SupportTicket, contractID int64) error {
+	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+		Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
+		Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
+		Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
+		Where("contract.id = ? AND support_ticket.deleted_at IS NULL", contractID).
+		Find(tickets).Error; err != nil {
+		return err
+	}
+
+	return nil
+}

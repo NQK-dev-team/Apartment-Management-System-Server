@@ -26,6 +26,21 @@ func (r *RoomRepository) GetById(ctx *gin.Context, room *models.RoomModel, id in
 	return nil
 }
 
+func (r *RoomRepository) GetById2(ctx *gin.Context, room *structs.BuildingRoom, roomID int64, customerID int64) error {
+	if err := config.DB.Model(&models.RoomModel{}).Preload("Images").Distinct().
+		Select("room.*, building.name AS building_name, building.address AS building_address").
+		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
+		Joins("JOIN contract ON contract.room_id = room.id AND contract.deleted_at IS NULL AND contract.status = ?", constants.Common.ContractStatus.ACTIVE).
+		Joins("LEFT JOIN room_resident_list ON room_resident_list.contract_id = contract.id").
+		Joins("JOIN room_resident ON room_resident_list.resident_id = room_resident.id AND room_resident.deleted_at IS NULL").
+		Where("(contract.householder_id = ? OR room_resident.user_account_id = ?) AND room.id = ? AND room.deleted_at IS NULL", customerID, customerID, roomID).
+		Find(room).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *RoomRepository) GetByIDs(ctx *gin.Context, rooms *[]models.RoomModel, IDs []int64) error {
 	if err := config.DB.Model(&models.RoomModel{}).
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").

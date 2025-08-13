@@ -60,6 +60,40 @@ func (s *RoomService) GetRoomDetail(ctx *gin.Context, room *models.RoomModel, id
 	return nil
 }
 
+func (s *RoomService) GetRoomDetail2(ctx *gin.Context, room *structs.BuildingRoom, roomID int64) error {
+	jwt, exists := ctx.Get("jwt")
+
+	if !exists {
+		return errors.New("jwt not found")
+	}
+
+	token, err := utils.ValidateJWTToken(jwt.(string))
+
+	if err != nil {
+		return err
+	}
+
+	claim := &structs.JTWClaim{}
+
+	utils.ExtractJWTClaim(token, claim)
+
+	if err := s.roomRepository.GetById2(ctx, room, roomID, claim.UserID); err != nil {
+		return err
+	}
+
+	contract := &structs.Contract{}
+
+	if err := s.contractRepository.GetRoomActiveContract(ctx, contract, roomID); err != nil {
+		return err
+	}
+
+	if contract.ID != 0 {
+		room.Contracts = append(room.Contracts, *contract)
+	}
+
+	return nil
+}
+
 func (s *RoomService) GetRoomByRoomIDAndBuildingID(ctx *gin.Context, room *models.RoomModel, roomID int64, buildingID int64) error {
 	if err := s.roomRepository.GetRoomByRoomIDAndBuildingID(ctx, room, roomID, buildingID); err != nil {
 		return err
@@ -197,6 +231,57 @@ func (s *RoomService) GetRoomList(ctx *gin.Context, rooms *[]structs.BuildingRoo
 	utils.ExtractJWTClaim(token, claim)
 
 	if err := s.roomRepository.GetRoomList(ctx, rooms, claim.UserID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *RoomService) GetRoomSupportTicket(ctx *gin.Context, supportTickets *[]structs.SupportTicket, roomID int64) error {
+	jwt, exists := ctx.Get("jwt")
+
+	if !exists {
+		return errors.New("jwt not found")
+	}
+
+	token, err := utils.ValidateJWTToken(jwt.(string))
+
+	if err != nil {
+		return err
+	}
+
+	claim := &structs.JTWClaim{}
+
+	utils.ExtractJWTClaim(token, claim)
+
+	contract := &structs.Contract{}
+
+	if err := s.contractRepository.GetRoomActiveContract(ctx, contract, roomID); err != nil {
+		return err
+	}
+
+	if contract.ID == 0 {
+		return nil
+	}
+
+	isCustomerFound := false
+
+	if contract.HouseholderID == claim.UserID {
+		isCustomerFound = true
+	}
+
+	for _, resident := range contract.Residents {
+		if resident.UserAccountID.Int64 == claim.UserID {
+			isCustomerFound = true
+			break
+		}
+	}
+
+	if !isCustomerFound {
+		return nil
+	}
+
+	if err := s.supportTicketRepository.GetSupportTicketsByContractID(ctx, supportTickets, contract.ID); err != nil {
 		return err
 	}
 
