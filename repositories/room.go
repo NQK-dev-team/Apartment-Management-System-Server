@@ -173,7 +173,7 @@ func (r *RoomRepository) GetRoomList(ctx *gin.Context, rooms *[]structs.Building
 		Joins("JOIN contract ON contract.room_id = room.id AND contract.deleted_at IS NULL AND contract.status = ?", constants.Common.ContractStatus.ACTIVE).
 		Joins("LEFT JOIN room_resident_list ON room_resident_list.contract_id = contract.id").
 		Joins("JOIN room_resident ON room_resident_list.resident_id = room_resident.id AND room_resident.deleted_at IS NULL").
-		Where("(contract.householder_id = ? OR room_resident.user_account_id = ?) AND contract.deleted_at IS NULL", customerID, customerID).
+		Where("(contract.householder_id = ? OR room_resident.user_account_id = ?) AND room.deleted_at IS NULL", customerID, customerID).
 		Find(rooms).Error; err != nil {
 		return err
 	}
