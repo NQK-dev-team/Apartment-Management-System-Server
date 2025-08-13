@@ -63,9 +63,13 @@ func main() {
 	// Limit form size to 500 MB
 	router.MaxMultipartMemory = (50 << 20) * 10 // 500 MB
 
-	// Init routes
-	r := router.Group("api")
-	routes.InitRoutes(r)
+	// Init HTTP routes
+	httpRoutes := router.Group("api")
+	routes.InitRoutes(httpRoutes)
+
+	// Init websocket routes
+	wsRoutes := router.Group("")
+	routes.InitWebSocketRoutes(wsRoutes)
 
 	// Init custom validation rules
 	constants.InitCustomValidationRules()

@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"api/controllers"
 	middlewares "api/middlewares"
 
 	"github.com/gin-gonic/gin"
@@ -29,4 +30,12 @@ func InitRoutes(router *gin.RouterGroup) {
 		InitRoomRoutes(r)
 		InitBillRoutes(r)
 	}
+}
+
+func InitWebSocketRoutes(router *gin.RouterGroup) {
+	websocketController := controllers.NewWebSocketController()
+
+	router.GET("/notification", websocketController.HandleNotificationConnection)
+
+	go controllers.HandleNotificationBroadcast()
 }
