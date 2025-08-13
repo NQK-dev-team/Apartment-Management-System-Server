@@ -621,7 +621,16 @@ func (s *ContractService) CreateContract(ctx *gin.Context, contract *structs.New
 	}
 
 	if room.Status != constants.Common.RoomStatus.AVAILABLE {
-		return true, false, nil
+		return false, true, nil
+	}
+
+	contractCheck := &structs.Contract{}
+	if err := s.contractRepository.GetRoomActiveContract(ctx, contractCheck, contract.RoomID); err != nil {
+		return true, true, err
+	}
+
+	if contractCheck.ID != 0 {
+		return false, true, nil
 	}
 
 	if role.(string) == constants.Roles.Manager {
