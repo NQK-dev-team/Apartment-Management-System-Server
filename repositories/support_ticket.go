@@ -47,7 +47,7 @@ func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[
 			Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
 			Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
 			Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
-			Where("support_ticket.created_at::timestamp::date >= ? AND support_ticket.created_at::timestamp::date <= ? AND support_ticket.manager_id IS NOT NULL", startDate, endDate).
+			Where("support_ticket.created_at::timestamp::date >= ? AND support_ticket.created_at::timestamp::date <= ? AND support_ticket.manager_id IS NOT NULL AND support_ticket.deleted_at IS NULL", startDate, endDate).
 			Limit(int(limit)).Offset(int(offset)).Order("support_ticket.created_at desc, support_ticket.owner_resolve_time desc, support_ticket.manager_resolve_time desc").
 			Find(tickets).Error; err != nil {
 			return err
@@ -76,7 +76,7 @@ func (r *SupportTicketRepository) GetSupportTicket(ctx *gin.Context, ticket *str
 			Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
 			Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
 			Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
-			Where("support_ticket.id = ? AND support_ticket.manager_id IS NOT NULL", ticketID).
+			Where("support_ticket.id = ? AND support_ticket.manager_id IS NOT NULL AND support_ticket.deleted_at IS NULL", ticketID).
 			Find(ticket).Error; err != nil {
 			return err
 		}
