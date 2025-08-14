@@ -37,5 +37,5 @@ func InitWebSocketRoutes(router *gin.RouterGroup) {
 
 	router.GET("/notification", websocketController.HandleNotificationConnection)
 
-	go controllers.HandleNotificationBroadcast()
+	go websocketController.HandleBroadcast()
 }
