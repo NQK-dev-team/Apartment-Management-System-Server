@@ -172,14 +172,14 @@ func (c *NotificationController) AddNotification(ctx *gin.Context) {
 		return
 	}
 
-	receiverList := &structs.NotificationWS{
+	signal := &structs.NotificationWS{
 		BaseWSStruct: structs.BaseWSStruct{
 			Type: constants.Common.WebsocketSignalType.NewInbox,
 		},
 		Users: newNotification.Receivers,
 	}
 
-	AddBroadcast(receiverList)
+	AddBroadcast(signal)
 
 	response.Message = config.GetMessageCode("CREATE_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
@@ -208,6 +208,24 @@ func (c *NotificationController) MarkAsRead(ctx *gin.Context) {
 		return
 	}
 
+	signal := &structs.NotificationWS{
+		BaseWSStruct: structs.BaseWSStruct{
+			Type: constants.Common.WebsocketSignalType.NewImportant,
+		},
+		Users: []int64{ctx.GetInt64("userID")},
+	}
+
+	AddBroadcast(signal)
+
+	signal = &structs.NotificationWS{
+		BaseWSStruct: structs.BaseWSStruct{
+			Type: constants.Common.WebsocketSignalType.NewInbox,
+		},
+		Users: []int64{ctx.GetInt64("userID")},
+	}
+
+	AddBroadcast(signal)
+
 	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }
@@ -234,6 +252,24 @@ func (c *NotificationController) MarkAsUnread(ctx *gin.Context) {
 		ctx.JSON(http.StatusForbidden, response)
 		return
 	}
+
+	signal := &structs.NotificationWS{
+		BaseWSStruct: structs.BaseWSStruct{
+			Type: constants.Common.WebsocketSignalType.NewImportant,
+		},
+		Users: []int64{ctx.GetInt64("userID")},
+	}
+
+	AddBroadcast(signal)
+
+	signal = &structs.NotificationWS{
+		BaseWSStruct: structs.BaseWSStruct{
+			Type: constants.Common.WebsocketSignalType.NewInbox,
+		},
+		Users: []int64{ctx.GetInt64("userID")},
+	}
+
+	AddBroadcast(signal)
 
 	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
@@ -262,8 +298,20 @@ func (c *NotificationController) MarkAsImportant(ctx *gin.Context) {
 		return
 	}
 
-	signal := &structs.BaseWSStruct{
-		Type: constants.Common.WebsocketSignalType.NewImportant,
+	signal := &structs.NotificationWS{
+		BaseWSStruct: structs.BaseWSStruct{
+			Type: constants.Common.WebsocketSignalType.NewImportant,
+		},
+		Users: []int64{ctx.GetInt64("userID")},
+	}
+
+	AddBroadcast(signal)
+
+	signal = &structs.NotificationWS{
+		BaseWSStruct: structs.BaseWSStruct{
+			Type: constants.Common.WebsocketSignalType.NewInbox,
+		},
+		Users: []int64{ctx.GetInt64("userID")},
 	}
 
 	AddBroadcast(signal)
@@ -295,8 +343,20 @@ func (c *NotificationController) UnmarkAsImportant(ctx *gin.Context) {
 		return
 	}
 
-	signal := &structs.BaseWSStruct{
-		Type: constants.Common.WebsocketSignalType.NewImportant,
+	signal := &structs.NotificationWS{
+		BaseWSStruct: structs.BaseWSStruct{
+			Type: constants.Common.WebsocketSignalType.NewImportant,
+		},
+		Users: []int64{ctx.GetInt64("userID")},
+	}
+
+	AddBroadcast(signal)
+
+	signal = &structs.NotificationWS{
+		BaseWSStruct: structs.BaseWSStruct{
+			Type: constants.Common.WebsocketSignalType.NewInbox,
+		},
+		Users: []int64{ctx.GetInt64("userID")},
 	}
 
 	AddBroadcast(signal)

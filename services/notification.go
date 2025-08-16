@@ -251,11 +251,35 @@ func (s *NotificationService) AddNotification(ctx *gin.Context, newNotification 
 func (s *NotificationService) CheckUserGetNotification(ctx *gin.Context, notificationID int64) (bool, error) {
 	userID := ctx.GetInt64("userID")
 
+	role, exists := ctx.Get("role")
+
+	if !exists {
+		return true, errors.New("role not found")
+	}
+
 	relation := &models.NotificationReceiverModel{}
 
 	if err := s.notificationRepository.GetReceiverNotificationRelation(ctx, notificationID, userID, relation); err != nil {
 		return false, err
 	}
 
-	return relation.NotificationID != 0 && relation.UserID != 0, nil
+	if role == constants.Roles.Customer {
+		return relation.NotificationID != 0 && relation.UserID != 0, nil
+	}
+
+	isValid := false
+
+	if role == constants.Roles.Manager && relation.NotificationID != 0 && relation.UserID != 0 {
+		isValid = true
+	}
+
+	notification := &models.NotificationModel{}
+
+	if err := s.notificationRepository.GetNotificationByID(ctx, notificationID, notification); err != nil {
+		return false, err
+	}
+
+	isValid = notification.SenderID == userID
+
+	return isValid, nil
 }
