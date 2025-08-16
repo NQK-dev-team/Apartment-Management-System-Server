@@ -61,3 +61,7 @@ type ValidateUserFile2 struct {
 type ValidateSupportTicketFile struct {
 	Images []ImageValidation `validate:"dive"`
 }
+
+type ValidateNoticeFile struct {
+	Files []FileValidation `validate:"dive"`
+}

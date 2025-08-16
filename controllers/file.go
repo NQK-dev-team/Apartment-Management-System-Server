@@ -16,6 +16,7 @@ type FileController struct {
 	authenticationService *services.AuthenticationService
 	contractService       *services.ContractService
 	supportTicketService  *services.SupportTicketService
+	notificationService   *services.NotificationService
 }
 
 func NewFileController() *FileController {
@@ -23,6 +24,7 @@ func NewFileController() *FileController {
 		authenticationService: services.NewAuthenticationService(),
 		contractService:       services.NewContractService(),
 		supportTicketService:  services.NewSupportTicketService(),
+		notificationService:   services.NewNotificationService(),
 	}
 }
 
@@ -203,6 +205,39 @@ func (c *FileController) GetTicketImage(ctx *gin.Context) {
 
 	if err := utils.GetFile(ctx, constants.GetTicketImageURL("images", ticketIDStr, filename)); err != nil {
 		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
+		ctx.JSON(http.StatusNotFound, response)
+		return
+	}
+}
+
+func (c *FileController) GetNotificationFile(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	notificationIDStr := ctx.Param("notificationID")
+	notificationID, _ := strconv.ParseInt(notificationIDStr, 10, 64)
+	filename := ctx.Param("fileName")
+
+	if notificationID == 0 || filename == "" {
+		response.Message = config.GetMessageCode("FILE_NOT_FOUND")
+		ctx.JSON(http.StatusNotFound, response)
+		return
+	}
+
+	isAllowed, err := c.notificationService.CheckUserGetNotification(ctx, notificationID)
+	if err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if !isAllowed {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(http.StatusForbidden, response)
+		return
+	}
+
+	if err := utils.GetFile(ctx, constants.GetNotificationFileURL("files", notificationIDStr, filename)); err != nil {
+		response.Message = config.GetMessageCode("FILE_NOT_FOUND")
 		ctx.JSON(http.StatusNotFound, response)
 		return
 	}

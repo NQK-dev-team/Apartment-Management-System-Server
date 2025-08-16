@@ -67,6 +67,18 @@ type contractTypeStruct struct {
 	BUY  int
 }
 
+type Notification struct {
+	MarkedStatus   int
+	UnmarkedStatus int
+	ReadStatus     int
+	UnreadStatus   int
+}
+
+type WebsocketSignalType struct {
+	NewInbox     int
+	NewImportant int
+}
+
 var Common = struct {
 	SupportTicketStatus  supportTicketStatusStruct
 	ContractType         contractTypeStruct
@@ -79,6 +91,8 @@ var Common = struct {
 	FileUpload           fileUploadStruct
 	EmailTokenLimit      int
 	NewPasswordLength    int
+	Notification         Notification
+	WebsocketSignalType  WebsocketSignalType
 }{
 	SupportTicketStatus: supportTicketStatusStruct{
 		PENDING:  1,
@@ -145,6 +159,16 @@ var Common = struct {
 		MaxImageSizeStr: "2MB",
 		MaxFileSizeStr:  "10MB",
 	},
+	Notification: Notification{
+		MarkedStatus:   1,
+		UnmarkedStatus: 0,
+		ReadStatus:     1,
+		UnreadStatus:   0,
+	},
+	WebsocketSignalType: WebsocketSignalType{
+		NewInbox:     1,
+		NewImportant: 2,
+	},
 }
 
 func GetRoomImageURL(imagePrefix, buildingID, roomNo, fileName string) string {
@@ -165,4 +189,8 @@ func GetContractFileURL(filePrefix, contractID, fileName string) string {
 
 func GetTicketImageURL(filePrefix, ticketID, fileName string) string {
 	return fmt.Sprintf("%s/tickets/%s/%s", filePrefix, ticketID, fileName)
+}
+
+func GetNotificationFileURL(filePrefix, notificationID, fileName string) string {
+	return fmt.Sprintf("%s/notifications/%s/%s", filePrefix, notificationID, fileName)
 }

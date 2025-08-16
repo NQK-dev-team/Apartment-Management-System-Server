@@ -29,13 +29,12 @@ func InitRoutes(router *gin.RouterGroup) {
 		InitContractRoutes(r)
 		InitRoomRoutes(r)
 		InitBillRoutes(r)
+		InitNotificationRoutes(r)
 	}
 }
 
 func InitWebSocketRoutes(router *gin.RouterGroup) {
-	websocketController := controllers.NewWebSocketController()
+	router.GET("/notification", controllers.HandleNotificationConnection)
 
-	router.GET("/notification", websocketController.HandleNotificationConnection)
-
-	go websocketController.HandleBroadcast()
+	go controllers.HandleBroadcast()
 }

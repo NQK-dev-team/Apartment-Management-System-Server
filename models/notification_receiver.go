@@ -1,7 +1,7 @@
 package models
 
 type NotificationReceiverModel struct {
-	NotifcationID   int64             `json:"notificationID" gorm:"not null;column:notification_id;"`
+	NotificationID   int64             `json:"notificationID" gorm:"not null;column:notification_id;"`
 	Notification    NotificationModel `json:"notification" gorm:"foreignKey:notification_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	UserID          int64             `json:"userID" gorm:"not null;column:user_id;"`
 	User            UserModel         `json:"user" gorm:"foreignKey:user_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`

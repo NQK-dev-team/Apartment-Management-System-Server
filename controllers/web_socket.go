@@ -7,33 +7,41 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type WebSocketController struct {
-	clients   map[*websocket.Conn]bool
-	broadcast chan interface{}
-	upgrader  websocket.Upgrader
+// type WebSocketController struct {
+// 	clients   map[*websocket.Conn]bool
+// 	broadcast chan interface{}
+// 	upgrader  websocket.Upgrader
+// }
+
+// func NewWebSocketController() *WebSocketController {
+// 	return &WebSocketController{
+// 		clients:   make(map[*websocket.Conn]bool),
+// 		broadcast: make(chan interface{}),
+// 		upgrader: websocket.Upgrader{
+// 			CheckOrigin: func(r *http.Request) bool {
+// 				return true // Allow all origins for simplicity; adjust as needed
+// 			},
+// 		},
+// 	}
+// }
+
+var clients = make(map[*websocket.Conn]bool)
+var broadcast = make(chan interface{})
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
 }
 
-func NewWebSocketController() *WebSocketController {
-	return &WebSocketController{
-		clients:   make(map[*websocket.Conn]bool),
-		broadcast: make(chan interface{}),
-		upgrader: websocket.Upgrader{
-			CheckOrigin: func(r *http.Request) bool {
-				return true // Allow all origins for simplicity; adjust as needed
-			},
-		},
-	}
-}
-
-func (c *WebSocketController) HandleNotificationConnection(ctx *gin.Context) {
-	ws, err := c.upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
+func HandleNotificationConnection(ctx *gin.Context) {
+	ws, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
 		// log.Printf("Failed to upgrade connection: %v", err)
 		return
 	}
 	defer ws.Close()
 
-	c.clients[ws] = true
+	clients[ws] = true
 	// log.Println("New client connected")
 
 	// This loop keeps the WebSocket connection open.
@@ -42,25 +50,29 @@ func (c *WebSocketController) HandleNotificationConnection(ctx *gin.Context) {
 		_, _, err := ws.ReadMessage()
 		if err != nil {
 			// log.Printf("Client disconnected: %v", err)
-			delete(c.clients, ws)
+			delete(clients, ws)
 			break
 		}
 	}
 }
 
-func (c *WebSocketController) HandleBroadcast() {
+func HandleBroadcast() {
 	for {
 		// Wait for a new message to come in
-		message := <-c.broadcast
+		message := <-broadcast
 
 		// Loop through all connected clients and send the message
-		for client := range c.clients {
+		for client := range clients {
 			err := client.WriteJSON(message)
 			if err != nil {
 				// log.Printf("Error sending notification to client: %v", err)
 				client.Close()
-				delete(c.clients, client) // Clean up on error
+				delete(clients, client) // Clean up on error
 			}
 		}
 	}
+}
+
+func AddBroadcast(signal interface{}) {
+	broadcast <- signal
 }
