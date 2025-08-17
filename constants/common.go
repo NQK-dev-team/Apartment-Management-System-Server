@@ -77,6 +77,7 @@ type Notification struct {
 type WebsocketSignalType struct {
 	NewInbox     int
 	NewImportant int
+	NewSent      int
 }
 
 var Common = struct {
@@ -168,6 +169,7 @@ var Common = struct {
 	WebsocketSignalType: WebsocketSignalType{
 		NewInbox:     1,
 		NewImportant: 2,
+		NewSent:      3,
 	},
 }
 

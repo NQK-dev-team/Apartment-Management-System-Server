@@ -23,6 +23,7 @@ func InitNotificationRoutes(router *gin.RouterGroup) {
 	{
 		r.POST("/add", controller.AddNotification)
 		r.GET("/sent", controller.GetSent)
-		r.DELETE("/:id", controller.DeleteNotification)
+		// r.DELETE("/:id", controller.DeleteNotification)
+		// r.GET("/:id", controller.GetNotificationDetail)
 	}
 }

@@ -5,7 +5,6 @@ import (
 	"api/constants"
 	"api/models"
 	"api/structs"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -30,27 +29,43 @@ func (r *NotificationRepository) GetNotificationByID(ctx *gin.Context, id int64,
 	return config.DB.Model(&models.NotificationModel{}).Preload("Files").Where("id = ?", id).Find(notification).Error
 }
 
-func (r *NotificationRepository) DeleteNotification(ctx *gin.Context, tx *gorm.DB, id int64) error {
-	now := time.Now()
-	userID := ctx.GetInt64("userID")
+// func (r *NotificationRepository) GetNotificationByID2(ctx *gin.Context, id int64, notification *structs.NotificationDetail) error {
+// 	if err := config.DB.Model(&models.NotificationModel{}).Preload("Files").Where("id = ?", id).Find(notification).Error; err != nil {
+// 		return err
+// 	}
 
-	if err := tx.Set("isQuiet", true).Model(&models.NotificationModel{}).Where("id = ?", id).UpdateColumns(models.NotificationModel{
-		DefaultModel: models.DefaultModel{
-			DeletedAt: gorm.DeletedAt{
-				Valid: true,
-				Time:  now,
-			},
-			DeletedBy: userID,
-		},
-	}).Error; err != nil {
-		return err
-	}
+// 	if err := config.DB.Model(&models.NotificationReceiverModel{}).Select("user_id").Where("notification_id = ?", id).Find(&notification.Receivers).Error; err != nil {
+// 		return err
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
+
+// func (r *NotificationRepository) DeleteNotification(ctx *gin.Context, tx *gorm.DB, id int64, receivers *[]int64) error {
+// 	now := time.Now()
+// 	userID := ctx.GetInt64("userID")
+
+// 	if err := tx.Set("isQuiet", true).Model(&models.NotificationModel{}).Where("id = ?", id).UpdateColumns(models.NotificationModel{
+// 		DefaultModel: models.DefaultModel{
+// 			DeletedAt: gorm.DeletedAt{
+// 				Valid: true,
+// 				Time:  now,
+// 			},
+// 			DeletedBy: userID,
+// 		},
+// 	}).Error; err != nil {
+// 		return err
+// 	}
+
+// 	if err := tx.Model(&models.NotificationReceiverModel{}).Select("user_id").Where("notification_id = ?", id).Find(receivers).Error; err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+// }
 
 func (r *NotificationRepository) GetSentNotification(ctx *gin.Context, notifications *[]models.NotificationModel, userID, limit, offset int64) error {
-	return config.DB.Model(&models.NotificationModel{}).Preload("Files").Where("sender_id = ?", userID).Order("send_time DESC").Limit(int(limit)).Offset(int(offset)).Find(notifications).Error
+	return config.DB.Model(&models.NotificationModel{}).Preload("Files").Preload("Sender").Where("sender_id = ?", userID).Order("send_time DESC").Limit(int(limit)).Offset(int(offset)).Find(notifications).Error
 }
 
 func (r *NotificationRepository) GetInboxNotification(ctx *gin.Context, notifications *[]structs.Notification, userID, limit, offset int64) error {

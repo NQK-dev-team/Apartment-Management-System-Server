@@ -130,41 +130,41 @@ func (s *NotificationService) UpdateNotificationImportantStatus(ctx *gin.Context
 	})
 }
 
-func (s *NotificationService) DeleteNotification(ctx *gin.Context, id int64) (bool, error) {
-	jwt, exists := ctx.Get("jwt")
+// func (s *NotificationService) DeleteNotification(ctx *gin.Context, id int64, receivers *[]int64) (bool, error) {
+// 	jwt, exists := ctx.Get("jwt")
 
-	if !exists {
-		return true, errors.New("jwt not found")
-	}
+// 	if !exists {
+// 		return true, errors.New("jwt not found")
+// 	}
 
-	token, err := utils.ValidateJWTToken(jwt.(string))
+// 	token, err := utils.ValidateJWTToken(jwt.(string))
 
-	if err != nil {
-		return true, err
-	}
+// 	if err != nil {
+// 		return true, err
+// 	}
 
-	claim := &structs.JTWClaim{}
+// 	claim := &structs.JTWClaim{}
 
-	utils.ExtractJWTClaim(token, claim)
+// 	utils.ExtractJWTClaim(token, claim)
 
-	notification := &models.NotificationModel{}
+// 	notification := &models.NotificationModel{}
 
-	if err := s.notificationRepository.GetNotificationByID(ctx, id, notification); err != nil {
-		return true, err
-	}
+// 	if err := s.notificationRepository.GetNotificationByID(ctx, id, notification); err != nil {
+// 		return true, err
+// 	}
 
-	if notification.ID == 0 || notification.SenderID != claim.UserID {
-		return false, nil
-	}
+// 	if notification.ID == 0 || notification.SenderID != claim.UserID {
+// 		return false, nil
+// 	}
 
-	return true, config.DB.Transaction(func(tx *gorm.DB) error {
-		if err := s.notificationRepository.DeleteNotification(ctx, tx, id); err != nil {
-			return err
-		}
+// 	return true, config.DB.Transaction(func(tx *gorm.DB) error {
+// 		if err := s.notificationRepository.DeleteNotification(ctx, tx, id, receivers); err != nil {
+// 			return err
+// 		}
 
-		return nil
-	})
-}
+// 		return nil
+// 	})
+// }
 
 func (s *NotificationService) GetSentNotifications(ctx *gin.Context, notifications *[]models.NotificationModel, limit, offset int64) error {
 	userID := ctx.GetInt64("userID")
@@ -287,3 +287,21 @@ func (s *NotificationService) CheckUserGetNotification(ctx *gin.Context, notific
 
 	return isValid, nil
 }
+
+// func (s *NotificationService) GetNotificationDetail(ctx *gin.Context, id int64, notification *structs.NotificationDetail) (bool, bool, error) {
+// 	userID := ctx.GetInt64("userID")
+
+// 	if err := s.notificationRepository.GetNotificationByID2(ctx, id, notification); err != nil {
+// 		return true, true, err
+// 	}
+
+// 	if notification.ID == 0 {
+// 		return false, true, nil
+// 	}
+
+// 	if notification.SenderID != userID {
+// 		return true, false, nil
+// 	}
+
+// 	return true, true, nil
+// }

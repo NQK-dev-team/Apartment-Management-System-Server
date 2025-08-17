@@ -181,6 +181,15 @@ func (c *NotificationController) AddNotification(ctx *gin.Context) {
 
 	AddBroadcast(signal)
 
+	signal = &structs.NotificationWS{
+		BaseWSStruct: structs.BaseWSStruct{
+			Type: constants.Common.WebsocketSignalType.NewSent,
+		},
+		Users: []int64{ctx.GetInt64("userID")},
+	}
+
+	AddBroadcast(signal)
+
 	response.Message = config.GetMessageCode("CREATE_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }
@@ -365,29 +374,85 @@ func (c *NotificationController) UnmarkAsImportant(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-func (c *NotificationController) DeleteNotification(ctx *gin.Context) {
-	response := config.NewDataResponse(ctx)
+// func (c *NotificationController) DeleteNotification(ctx *gin.Context) {
+// 	response := config.NewDataResponse(ctx)
 
-	idStr := ctx.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+// 	idStr := ctx.Param("id")
+// 	id, err := strconv.ParseInt(idStr, 10, 64)
 
-	if err != nil {
-		id = 0
-	}
+// 	if err != nil {
+// 		id = 0
+// 	}
 
-	isAllowed, err := c.notificationService.DeleteNotification(ctx, id)
-	if err != nil {
-		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.JSON(http.StatusInternalServerError, response)
-		return
-	}
+// 	receivers := []int64{}
 
-	if !isAllowed {
-		response.Message = config.GetMessageCode("PERMISSION_DENIED")
-		ctx.JSON(http.StatusForbidden, response)
-		return
-	}
+// 	isAllowed, err := c.notificationService.DeleteNotification(ctx, id, &receivers)
+// 	if err != nil {
+// 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+// 		ctx.JSON(http.StatusInternalServerError, response)
+// 		return
+// 	}
 
-	response.Message = config.GetMessageCode("DELETE_SUCCESS")
-	ctx.JSON(http.StatusOK, response)
-}
+// 	if !isAllowed {
+// 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+// 		ctx.JSON(http.StatusForbidden, response)
+// 		return
+// 	}
+
+// 	signal := &structs.NotificationWS{
+// 		BaseWSStruct: structs.BaseWSStruct{
+// 			Type: constants.Common.WebsocketSignalType.NewImportant,
+// 		},
+// 		Users: receivers,
+// 	}
+
+// 	AddBroadcast(signal)
+
+// 	signal = &structs.NotificationWS{
+// 		BaseWSStruct: structs.BaseWSStruct{
+// 			Type: constants.Common.WebsocketSignalType.NewInbox,
+// 		},
+// 		Users: receivers,
+// 	}
+
+// 	AddBroadcast(signal)
+
+// 	response.Message = config.GetMessageCode("DELETE_SUCCESS")
+// 	ctx.JSON(http.StatusOK, response)
+// }
+
+// func (c *NotificationController) GetNotificationDetail(ctx *gin.Context) {
+// 	response := config.NewDataResponse(ctx)
+
+// 	idStr := ctx.Param("id")
+// 	id, err := strconv.ParseInt(idStr, 10, 64)
+
+// 	if err != nil {
+// 		id = 0
+// 	}
+
+// 	notification := &structs.NotificationDetail{}
+
+// 	isFound, isAllowed, err := c.notificationService.GetNotificationDetail(ctx, id, notification)
+// 	if err != nil {
+// 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+// 		ctx.JSON(http.StatusInternalServerError, response)
+// 		return
+// 	}
+
+// 	if !isAllowed {
+// 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+// 		ctx.JSON(http.StatusForbidden, response)
+// 		return
+// 	}
+
+// 	if !isFound {
+// 		response.Message = config.GetMessageCode("DATA_NOT_FOUND")
+// 		ctx.JSON(http.StatusNotFound, response)
+// 		return
+// 	}
+
+// 	response.Data = notification
+// 	response.Message = config.GetMessageCode("GET_SUCCESS")
+// 	ctx.JSON(http.StatusOK, response)
+// }
