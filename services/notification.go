@@ -273,6 +273,10 @@ func (s *NotificationService) CheckUserGetNotification(ctx *gin.Context, notific
 		isValid = true
 	}
 
+	if isValid {
+		return true, nil
+	}
+
 	notification := &models.NotificationModel{}
 
 	if err := s.notificationRepository.GetNotificationByID(ctx, notificationID, notification); err != nil {

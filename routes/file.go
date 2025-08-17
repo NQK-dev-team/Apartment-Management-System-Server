@@ -18,5 +18,5 @@ func InitFileRoutes(router *gin.RouterGroup) {
 	imageRoutes.GET(constants.GetTicketImageURL("", ":ticketID", ":fileName"), fileController.GetTicketImage)
 
 	fileRoutes.GET(constants.GetContractFileURL("", ":contractID", ":fileName"), fileController.GetContractFile)
-		fileRoutes.GET(constants.GetNotificationFileURL("", ":notificationID", ":fileName"), fileController.GetNotificationFile)
+	fileRoutes.GET(constants.GetNotificationFileURL("", ":notificationID", ":fileName"), fileController.GetNotificationFile)
 }
