@@ -18,6 +18,7 @@ func InitNotificationRoutes(router *gin.RouterGroup) {
 	r.PATCH("/:id/unread", controller.MarkAsUnread)
 	r.PATCH("/:id/mark", controller.MarkAsImportant)
 	r.PATCH("/:id/unmark", controller.UnmarkAsImportant)
+	r.POST("/read-many", controller.MarkMultiNotiAsRead)
 
 	r.Use(authorizationMiddleware.AuthManagerMiddleware)
 	{

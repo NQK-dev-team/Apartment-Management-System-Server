@@ -374,6 +374,49 @@ func (c *NotificationController) UnmarkAsImportant(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
+func (c *NotificationController) MarkMultiNotiAsRead(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	idsStruct := &structs.IDList{}
+	if err := ctx.ShouldBindJSON(idsStruct); err != nil {
+		response.Message = config.GetMessageCode("INVALID_REQUEST")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	if err := constants.Validate.Struct(idsStruct); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	isAllowed, err := c.notificationService.MarkMultiNotiAsRead(ctx, &idsStruct.IDs)
+	if err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if !isAllowed {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(http.StatusForbidden, response)
+		return
+	}
+
+	signal := &structs.NotificationWS{
+		BaseWSStruct: structs.BaseWSStruct{
+			Type: constants.Common.WebsocketSignalType.NewInbox,
+		},
+		Users: []int64{ctx.GetInt64("userID")},
+	}
+
+	AddBroadcast(signal)
+
+	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
 // func (c *NotificationController) DeleteNotification(ctx *gin.Context) {
 // 	response := config.NewDataResponse(ctx)
 

@@ -130,6 +130,64 @@ func (s *NotificationService) UpdateNotificationImportantStatus(ctx *gin.Context
 	})
 }
 
+func (s *NotificationService) MarkMultiNotiAsRead(ctx *gin.Context, ids *[]int64) (bool, error) {
+	role, exists := ctx.Get("role")
+
+	if !exists {
+		return true, errors.New("role not found")
+	}
+
+	if role == constants.Roles.Owner {
+		return false, nil
+	}
+
+	jwt, exists := ctx.Get("jwt")
+
+	if !exists {
+		return true, errors.New("jwt not found")
+	}
+
+	token, err := utils.ValidateJWTToken(jwt.(string))
+
+	if err != nil {
+		return true, err
+	}
+
+	claim := &structs.JTWClaim{}
+
+	utils.ExtractJWTClaim(token, claim)
+
+	for _, id := range *ids {
+		relation := &models.NotificationReceiverModel{}
+
+		if err := s.notificationRepository.GetReceiverNotificationRelation(ctx, id, claim.UserID, relation); err != nil {
+			return true, err
+		}
+
+		if relation.NotificationID == 0 || relation.UserID == 0 {
+			return false, nil
+		}
+	}
+
+	return true, config.DB.Transaction(func(tx *gorm.DB) error {
+		for _, id := range *ids {
+			relation := &models.NotificationReceiverModel{}
+
+			if err := s.notificationRepository.GetReceiverNotificationRelation(ctx, id, claim.UserID, relation); err != nil {
+				return err
+			}
+
+			relation.MarkAsRead = constants.Common.Notification.ReadStatus
+
+			if err := s.notificationRepository.UpdateReceiverNotificationRelation(ctx, tx, relation); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
 // func (s *NotificationService) DeleteNotification(ctx *gin.Context, id int64, receivers *[]int64) (bool, error) {
 // 	jwt, exists := ctx.Get("jwt")
 
