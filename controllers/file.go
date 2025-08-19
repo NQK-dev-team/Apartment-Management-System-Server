@@ -3,7 +3,6 @@ package controllers
 import (
 	"api/config"
 	"api/constants"
-	"api/models"
 	"api/services"
 	"api/structs"
 	"api/utils"
@@ -43,24 +42,6 @@ func (c *FileController) GetBuildingImage(ctx *gin.Context) {
 		return
 	}
 
-	// file := &structs.CustomFileStruct{}
-	// if err := utils.GetFile(file, "images/buildings/"+buildingID+"/"+filename); err != nil {
-	// 	response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
-	// 	ctx.JSON(http.StatusNotFound, response)
-	// 	return
-	// }
-
-	// ext := strings.TrimPrefix(filepath.Ext(file.Filename), ".")
-	// ctx.Header("Content-Type", "image/"+ext)
-	// ctx.Header("Content-Disposition", "inline; filename="+file.Filename)
-	// ctx.Header("Content-Length", strconv.FormatInt(file.Size, 10))
-
-	// if _, err := io.Copy(ctx.Writer, bytes.NewReader(file.Content)); err != nil {
-	// 	response.Message = config.GetMessageCode("SYSTEM_ERROR")
-	// 	ctx.JSON(http.StatusInternalServerError, response)
-	// 	return
-	// }
-
 	if err := utils.GetFile(ctx, constants.GetBuildingImageURL("images", buildingID, filename)); err != nil {
 		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
 		ctx.JSON(http.StatusNotFound, response)
@@ -81,25 +62,6 @@ func (c *FileController) GetRoomImage(ctx *gin.Context) {
 		return
 	}
 
-	// file := &structs.CustomFileStruct{}
-	// fmt.Println("images/buildings/" + buildingID + "/rooms/" + roomNo + "/" + filename)
-	// if err := utils.GetFile(file, "images/buildings/"+buildingID+"/rooms/"+roomNo+"/"+filename); err != nil {
-	// 	response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
-	// 	ctx.JSON(http.StatusNotFound, response)
-	// 	return
-	// }
-
-	// ext := strings.TrimPrefix(filepath.Ext(file.Filename), ".")
-	// ctx.Header("Content-Type", "image/"+ext)
-	// ctx.Header("Content-Disposition", "inline; filename="+file.Filename)
-	// ctx.Header("Content-Length", strconv.FormatInt(file.Size, 10))
-
-	// if _, err := io.Copy(ctx.Writer, bytes.NewReader(file.Content)); err != nil {
-	// 	response.Message = config.GetMessageCode("SYSTEM_ERROR")
-	// 	ctx.JSON(http.StatusInternalServerError, response)
-	// 	return
-	// }
-
 	if err := utils.GetFile(ctx, constants.GetRoomImageURL("images", buildingID, roomNo, filename)); err != nil {
 		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
 		ctx.JSON(http.StatusNotFound, response)
@@ -119,24 +81,12 @@ func (c *FileController) GetUserImage(ctx *gin.Context) {
 		return
 	}
 
-	// file := &structs.CustomFileStruct{}
-	// fmt.Println("images/buildings/" + buildingID + "/rooms/" + roomNo + "/" + filename)
-	// if err := utils.GetFile(file, "images/buildings/"+buildingID+"/rooms/"+roomNo+"/"+filename); err != nil {
-	// 	response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
-	// 	ctx.JSON(http.StatusNotFound, response)
-	// 	return
-	// }
-
-	// ext := strings.TrimPrefix(filepath.Ext(file.Filename), ".")
-	// ctx.Header("Content-Type", "image/"+ext)
-	// ctx.Header("Content-Disposition", "inline; filename="+file.Filename)
-	// ctx.Header("Content-Length", strconv.FormatInt(file.Size, 10))
-
-	// if _, err := io.Copy(ctx.Writer, bytes.NewReader(file.Content)); err != nil {
-	// 	response.Message = config.GetMessageCode("SYSTEM_ERROR")
-	// 	ctx.JSON(http.StatusInternalServerError, response)
-	// 	return
-	// }
+	role := ctx.GetString("role")
+	if role == constants.Roles.Customer && userID != strconv.FormatInt(ctx.GetInt64("userID"), 10) {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(http.StatusForbidden, response)
+		return
+	}
 
 	if err := utils.GetFile(ctx, constants.GetUserImageURL("images", userID, filename)); err != nil {
 		response.Message = config.GetMessageCode("IMAGE_NOT_FOUND")
@@ -249,28 +199,16 @@ func (c *FileController) GetNotificationFile(ctx *gin.Context) {
 func (c *FileController) GetUploadFile(ctx *gin.Context) {
 	response := config.NewDataResponse(ctx)
 
+	role := ctx.GetString("role")
+
+	if role != constants.Roles.Manager && role != constants.Roles.Owner {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(http.StatusForbidden, response)
+		return
+	}
+
 	uploadIDStr := ctx.Param("uploadID")
-	uploadID, _ := strconv.ParseInt(uploadIDStr, 10, 64)
 	filename := ctx.Param("fileName")
-
-	if uploadID == 0 || filename == "" {
-		response.Message = config.GetMessageCode("FILE_NOT_FOUND")
-		ctx.JSON(http.StatusNotFound, response)
-		return
-	}
-
-	upload := &models.UploadFileModel{}
-	if err := c.uploadService.GetUploadByID(ctx, upload, uploadID); err != nil {
-		response.Message = config.GetMessageCode("FILE_NOT_FOUND")
-		ctx.JSON(http.StatusNotFound, response)
-		return
-	}
-
-	if upload.ID == 0 {
-		response.Message = config.GetMessageCode("FILE_NOT_FOUND")
-		ctx.JSON(http.StatusNotFound, response)
-		return
-	}
 
 	if err := utils.GetFile(ctx, constants.GetUploadFileURL("files", uploadIDStr, filename)); err != nil {
 		response.Message = config.GetMessageCode("FILE_NOT_FOUND")

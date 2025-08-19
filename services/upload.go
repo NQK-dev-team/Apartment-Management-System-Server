@@ -73,7 +73,3 @@ func (s *UploadService) UploadFile(ctx *gin.Context, upload *structs.UploadStruc
 func (s *UploadService) GetUploads(ctx *gin.Context, uploads *[]models.UploadFileModel, uploadType int, isProcessed bool) error {
 	return s.repository.Get(ctx, uploads, uploadType, isProcessed)
 }
-
-func (s *UploadService) GetUploadByID(ctx *gin.Context, upload *models.UploadFileModel, uploadID int64) error {
-	return s.repository.GetByID(ctx, upload, uploadID)
-}

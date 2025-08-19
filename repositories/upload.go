@@ -46,10 +46,3 @@ func (r *UploadRepository) Update(ctx *gin.Context, tx *gorm.DB, upload *models.
 	}
 	return nil
 }
-
-func(r*UploadRepository) GetByID(ctx *gin.Context, upload *models.UploadFileModel, uploadID int64) error {
-	if err := config.DB.Model(&models.UploadFileModel{}).Where("id = ?", uploadID).Find(upload).Error; err != nil {
-		return err
-	}
-	return nil
-}
