@@ -10,29 +10,23 @@ import (
 )
 
 var userMigration *migrations.UserMigration
-var refreshTokenMigration *migrations.RefreshTokenMigration
-var emailVerifyTokenMigration *migrations.EmailVerifyTokenMigration
-var passwordResetTokenMigration *migrations.PasswordResetTokenMigration
 var buildingMigration *migrations.BuildingMigration
 var contractMigration *migrations.ContractMigration
+var systemMigration *migrations.SystemMigration
 
 // var messageMigration *migrations.MessageMigration
 var notificationMigration *migrations.NotificationMigration
 var supportTicketMigration *migrations.SupportTicketMigration
-var emailQueueMigration *migrations.EmailQueueMigration
 
 func migrateUp() {
 	fmt.Println("--------- Migrate Up Start ---------")
 	userMigration.Up()
-	refreshTokenMigration.Up()
-	emailVerifyTokenMigration.Up()
-	passwordResetTokenMigration.Up()
 	buildingMigration.Up()
 	contractMigration.Up()
 	// messageMigration.Up()
 	notificationMigration.Up()
 	supportTicketMigration.Up()
-	emailQueueMigration.Up()
+	systemMigration.Up()
 	fmt.Println("--------- Migrate Up Finish ---------")
 }
 
@@ -43,25 +37,19 @@ func migrateDown() {
 	// messageMigration.Down()
 	contractMigration.Down()
 	buildingMigration.Down()
-	passwordResetTokenMigration.Down()
-	emailVerifyTokenMigration.Down()
-	refreshTokenMigration.Down()
 	userMigration.Down()
-	emailQueueMigration.Down()
+	systemMigration.Down()
 	fmt.Println("--------- Migrating Down Finish ---------")
 }
 
 func initMigrations() {
 	userMigration = migrations.NewUserMigration()
-	refreshTokenMigration = migrations.NewRefreshTokenMigration()
-	emailVerifyTokenMigration = migrations.NewEmailVerifyTokenMigration()
-	passwordResetTokenMigration = migrations.NewPasswordResetTokenMigration()
 	buildingMigration = migrations.NewBuildingMigration()
 	contractMigration = migrations.NewContractMigration()
 	// messageMigration = migrations.NewMessageMigration()
 	notificationMigration = migrations.NewNotificationMigration()
 	supportTicketMigration = migrations.NewSupportTicketMigration()
-	emailQueueMigration = migrations.NewEmailQueueMigration()
+	systemMigration = migrations.NewSystemMigration()
 }
 
 func migrateHandler(mode string) {

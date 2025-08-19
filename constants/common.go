@@ -31,11 +31,14 @@ type userGenderStruct struct {
 }
 
 type importTypeStruct struct {
-	ADD_BUILDINGS int
-	ADD_ROOMS     int
-	ADD_EMPLOYEES int
 	ADD_CUSTOMERS int
+	ADD_CONTRACTS int
 	ADD_BILLS     int
+}
+
+type importProcessResultStruct struct {
+	SUCCESS int
+	FAILED  int
 }
 
 type billStatusStruct struct {
@@ -94,6 +97,7 @@ var Common = struct {
 	NewPasswordLength    int
 	Notification         Notification
 	WebsocketSignalType  WebsocketSignalType
+	ImportProcessResult  importProcessResultStruct
 }{
 	SupportTicketStatus: supportTicketStatusStruct{
 		PENDING:  1,
@@ -124,11 +128,9 @@ var Common = struct {
 		OTHER:  3,
 	},
 	ImportType: importTypeStruct{
-		ADD_BUILDINGS: 1,
-		ADD_ROOMS:     2,
-		ADD_EMPLOYEES: 3,
-		ADD_CUSTOMERS: 4,
-		ADD_BILLS:     5,
+		ADD_CUSTOMERS: 1,
+		ADD_CONTRACTS: 2,
+		ADD_BILLS:     3,
 	},
 	BillStatus: billStatusStruct{
 		UN_PAID:    1,
@@ -170,6 +172,10 @@ var Common = struct {
 		NewInbox:     1,
 		NewImportant: 2,
 		NewSent:      3,
+	},
+	ImportProcessResult: importProcessResultStruct{
+		SUCCESS: 1,
+		FAILED:  2,
 	},
 }
 

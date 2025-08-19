@@ -21,7 +21,7 @@ func (m *UserMigration) generateRoleCheckRule() string {
 }
 
 func (m *UserMigration) Up() {
-	config.DB.AutoMigrate(&models.UserModel{})
+	config.MigrationDB.AutoMigrate(&models.UserModel{})
 	// Add role check constraint
 	config.DB.Exec(m.generateRoleCheckRule())
 	config.DB.Exec("ALTER TABLE \"user\" ADD CONSTRAINT gender_check CHECK (gender>=1 AND gender<=3)")
@@ -29,5 +29,5 @@ func (m *UserMigration) Up() {
 }
 
 func (m *UserMigration) Down() {
-	config.DB.Migrator().DropTable(&models.UserModel{})
+	config.MigrationDB.Migrator().DropTable(&models.UserModel{})
 }

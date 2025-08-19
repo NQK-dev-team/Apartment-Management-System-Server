@@ -10,6 +10,7 @@ import (
 
 var DB *gorm.DB
 var WorkerDB *gorm.DB
+var MigrationDB *gorm.DB
 
 func InitDB() error {
 	host := GetEnv("DB_HOST")
@@ -43,6 +44,15 @@ func InitDB() error {
 	}
 
 	WorkerDB, err = gorm.Open(postgresDriver.Open(dsn), &gorm.Config{
+		Logger:      logger.Default.LogMode(logMode),
+		PrepareStmt: true,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	MigrationDB, err = gorm.Open(postgresDriver.Open(dsn), &gorm.Config{
 		Logger:      logger.Default.LogMode(logMode),
 		PrepareStmt: true,
 	})
