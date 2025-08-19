@@ -55,6 +55,7 @@ var messageList = map[string]string{
 	"UPDATE_FAILED":          "MSG_E0016",
 	"CREATE_FAILED":          "MSG_E0017",
 	"PASSWORD_INCORRECT":     "MSG_E0018",
+	"FILE_NOT_FOUND":         "MSG_E0019",
 
 	// Parameter error messages
 	"INVALID_PARAMETER":    "MSG_V0001",

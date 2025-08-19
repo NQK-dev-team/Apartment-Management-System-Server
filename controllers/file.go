@@ -9,7 +9,6 @@ import (
 	"api/utils"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -267,7 +266,7 @@ func (c *FileController) GetUploadFile(ctx *gin.Context) {
 		return
 	}
 
-	if upload.ID == 0 || strings.Index(upload.URLPath, filename) == -1 {
+	if upload.ID == 0 {
 		response.Message = config.GetMessageCode("FILE_NOT_FOUND")
 		ctx.JSON(http.StatusNotFound, response)
 		return
