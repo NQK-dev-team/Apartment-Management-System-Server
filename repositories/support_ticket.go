@@ -44,10 +44,22 @@ func (r *SupportTicketRepository) GetById(ctx *gin.Context, ticket *models.Suppo
 func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[]structs.SupportTicket, limit int64, offset int64, startDate string, endDate string, managerID *int64) error {
 	if managerID == nil {
 		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager", func(db *gorm.DB) *gorm.DB {
+			role := ctx.GetString("role")
+
+			if role == constants.Roles.Manager {
+				return db.Unscoped().Select("id", "no", "first_name", "middle_name", "last_name", "is_owner", "is_manager", "is_customer")
+			}
+
 			return db.Unscoped()
 		}).Preload("Customer", func(db *gorm.DB) *gorm.DB {
 			return db.Unscoped()
 		}).Preload("Owner", func(db *gorm.DB) *gorm.DB {
+			role := ctx.GetString("role")
+
+			if role == constants.Roles.Manager {
+				return db.Unscoped().Select("id", "no", "first_name", "middle_name", "last_name", "is_owner", "is_manager", "is_customer")
+			}
+
 			return db.Unscoped()
 		}).Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 			Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
@@ -143,10 +155,22 @@ func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, ticket
 
 func (r *SupportTicketRepository) GetTicketsByCustomerID(ctx *gin.Context, tickets *[]structs.SupportTicket, customerID int64) error {
 	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager", func(db *gorm.DB) *gorm.DB {
+		role := ctx.GetString("role")
+
+		if role == constants.Roles.Manager {
+			return db.Unscoped().Select("id", "no", "first_name", "middle_name", "last_name", "is_owner", "is_manager", "is_customer")
+		}
+
 		return db.Unscoped()
 	}).Preload("Customer", func(db *gorm.DB) *gorm.DB {
 		return db.Unscoped()
 	}).Preload("Owner", func(db *gorm.DB) *gorm.DB {
+		role := ctx.GetString("role")
+
+		if role == constants.Roles.Manager {
+			return db.Unscoped().Select("id", "no", "first_name", "middle_name", "last_name", "is_owner", "is_manager", "is_customer")
+		}
+
 		return db.Unscoped()
 	}).Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 		Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
@@ -187,11 +211,11 @@ func (r *SupportTicketRepository) GetTicketByCustomerID(ctx *gin.Context, ticket
 
 func (r *SupportTicketRepository) GetTicketsByCustomerID2(ctx *gin.Context, tickets *[]structs.SupportTicket, limit, offset int64, startDate string, endDate string, customerID int64) error {
 	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager", func(db *gorm.DB) *gorm.DB {
-		return db.Unscoped()
+		return db.Unscoped().Select("id", "no", "first_name", "middle_name", "last_name", "is_owner", "is_manager", "is_customer")
 	}).Preload("Customer", func(db *gorm.DB) *gorm.DB {
 		return db.Unscoped()
 	}).Preload("Owner", func(db *gorm.DB) *gorm.DB {
-		return db.Unscoped()
+		return db.Unscoped().Select("id", "no", "first_name", "middle_name", "last_name", "is_owner", "is_manager", "is_customer")
 	}).Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 		Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
 		Joins("LEFT JOIN room_resident_list ON room_resident_list.contract_id = contract.id").
@@ -210,10 +234,20 @@ func (r *SupportTicketRepository) GetTicketsByCustomerID2(ctx *gin.Context, tick
 
 func (r *SupportTicketRepository) GetTicketByRoomIDAndBuildingID(ctx *gin.Context, roomID int64, buildingID int64, startDate string, endDate string, tickets *[]models.SupportTicketModel) error {
 	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager", func(db *gorm.DB) *gorm.DB {
+		role := ctx.GetString("role")
+
+		if role == constants.Roles.Manager {
+			return db.Unscoped().Select("id", "no", "first_name", "middle_name", "last_name", "is_owner", "is_manager", "is_customer")
+		}
 		return db.Unscoped()
 	}).Preload("Customer", func(db *gorm.DB) *gorm.DB {
 		return db.Unscoped()
 	}).Preload("Owner", func(db *gorm.DB) *gorm.DB {
+		role := ctx.GetString("role")
+
+		if role == constants.Roles.Manager {
+			return db.Unscoped().Select("id", "no", "first_name", "middle_name", "last_name", "is_owner", "is_manager", "is_customer")
+		}
 		return db.Unscoped()
 	}).
 		Joins("JOIN contract ON contract.id = support_ticket.contract_id AND contract.deleted_at IS NULL").

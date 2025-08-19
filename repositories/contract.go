@@ -78,6 +78,12 @@ func (r *ContractRepository) GetContractsByManagerID(ctx *gin.Context, contracts
 
 func (r *ContractRepository) GetContractByID(ctx *gin.Context, contract *structs.Contract, id int64) error {
 	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator", func(db *gorm.DB) *gorm.DB {
+		role := ctx.GetString("role")
+
+		if role == constants.Roles.Customer || role == constants.Roles.Manager {
+			return db.Unscoped().Select("id", "no", "first_name", "middle_name", "last_name", "is_owner", "is_manager", "is_customer")
+		}
+
 		return db.Unscoped()
 	}).Preload("Householder", func(db *gorm.DB) *gorm.DB {
 		return db.Unscoped()
@@ -168,6 +174,12 @@ func (r *ContractRepository) GetContractsByManagerID2(ctx *gin.Context, contract
 		Where("contract.deleted_at IS NULL AND manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ?", managerID)
 
 	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator", func(db *gorm.DB) *gorm.DB {
+		role := ctx.GetString("role")
+
+		if role == constants.Roles.Manager {
+			return db.Unscoped().Select("id", "no", "first_name", "middle_name", "last_name", "is_owner", "is_manager", "is_customer")
+		}
+
 		return db.Unscoped()
 	}).Preload("Householder", func(db *gorm.DB) *gorm.DB {
 		return db.Unscoped()
@@ -213,6 +225,12 @@ func (r *ContractRepository) GetActiveContractsByManagerID(ctx *gin.Context, con
 
 func (r *ContractRepository) GetContractsByCustomerID(ctx *gin.Context, contracts *[]structs.Contract, customerID int64) error {
 	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator", func(db *gorm.DB) *gorm.DB {
+		role := ctx.GetString("role")
+
+		if role == constants.Roles.Manager {
+			return db.Unscoped().Select("id", "no", "first_name", "middle_name", "last_name", "is_owner", "is_manager", "is_customer")
+		}
+
 		return db.Unscoped()
 	}).Preload("Householder", func(db *gorm.DB) *gorm.DB {
 		return db.Unscoped()
@@ -230,7 +248,7 @@ func (r *ContractRepository) GetContractsByCustomerID(ctx *gin.Context, contract
 
 func (r *ContractRepository) GetContractsByCustomerID2(ctx *gin.Context, contracts *[]structs.Contract, customerID int64, limit int64, offset int64) error {
 	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator", func(db *gorm.DB) *gorm.DB {
-		return db.Unscoped()
+		return db.Unscoped().Select("id", "no", "first_name", "middle_name", "last_name", "is_owner", "is_manager", "is_customer")
 	}).Preload("Householder", func(db *gorm.DB) *gorm.DB {
 		return db.Unscoped()
 	}).Distinct().
@@ -249,6 +267,12 @@ func (r *ContractRepository) GetContractsByCustomerID2(ctx *gin.Context, contrac
 
 func (r *ContractRepository) GetContractByRoomIDAndBuildingID(ctx *gin.Context, contracts *[]structs.Contract, roomID int64, buildingID int64) error {
 	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator", func(db *gorm.DB) *gorm.DB {
+		role := ctx.GetString("role")
+
+		if role == constants.Roles.Manager {
+			return db.Unscoped().Select("id", "no", "first_name", "middle_name", "last_name", "is_owner", "is_manager", "is_customer")
+		}
+
 		return db.Unscoped()
 	}).Preload("Householder", func(db *gorm.DB) *gorm.DB {
 		return db.Unscoped()

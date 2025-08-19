@@ -72,7 +72,7 @@ func (r *NotificationRepository) GetSentNotification(ctx *gin.Context, notificat
 
 func (r *NotificationRepository) GetInboxNotification(ctx *gin.Context, notifications *[]structs.Notification, userID, limit, offset int64) error {
 	return config.DB.Model(&models.NotificationModel{}).Preload("Sender", func(db *gorm.DB) *gorm.DB {
-		return db.Unscoped()
+		return db.Unscoped().Select("id", "no", "first_name", "middle_name", "last_name", "is_owner", "is_manager", "is_customer")
 	}).Preload("Files").Distinct().Select("notification.*, notification_receiver.mark_as_read as is_read, notification_receiver.mark_as_important as is_marked, \"user\".first_name as sender_first_name, \"user\".last_name as sender_last_name, \"user\".middle_name as sender_middle_name").
 		Joins("JOIN notification_receiver ON notification_receiver.notification_id = notification.id").
 		Joins("JOIN \"user\" ON \"user\".id = notification.sender_id").
@@ -81,7 +81,7 @@ func (r *NotificationRepository) GetInboxNotification(ctx *gin.Context, notifica
 
 func (r *NotificationRepository) GetMarkedNotification(ctx *gin.Context, notifications *[]structs.Notification, userID, limit, offset int64) error {
 	return config.DB.Model(&models.NotificationModel{}).Preload("Sender", func(db *gorm.DB) *gorm.DB {
-		return db.Unscoped()
+		return db.Unscoped().Select("id", "no", "first_name", "middle_name", "last_name", "is_owner", "is_manager", "is_customer")
 	}).Preload("Files").Distinct().Select("notification.*, notification_receiver.mark_as_read as is_read, notification_receiver.mark_as_important as is_marked, \"user\".first_name as sender_first_name, \"user\".last_name as sender_last_name, \"user\".middle_name as sender_middle_name").
 		Joins("JOIN notification_receiver ON notification_receiver.notification_id = notification.id").
 		Joins("JOIN \"user\" ON \"user\".id = notification.sender_id").

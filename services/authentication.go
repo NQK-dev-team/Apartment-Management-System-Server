@@ -116,10 +116,6 @@ func (s *AuthenticationService) CreateRefreshToken(ctx *gin.Context, userID int6
 		return "", err
 	}
 
-	if err != nil {
-		return "", err
-	}
-
 	return token, nil
 }
 
