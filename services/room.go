@@ -7,7 +7,6 @@ import (
 	"api/repositories"
 	"api/structs"
 	"api/utils"
-	"errors"
 	"path/filepath"
 	"strconv"
 
@@ -61,13 +60,9 @@ func (s *RoomService) GetRoomDetail(ctx *gin.Context, room *models.RoomModel, id
 }
 
 func (s *RoomService) GetRoomDetail2(ctx *gin.Context, room *structs.BuildingRoom, roomID int64) error {
-	jwt, exists := ctx.Get("jwt")
+	jwt := ctx.GetString("jwt")
 
-	if !exists {
-		return errors.New("jwt not found")
-	}
-
-	token, err := utils.ValidateJWTToken(jwt.(string))
+	token, err := utils.ValidateJWTToken(jwt)
 
 	if err != nil {
 		return err
@@ -109,13 +104,13 @@ func (s *RoomService) GetContractByRoomIDAndBuildingID(ctx *gin.Context, contrac
 	// }
 
 	// if role.(string) == constants.Roles.Manager {
-	// 	jwt, exists := ctx.Get("jwt")
+	// 	jwt := ctx.GetString("jwt")
 
 	// 	if !exists {
 	// 		return errors.New("jwt not found")
 	// 	}
 
-	// 	token, err := utils.ValidateJWTToken(jwt.(string))
+	// 	token, err := utils.ValidateJWTToken(jwt)
 
 	// 	if err != nil {
 	// 		return err
@@ -214,13 +209,9 @@ func (s *RoomService) UpdateRoomStatus() error {
 }
 
 func (s *RoomService) GetRoomList(ctx *gin.Context, rooms *[]structs.BuildingRoom) error {
-	jwt, exists := ctx.Get("jwt")
+	jwt := ctx.GetString("jwt")
 
-	if !exists {
-		return errors.New("jwt not found")
-	}
-
-	token, err := utils.ValidateJWTToken(jwt.(string))
+	token, err := utils.ValidateJWTToken(jwt)
 
 	if err != nil {
 		return err
@@ -238,13 +229,9 @@ func (s *RoomService) GetRoomList(ctx *gin.Context, rooms *[]structs.BuildingRoo
 }
 
 func (s *RoomService) GetRoomSupportTicket(ctx *gin.Context, supportTickets *[]structs.SupportTicket, roomID int64) error {
-	jwt, exists := ctx.Get("jwt")
+	jwt := ctx.GetString("jwt")
 
-	if !exists {
-		return errors.New("jwt not found")
-	}
-
-	token, err := utils.ValidateJWTToken(jwt.(string))
+	token, err := utils.ValidateJWTToken(jwt)
 
 	if err != nil {
 		return err

@@ -32,18 +32,12 @@ func NewBillService() *BillService {
 }
 
 func (s *BillService) GetBillList(ctx *gin.Context, bills *[]structs.Bill, limit, offset int64, startMonth, endMonth string) error {
-	role, exists := ctx.Get("role")
-	if !exists {
-		return errors.New("role not found")
-	}
+	role := ctx.GetString("role")
 
-	if role.(string) == constants.Roles.Manager || role.(string) == constants.Roles.Customer {
-		jwt, exists := ctx.Get("jwt")
-		if !exists {
-			return errors.New("jwt not found")
-		}
+	if role == constants.Roles.Manager || role == constants.Roles.Customer {
+		jwt := ctx.GetString("jwt")
 
-		token, err := utils.ValidateJWTToken(jwt.(string))
+		token, err := utils.ValidateJWTToken(jwt)
 		if err != nil {
 			return err
 		}
@@ -51,7 +45,7 @@ func (s *BillService) GetBillList(ctx *gin.Context, bills *[]structs.Bill, limit
 		claim := &structs.JTWClaim{}
 		utils.ExtractJWTClaim(token, claim)
 
-		if role.(string) == constants.Roles.Manager {
+		if role == constants.Roles.Manager {
 			if err := s.billRepository.GetBillListForManager(ctx, bills, startMonth, endMonth, limit, offset, claim.UserID); err != nil {
 				return err
 			}
@@ -61,7 +55,7 @@ func (s *BillService) GetBillList(ctx *gin.Context, bills *[]structs.Bill, limit
 			}
 		}
 
-	} else if role.(string) == constants.Roles.Owner {
+	} else if role == constants.Roles.Owner {
 		if err := s.billRepository.GetBillList(ctx, bills, startMonth, endMonth, limit, offset); err != nil {
 			return err
 		}
@@ -71,20 +65,12 @@ func (s *BillService) GetBillList(ctx *gin.Context, bills *[]structs.Bill, limit
 }
 
 func (s *BillService) DeleteBill(ctx *gin.Context, IDs []int64) (bool, error) {
-	role, exists := ctx.Get("role")
+	role := ctx.GetString("role")
 
-	if !exists {
-		return true, errors.New("role not found")
-	}
+	if constants.Roles.Owner == constants.Roles.Manager {
+		jwt := ctx.GetString("jwt")
 
-	if role.(string) == constants.Roles.Manager {
-		jwt, exists := ctx.Get("jwt")
-
-		if !exists {
-			return true, errors.New("jwt not found")
-		}
-
-		token, err := utils.ValidateJWTToken(jwt.(string))
+		token, err := utils.ValidateJWTToken(jwt)
 
 		if err != nil {
 			return true, err
@@ -102,7 +88,7 @@ func (s *BillService) DeleteBill(ctx *gin.Context, IDs []int64) (bool, error) {
 		if len(bills) != len(IDs) {
 			return false, nil
 		}
-	} else if role.(string) == constants.Roles.Owner {
+	} else if role == constants.Roles.Owner {
 		bills := []models.BillModel{}
 		if err := s.billRepository.GetDeletableBills(ctx, &bills, IDs, nil); err != nil {
 			return true, err
@@ -118,13 +104,10 @@ func (s *BillService) DeleteBill(ctx *gin.Context, IDs []int64) (bool, error) {
 }
 
 func (s *BillService) GetBillDetail(ctx *gin.Context, bill *structs.Bill, billID int64) (bool, error) {
-	role, exists := ctx.Get("role")
-	if !exists {
-		return true, errors.New("role not found")
-	}
+	role := ctx.GetString("role")
 
-	if role.(string) == constants.Roles.Manager || role.(string) == constants.Roles.Customer {
-		if role.(string) == constants.Roles.Manager {
+	if role == constants.Roles.Manager || role == constants.Roles.Customer {
+		if role == constants.Roles.Manager {
 			if isAllowed := s.CheckManagerPermission(ctx, billID); !isAllowed {
 				return false, nil
 			}
@@ -152,12 +135,9 @@ func (s *BillService) CheckManagerPermission(ctx *gin.Context, billID int64) boo
 }
 
 func (s *BillService) CheckCustomerPermission(ctx *gin.Context, billID int64) bool {
-	jwt, exists := ctx.Get("jwt")
-	if !exists {
-		return false
-	}
+	jwt := ctx.GetString("jwt")
 
-	token, err := utils.ValidateJWTToken(jwt.(string))
+	token, err := utils.ValidateJWTToken(jwt)
 	if err != nil {
 		return false
 	}
@@ -178,12 +158,9 @@ func (s *BillService) CheckCustomerPermission(ctx *gin.Context, billID int64) bo
 }
 
 func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID int64) (bool, bool, error) {
-	role, exists := ctx.Get("role")
-	if !exists {
-		return true, true, errors.New("role not found")
-	}
+	role := ctx.GetString("role")
 
-	if role.(string) == constants.Roles.Manager {
+	if role == constants.Roles.Manager {
 		if isAllowed := s.CheckManagerPermission(ctx, ID); !isAllowed {
 			return false, true, nil
 		}
@@ -321,18 +298,12 @@ func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID 
 }
 
 func (s *BillService) AddBill(ctx *gin.Context, bill *structs.AddBill, newBillID *int64) (bool, bool, error) {
-	role, exists := ctx.Get("role")
-	if !exists {
-		return true, true, errors.New("role not found")
-	}
+	role := ctx.GetString("role")
 
-	if role.(string) == constants.Roles.Manager {
-		jwt, exists := ctx.Get("jwt")
-		if !exists {
-			return true, true, errors.New("jwt not found")
-		}
+	if role == constants.Roles.Manager {
+		jwt := ctx.GetString("jwt")
 
-		token, err := utils.ValidateJWTToken(jwt.(string))
+		token, err := utils.ValidateJWTToken(jwt)
 		if err != nil {
 			return true, true, err
 		}

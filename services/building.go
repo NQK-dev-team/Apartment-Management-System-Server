@@ -7,7 +7,6 @@ import (
 	"api/repositories"
 	"api/structs"
 	"api/utils"
-	"errors"
 	"path/filepath"
 	"strconv"
 
@@ -41,20 +40,12 @@ func NewBuildingService(noInitRoomService bool) *BuildingService {
 }
 
 func (s *BuildingService) GetBuilding(ctx *gin.Context, building *[]models.BuildingModel, getAll bool) (bool, error) {
-	role, exists := ctx.Get("role")
+	role := ctx.GetString("role")
 
-	if !exists {
-		return false, nil
-	}
+	if role == constants.Roles.Manager && !getAll {
+		jwt := ctx.GetString("jwt")
 
-	if role.(string) == constants.Roles.Manager && !getAll {
-		jwt, exists := ctx.Get("jwt")
-
-		if !exists {
-			return false, nil
-		}
-
-		token, err := utils.ValidateJWTToken(jwt.(string))
+		token, err := utils.ValidateJWTToken(jwt)
 
 		if err != nil {
 			return true, err
@@ -237,20 +228,12 @@ func (s *BuildingService) DeleteBuilding(ctx *gin.Context, id int64) error {
 }
 
 func (s *BuildingService) GetBuildingSchedule(ctx *gin.Context, buildingID int64, schedules *[]models.ManagerScheduleModel) (bool, error) {
-	role, exists := ctx.Get("role")
+	role := ctx.GetString("role")
 
-	if !exists {
-		return false, nil
-	}
+	if role == constants.Roles.Manager {
+		jwt := ctx.GetString("jwt")
 
-	if role.(string) == constants.Roles.Manager {
-		jwt, exists := ctx.Get("jwt")
-
-		if !exists {
-			return false, nil
-		}
-
-		token, err := utils.ValidateJWTToken(jwt.(string))
+		token, err := utils.ValidateJWTToken(jwt)
 
 		if err != nil {
 			return true, err
@@ -267,20 +250,12 @@ func (s *BuildingService) GetBuildingSchedule(ctx *gin.Context, buildingID int64
 }
 
 func (s *BuildingService) GetBuildingRoom(ctx *gin.Context, buildingID int64, rooms *[]models.RoomModel) (bool, error) {
-	role, exists := ctx.Get("role")
+	role := ctx.GetString("role")
 
-	if !exists {
-		return false, nil
-	}
+	if role == constants.Roles.Manager {
+		jwt := ctx.GetString("jwt")
 
-	if role.(string) == constants.Roles.Manager {
-		jwt, exists := ctx.Get("jwt")
-
-		if !exists {
-			return false, nil
-		}
-
-		token, err := utils.ValidateJWTToken(jwt.(string))
+		token, err := utils.ValidateJWTToken(jwt)
 
 		if err != nil {
 			return true, err
@@ -312,11 +287,7 @@ func (s *BuildingService) GetBuildingRoom(ctx *gin.Context, buildingID int64, ro
 }
 
 func (s *BuildingService) UpdateBuilding(ctx *gin.Context, building *structs.EditBuilding) error {
-	role, exists := ctx.Get("role")
-
-	if !exists {
-		return errors.New("role not found")
-	}
+	role := ctx.GetString("role")
 
 	buildingIDStr := strconv.Itoa(int(building.ID))
 
@@ -329,7 +300,7 @@ func (s *BuildingService) UpdateBuilding(ctx *gin.Context, building *structs.Edi
 			return err
 		}
 
-		if role.(string) == constants.Roles.Owner {
+		if role == constants.Roles.Owner {
 			newBuildingData.Name = building.Name
 			newBuildingData.Address = building.Address
 			newBuildingData.TotalFloor = building.TotalFloor
@@ -613,20 +584,12 @@ func (s *BuildingService) UpdateBuilding(ctx *gin.Context, building *structs.Edi
 }
 
 func (s *BuildingService) CheckManagerPermission(ctx *gin.Context, buildingID int64) bool {
-	role, exists := ctx.Get("role")
+	role := ctx.GetString("role")
 
-	if !exists {
-		return false
-	}
+	if role == constants.Roles.Manager {
+		jwt := ctx.GetString("jwt")
 
-	if role.(string) == constants.Roles.Manager {
-		jwt, exists := ctx.Get("jwt")
-
-		if !exists {
-			return false
-		}
-
-		token, err := utils.ValidateJWTToken(jwt.(string))
+		token, err := utils.ValidateJWTToken(jwt)
 
 		if err != nil {
 			return false

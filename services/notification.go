@@ -7,7 +7,6 @@ import (
 	"api/repositories"
 	"api/structs"
 	"api/utils"
-	"errors"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -27,23 +26,15 @@ func NewNotificationService() *NotificationService {
 }
 
 func (s *NotificationService) UpdateNotificationReadStatus(ctx *gin.Context, id int64, isRead bool) (bool, error) {
-	role, exists := ctx.Get("role")
-
-	if !exists {
-		return true, errors.New("role not found")
-	}
+	role := ctx.GetString("role")
 
 	if role == constants.Roles.Owner {
 		return false, nil
 	}
 
-	jwt, exists := ctx.Get("jwt")
+	jwt := ctx.GetString("jwt")
 
-	if !exists {
-		return true, errors.New("jwt not found")
-	}
-
-	token, err := utils.ValidateJWTToken(jwt.(string))
+	token, err := utils.ValidateJWTToken(jwt)
 
 	if err != nil {
 		return true, err
@@ -79,23 +70,15 @@ func (s *NotificationService) UpdateNotificationReadStatus(ctx *gin.Context, id 
 }
 
 func (s *NotificationService) UpdateNotificationImportantStatus(ctx *gin.Context, id int64, isImportant bool) (bool, error) {
-	role, exists := ctx.Get("role")
-
-	if !exists {
-		return true, errors.New("role not found")
-	}
+	role := ctx.GetString("role")
 
 	if role == constants.Roles.Owner {
 		return false, nil
 	}
 
-	jwt, exists := ctx.Get("jwt")
+	jwt := ctx.GetString("jwt")
 
-	if !exists {
-		return true, errors.New("jwt not found")
-	}
-
-	token, err := utils.ValidateJWTToken(jwt.(string))
+	token, err := utils.ValidateJWTToken(jwt)
 
 	if err != nil {
 		return true, err
@@ -131,23 +114,15 @@ func (s *NotificationService) UpdateNotificationImportantStatus(ctx *gin.Context
 }
 
 func (s *NotificationService) MarkMultiNotiAsRead(ctx *gin.Context, ids *[]int64) (bool, error) {
-	role, exists := ctx.Get("role")
-
-	if !exists {
-		return true, errors.New("role not found")
-	}
+	role := ctx.GetString("role")
 
 	if role == constants.Roles.Owner {
 		return false, nil
 	}
 
-	jwt, exists := ctx.Get("jwt")
+	jwt := ctx.GetString("jwt")
 
-	if !exists {
-		return true, errors.New("jwt not found")
-	}
-
-	token, err := utils.ValidateJWTToken(jwt.(string))
+	token, err := utils.ValidateJWTToken(jwt)
 
 	if err != nil {
 		return true, err
@@ -189,13 +164,13 @@ func (s *NotificationService) MarkMultiNotiAsRead(ctx *gin.Context, ids *[]int64
 }
 
 // func (s *NotificationService) DeleteNotification(ctx *gin.Context, id int64, receivers *[]int64) (bool, error) {
-// 	jwt, exists := ctx.Get("jwt")
+// 	jwt := ctx.GetString("jwt")
 
 // 	if !exists {
 // 		return true, errors.New("jwt not found")
 // 	}
 
-// 	token, err := utils.ValidateJWTToken(jwt.(string))
+// 	token, err := utils.ValidateJWTToken(jwt)
 
 // 	if err != nil {
 // 		return true, err
@@ -309,11 +284,7 @@ func (s *NotificationService) AddNotification(ctx *gin.Context, newNotification 
 func (s *NotificationService) CheckUserGetNotification(ctx *gin.Context, notificationID int64) (bool, error) {
 	userID := ctx.GetInt64("userID")
 
-	role, exists := ctx.Get("role")
-
-	if !exists {
-		return true, errors.New("role not found")
-	}
+	role := ctx.GetString("role")
 
 	relation := &models.NotificationReceiverModel{}
 

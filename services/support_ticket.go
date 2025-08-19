@@ -32,20 +32,12 @@ func NewSupportTicketService() *SupportTicketService {
 }
 
 func (s *SupportTicketService) GetSupportTickets(ctx *gin.Context, tickets *[]structs.SupportTicket, limit, offset int64, startDate string, endDate string) error {
-	role, exists := ctx.Get("role")
+	role := ctx.GetString("role")
 
-	if !exists {
-		return errors.New("role not found")
-	}
+	if role == constants.Roles.Manager || role == constants.Roles.Customer {
+		jwt := ctx.GetString("jwt")
 
-	if role.(string) == constants.Roles.Manager || role.(string) == constants.Roles.Customer {
-		jwt, exists := ctx.Get("jwt")
-
-		if !exists {
-			return errors.New("jwt not found")
-		}
-
-		token, err := utils.ValidateJWTToken(jwt.(string))
+		token, err := utils.ValidateJWTToken(jwt)
 
 		if err != nil {
 			return err
@@ -55,7 +47,7 @@ func (s *SupportTicketService) GetSupportTickets(ctx *gin.Context, tickets *[]st
 
 		utils.ExtractJWTClaim(token, claim)
 
-		if role.(string) == constants.Roles.Manager {
+		if role == constants.Roles.Manager {
 			return s.supportTicketRepository.GetSupportTickets(ctx, tickets, limit, offset, startDate, endDate, &claim.UserID)
 		} else {
 			return s.supportTicketRepository.GetTicketsByCustomerID2(ctx, tickets, limit, offset, startDate, endDate, claim.UserID)
@@ -66,20 +58,12 @@ func (s *SupportTicketService) GetSupportTickets(ctx *gin.Context, tickets *[]st
 }
 
 func (s *SupportTicketService) GetSupportTicket(ctx *gin.Context, ticket *structs.SupportTicket, ticketID int64) error {
-	role, exists := ctx.Get("role")
+	role := ctx.GetString("role")
 
-	if !exists {
-		return errors.New("role not found")
-	}
+	if role == constants.Roles.Manager || role == constants.Roles.Customer {
+		jwt := ctx.GetString("jwt")
 
-	if role.(string) == constants.Roles.Manager || role.(string) == constants.Roles.Customer {
-		jwt, exists := ctx.Get("jwt")
-
-		if !exists {
-			return errors.New("jwt not found")
-		}
-
-		token, err := utils.ValidateJWTToken(jwt.(string))
+		token, err := utils.ValidateJWTToken(jwt)
 
 		if err != nil {
 			return err
@@ -89,7 +73,7 @@ func (s *SupportTicketService) GetSupportTicket(ctx *gin.Context, ticket *struct
 
 		utils.ExtractJWTClaim(token, claim)
 
-		if role.(string) == constants.Roles.Manager {
+		if role == constants.Roles.Manager {
 			return s.supportTicketRepository.GetSupportTicket(ctx, ticket, ticketID, &claim.UserID)
 		} else {
 			return s.supportTicketRepository.GetTicketByCustomerID(ctx, ticket, claim.UserID, ticketID)
@@ -109,19 +93,11 @@ func (s *SupportTicketService) CheckManagerPermission(ctx *gin.Context, ticketID
 }
 
 func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID int64) (bool, error) {
-	role, exists := ctx.Get("role")
+	role := ctx.GetString("role")
 
-	if !exists {
-		return false, errors.New("role not found")
-	}
+	jwt := ctx.GetString("jwt")
 
-	jwt, exists := ctx.Get("jwt")
-
-	if !exists {
-		return false, errors.New("jwt not found")
-	}
-
-	token, err := utils.ValidateJWTToken(jwt.(string))
+	token, err := utils.ValidateJWTToken(jwt)
 
 	if err != nil {
 		return false, errors.New("jwt not valid")
@@ -137,7 +113,7 @@ func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID i
 		return false, err
 	}
 
-	if role.(string) == constants.Roles.Manager {
+	if role == constants.Roles.Manager {
 		if !s.CheckManagerPermission(ctx, ticketID, claim.UserID) {
 			return false, nil
 		}
@@ -189,19 +165,11 @@ func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID i
 }
 
 func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int64) (bool, error) {
-	role, exists := ctx.Get("role")
+	role := ctx.GetString("role")
 
-	if !exists {
-		return false, errors.New("role not found")
-	}
+	jwt := ctx.GetString("jwt")
 
-	jwt, exists := ctx.Get("jwt")
-
-	if !exists {
-		return false, errors.New("jwt not found")
-	}
-
-	token, err := utils.ValidateJWTToken(jwt.(string))
+	token, err := utils.ValidateJWTToken(jwt)
 
 	if err != nil {
 		return false, errors.New("jwt not valid")
@@ -217,7 +185,7 @@ func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int6
 		return false, err
 	}
 
-	if role.(string) == constants.Roles.Manager {
+	if role == constants.Roles.Manager {
 		if !s.CheckManagerPermission(ctx, ticketID, claim.UserID) {
 			return false, nil
 		}
@@ -268,13 +236,9 @@ func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int6
 }
 
 func (s *SupportTicketService) DeleteTickets(ctx *gin.Context, ids []int64) (bool, error) {
-	jwt, exists := ctx.Get("jwt")
+	jwt := ctx.GetString("jwt")
 
-	if !exists {
-		return true, errors.New("jwt not found")
-	}
-
-	token, err := utils.ValidateJWTToken(jwt.(string))
+	token, err := utils.ValidateJWTToken(jwt)
 
 	if err != nil {
 		return true, errors.New("jwt not valid")
@@ -302,13 +266,9 @@ func (s *SupportTicketService) DeleteTickets(ctx *gin.Context, ids []int64) (boo
 }
 
 func (s *SupportTicketService) UpdateSupportTicket(ctx *gin.Context, ticketID int64, ticket *structs.UpdateSupportTicketRequest) (bool, bool, error) {
-	jwt, exists := ctx.Get("jwt")
+	jwt := ctx.GetString("jwt")
 
-	if !exists {
-		return true, true, errors.New("jwt not found")
-	}
-
-	token, err := utils.ValidateJWTToken(jwt.(string))
+	token, err := utils.ValidateJWTToken(jwt)
 
 	if err != nil {
 		return true, true, err
@@ -390,13 +350,9 @@ func (s *SupportTicketService) UpdateSupportTicket(ctx *gin.Context, ticketID in
 }
 
 func (s *SupportTicketService) AddSupportTicket(ctx *gin.Context, ticket *structs.CreateSupportTicketRequest) (bool, error) {
-	jwt, exists := ctx.Get("jwt")
+	jwt := ctx.GetString("jwt")
 
-	if !exists {
-		return true, errors.New("jwt not found")
-	}
-
-	token, err := utils.ValidateJWTToken(jwt.(string))
+	token, err := utils.ValidateJWTToken(jwt)
 
 	if err != nil {
 		return true, err

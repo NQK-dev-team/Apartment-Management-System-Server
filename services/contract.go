@@ -39,20 +39,12 @@ func NewContractService() *ContractService {
 }
 
 func (s *ContractService) GetContractList(ctx *gin.Context, contracts *[]structs.Contract, limit int64, offset int64) error {
-	role, exists := ctx.Get("role")
+	role := ctx.GetString("role")
 
-	if !exists {
-		return errors.New("role not found")
-	}
+	if role == constants.Roles.Manager || role == constants.Roles.Customer {
+		jwt := ctx.GetString("jwt")
 
-	if role.(string) == constants.Roles.Manager || role.(string) == constants.Roles.Customer {
-		jwt, exists := ctx.Get("jwt")
-
-		if !exists {
-			return errors.New("jwt not found")
-		}
-
-		token, err := utils.ValidateJWTToken(jwt.(string))
+		token, err := utils.ValidateJWTToken(jwt)
 
 		if err != nil {
 			return err
@@ -62,7 +54,7 @@ func (s *ContractService) GetContractList(ctx *gin.Context, contracts *[]structs
 
 		utils.ExtractJWTClaim(token, claim)
 
-		if role.(string) == constants.Roles.Manager {
+		if role == constants.Roles.Manager {
 			return s.contractRepository.GetContractsByManagerID2(ctx, contracts, claim.UserID, limit, offset)
 		} else {
 			return s.contractRepository.GetContractsByCustomerID2(ctx, contracts, claim.UserID, limit, offset)
@@ -74,20 +66,12 @@ func (s *ContractService) GetContractList(ctx *gin.Context, contracts *[]structs
 }
 
 func (s *ContractService) GetActiveContractList(ctx *gin.Context, contracts *[]structs.Contract, limit int64, offset int64) error {
-	role, exists := ctx.Get("role")
+	role := ctx.GetString("role")
 
-	if !exists {
-		return errors.New("role not found")
-	}
+	if role == constants.Roles.Manager {
+		jwt := ctx.GetString("jwt")
 
-	if role.(string) == constants.Roles.Manager {
-		jwt, exists := ctx.Get("jwt")
-
-		if !exists {
-			return errors.New("jwt not found")
-		}
-
-		token, err := utils.ValidateJWTToken(jwt.(string))
+		token, err := utils.ValidateJWTToken(jwt)
 
 		if err != nil {
 			return err
@@ -97,7 +81,7 @@ func (s *ContractService) GetActiveContractList(ctx *gin.Context, contracts *[]s
 
 		utils.ExtractJWTClaim(token, claim)
 
-		if role.(string) == constants.Roles.Manager {
+		if role == constants.Roles.Manager {
 			return s.contractRepository.GetActiveContractsByManagerID(ctx, contracts, claim.UserID, limit, offset)
 		}
 
@@ -119,20 +103,12 @@ func (s *ContractService) GetContractDetail(ctx *gin.Context, contract *structs.
 		return false, err
 	}
 
-	role, exists := ctx.Get("role")
+	role := ctx.GetString("role")
 
-	if !exists {
-		return false, errors.New("role not found")
-	}
+	if role == constants.Roles.Manager || role == constants.Roles.Customer {
+		jwt := ctx.GetString("jwt")
 
-	if role.(string) == constants.Roles.Manager || role.(string) == constants.Roles.Customer {
-		jwt, exists := ctx.Get("jwt")
-
-		if !exists {
-			return false, errors.New("jwt not found")
-		}
-
-		token, err := utils.ValidateJWTToken(jwt.(string))
+		token, err := utils.ValidateJWTToken(jwt)
 
 		if err != nil {
 			return false, err
@@ -142,7 +118,7 @@ func (s *ContractService) GetContractDetail(ctx *gin.Context, contract *structs.
 
 		utils.ExtractJWTClaim(token, claim)
 
-		if role.(string) == constants.Roles.Manager {
+		if role == constants.Roles.Manager {
 			isAllowed, err := s.CheckManagerContractPermission(ctx, claim.UserID, contract.ID)
 
 			if err != nil {
@@ -188,20 +164,12 @@ func (s *ContractService) GetContractBill(ctx *gin.Context, bills *[]models.Bill
 		return false, err
 	}
 
-	role, exists := ctx.Get("role")
+	role := ctx.GetString("role")
 
-	if !exists {
-		return false, errors.New("role not found")
-	}
+	if role == constants.Roles.Manager || role == constants.Roles.Customer {
+		jwt := ctx.GetString("jwt")
 
-	if role.(string) == constants.Roles.Manager || role.(string) == constants.Roles.Customer {
-		jwt, exists := ctx.Get("jwt")
-
-		if !exists {
-			return false, errors.New("jwt not found")
-		}
-
-		token, err := utils.ValidateJWTToken(jwt.(string))
+		token, err := utils.ValidateJWTToken(jwt)
 
 		if err != nil {
 			return false, err
@@ -211,7 +179,7 @@ func (s *ContractService) GetContractBill(ctx *gin.Context, bills *[]models.Bill
 
 		utils.ExtractJWTClaim(token, claim)
 
-		if role.(string) == constants.Roles.Manager {
+		if role == constants.Roles.Manager {
 			isAllowed, err := s.CheckManagerContractPermission(ctx, claim.UserID, contractID)
 
 			if err != nil {
@@ -233,20 +201,12 @@ func (s *ContractService) GetContractBill(ctx *gin.Context, bills *[]models.Bill
 }
 
 func (s *ContractService) DeleteContract(ctx *gin.Context, IDs []int64, roomID int64, buildingID int64) (bool, error) {
-	role, exists := ctx.Get("role")
+	role := ctx.GetString("role")
 
-	if !exists {
-		return true, errors.New("role not found")
-	}
+	if role == constants.Roles.Manager {
+		jwt := ctx.GetString("jwt")
 
-	if role.(string) == constants.Roles.Manager {
-		jwt, exists := ctx.Get("jwt")
-
-		if !exists {
-			return true, errors.New("jwt not found")
-		}
-
-		token, err := utils.ValidateJWTToken(jwt.(string))
+		token, err := utils.ValidateJWTToken(jwt)
 
 		if err != nil {
 			return true, err
@@ -264,7 +224,7 @@ func (s *ContractService) DeleteContract(ctx *gin.Context, IDs []int64, roomID i
 		if len(contracts) != len(IDs) {
 			return false, nil
 		}
-	} else if role.(string) == constants.Roles.Owner {
+	} else if role == constants.Roles.Owner {
 		contracts := []models.ContractModel{}
 		if err := s.contractRepository.GetDeletableContracts(ctx, &contracts, IDs, nil, roomID, buildingID); err != nil {
 			return true, err
@@ -280,20 +240,12 @@ func (s *ContractService) DeleteContract(ctx *gin.Context, IDs []int64, roomID i
 }
 
 func (s *ContractService) DeleteContract2(ctx *gin.Context, IDs []int64) (bool, error) {
-	role, exists := ctx.Get("role")
+	role := ctx.GetString("role")
 
-	if !exists {
-		return true, errors.New("role not found")
-	}
+	if role == constants.Roles.Manager {
+		jwt := ctx.GetString("jwt")
 
-	if role.(string) == constants.Roles.Manager {
-		jwt, exists := ctx.Get("jwt")
-
-		if !exists {
-			return true, errors.New("jwt not found")
-		}
-
-		token, err := utils.ValidateJWTToken(jwt.(string))
+		token, err := utils.ValidateJWTToken(jwt)
 
 		if err != nil {
 			return true, err
@@ -311,7 +263,7 @@ func (s *ContractService) DeleteContract2(ctx *gin.Context, IDs []int64) (bool, 
 		if len(contracts) != len(IDs) {
 			return false, nil
 		}
-	} else if role.(string) == constants.Roles.Owner {
+	} else if role == constants.Roles.Owner {
 		contracts := []models.ContractModel{}
 		if err := s.contractRepository.GetDeletableContracts2(ctx, &contracts, IDs, nil); err != nil {
 			return true, err
@@ -357,20 +309,12 @@ func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.Edi
 		return true, true, errors.New("contract not found")
 	}
 
-	role, exists := ctx.Get("role")
+	role := ctx.GetString("role")
 
-	if !exists {
-		return true, true, errors.New("role not found")
-	}
+	if role == constants.Roles.Manager {
+		jwt := ctx.GetString("jwt")
 
-	if role.(string) == constants.Roles.Manager {
-		jwt, exists := ctx.Get("jwt")
-
-		if !exists {
-			return true, true, errors.New("jwt not found")
-		}
-
-		token, err := utils.ValidateJWTToken(jwt.(string))
+		token, err := utils.ValidateJWTToken(jwt)
 
 		if err != nil {
 			return true, true, err
@@ -592,17 +536,11 @@ func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.Edi
 }
 
 func (s *ContractService) CreateContract(ctx *gin.Context, contract *structs.NewContract, newContractID *int64) (bool, bool, error) {
-	role, exists := ctx.Get("role")
-	if !exists {
-		return true, true, errors.New("role not found")
-	}
+	role := ctx.GetString("role")
 
-	jwt, exists := ctx.Get("jwt")
-	if !exists {
-		return true, true, errors.New("jwt not found")
-	}
+	jwt := ctx.GetString("jwt")
 
-	token, err := utils.ValidateJWTToken(jwt.(string))
+	token, err := utils.ValidateJWTToken(jwt)
 	if err != nil {
 		return true, true, err
 	}
@@ -633,7 +571,7 @@ func (s *ContractService) CreateContract(ctx *gin.Context, contract *structs.New
 		return false, true, nil
 	}
 
-	if role.(string) == constants.Roles.Manager {
+	if role == constants.Roles.Manager {
 		isAllowed := s.buildingService.CheckManagerPermission(ctx, contract.BuildingID)
 
 		if !isAllowed {

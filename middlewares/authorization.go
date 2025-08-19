@@ -16,7 +16,7 @@ func NewAuthorizationMiddleware() *AuthorizationMiddleware {
 }
 
 func (m *AuthorizationMiddleware) AuthOwnerMiddleware(ctx *gin.Context) {
-	role, _ := ctx.Get("role")
+	role := ctx.GetString("role")
 	response := config.NewDataResponse(ctx)
 
 	if role != constants.Roles.Owner {
@@ -29,7 +29,7 @@ func (m *AuthorizationMiddleware) AuthOwnerMiddleware(ctx *gin.Context) {
 }
 
 func (m *AuthorizationMiddleware) AuthManagerMiddleware(ctx *gin.Context) {
-	role, _ := ctx.Get("role")
+	role := ctx.GetString("role")
 	response := config.NewDataResponse(ctx)
 
 	if role != constants.Roles.Owner && role != constants.Roles.Manager {
@@ -42,7 +42,7 @@ func (m *AuthorizationMiddleware) AuthManagerMiddleware(ctx *gin.Context) {
 }
 
 func (m *AuthorizationMiddleware) AuthCustomerMiddleware(ctx *gin.Context) {
-	role, _ := ctx.Get("role")
+	role := ctx.GetString("role")
 	response := config.NewDataResponse(ctx)
 
 	if role != constants.Roles.Customer {

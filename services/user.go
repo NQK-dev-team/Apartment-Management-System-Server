@@ -282,20 +282,12 @@ func (s *UserService) DeleteUsers(ctx *gin.Context, IDs []int64) error {
 }
 
 func (s *UserService) GetStaffList(ctx *gin.Context, users *[]models.UserModel) error {
-	role, exists := ctx.Get("role")
+	role := ctx.GetString("role")
 
-	if !exists {
-		return errors.New("role not found")
-	}
+	if role == constants.Roles.Manager {
+		jwt := ctx.GetString("jwt")
 
-	if role.(string) == constants.Roles.Manager {
-		jwt, exists := ctx.Get("jwt")
-
-		if !exists {
-			return errors.New("jwt not found")
-		}
-
-		token, err := utils.ValidateJWTToken(jwt.(string))
+		token, err := utils.ValidateJWTToken(jwt)
 
 		if err != nil {
 			return errors.New("jwt not valid")
@@ -386,13 +378,9 @@ func (s *UserService) CheckDuplicateData(ctx *gin.Context, email string, ssn str
 }
 
 func (s *UserService) CheckDuplicateData2(ctx *gin.Context, ssn string, phone string, oldSSN string) (string, error) {
-	jwt, exists := ctx.Get("jwt")
+	jwt := ctx.GetString("jwt")
 
-	if !exists {
-		return "", errors.New("jwt not found")
-	}
-
-	token, err := utils.ValidateJWTToken(jwt.(string))
+	token, err := utils.ValidateJWTToken(jwt)
 
 	if err != nil {
 		return "", errors.New("jwt not valid")
@@ -564,13 +552,9 @@ func (s *UserService) CreateCustomer(ctx *gin.Context, newCustomer *structs.NewC
 }
 
 func (s *UserService) GetUserInfo(ctx *gin.Context, user *models.UserModel) error {
-	jwt, exists := ctx.Get("jwt")
+	jwt := ctx.GetString("jwt")
 
-	if !exists {
-		return errors.New("jwt not found")
-	}
-
-	token, err := utils.ValidateJWTToken(jwt.(string))
+	token, err := utils.ValidateJWTToken(jwt)
 
 	if err != nil {
 		return errors.New("jwt not valid")
@@ -588,13 +572,9 @@ func (s *UserService) GetUserInfo(ctx *gin.Context, user *models.UserModel) erro
 }
 
 func (s *UserService) UpdateProfile(ctx *gin.Context, profile *structs.UpdateProfile) error {
-	jwt, exists := ctx.Get("jwt")
+	jwt := ctx.GetString("jwt")
 
-	if !exists {
-		return errors.New("jwt not found")
-	}
-
-	token, err := utils.ValidateJWTToken(jwt.(string))
+	token, err := utils.ValidateJWTToken(jwt)
 
 	if err != nil {
 		return errors.New("jwt not valid")
@@ -678,13 +658,9 @@ func (s *UserService) UpdateProfile(ctx *gin.Context, profile *structs.UpdatePro
 }
 
 func (s *UserService) ChangePassword(ctx *gin.Context, changePassword *structs.ChangePassword) (bool, error) {
-	jwt, exists := ctx.Get("jwt")
+	jwt := ctx.GetString("jwt")
 
-	if !exists {
-		return true, errors.New("jwt not found")
-	}
-
-	token, err := utils.ValidateJWTToken(jwt.(string))
+	token, err := utils.ValidateJWTToken(jwt)
 
 	if err != nil {
 		return true, errors.New("jwt not valid")
@@ -725,12 +701,9 @@ func (s *UserService) ChangePassword(ctx *gin.Context, changePassword *structs.C
 }
 
 func (s *UserService) ChangeEmail(ctx *gin.Context, changeEmail *structs.ChangeEmail) (bool, bool, error) {
-	jwt, exists := ctx.Get("jwt")
-	if !exists {
-		return true, true, errors.New("jwt not found")
-	}
+	jwt := ctx.GetString("jwt")
 
-	token, err := utils.ValidateJWTToken(jwt.(string))
+	token, err := utils.ValidateJWTToken(jwt)
 	if err != nil {
 		return true, true, errors.New("jwt not valid")
 	}
