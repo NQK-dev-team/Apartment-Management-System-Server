@@ -187,28 +187,22 @@ func StoreFile(file *multipart.FileHeader, folder string) (string, error) {
 
 	filePath := folder + fileName
 
-	var err error
+	var err1, err2, err3 error
 
 	if s3Client != nil {
-		err = saveFileToS3(file, filePath)
-		if err == nil {
-			return "/api/" + filePath, nil
-		}
+		err1 = saveFileToS3(file, filePath)
 	}
 
 	if minioClient != nil {
-		err = saveFileToMinio(file, filePath)
-		if err == nil {
-			return "/api/" + filePath, nil
-		}
+		err2 = saveFileToMinio(file, filePath)
 	}
 
-	err = saveFileToLocal(file, filePath)
-	if err == nil {
+	err3 = saveFileToLocal(file, filePath)
+	if err1 == nil || err2 == nil || err3 == nil {
 		return "/api/" + filePath, nil
 	}
 
-	return "", err
+	return "", errors.New("failed to save file to all storage services")
 }
 
 func removeFileFromS3(filePath string) error {
@@ -250,20 +244,12 @@ func removeFileFromLocal(filePath string) error {
 func RemoveFile(filePath string) {
 	filePath = strings.Replace(filePath, "/api/", "", -1)
 
-	var err error
-
 	if s3Client != nil && fileExistsInS3(filePath) {
-		err = removeFileFromS3(filePath)
-		if err == nil {
-			return
-		}
+		removeFileFromS3(filePath)
 	}
 
 	if minioClient != nil && fileExistsInMinio(filePath) {
-		err = removeFileFromMinio(filePath)
-		if err == nil {
-			return
-		}
+		removeFileFromMinio(filePath)
 	}
 
 	removeFileFromLocal(filePath)
