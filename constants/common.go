@@ -57,12 +57,15 @@ type residentRelationshipStruct struct {
 }
 
 type fileUploadStruct struct {
-	AllowedImageTypes []string
-	AllowedFileTypes  []string
-	MaxImageSize      int64
-	MaxFileSize       int64
-	MaxImageSizeStr   string
-	MaxFileSizeStr    string
+	AllowedImageTypes  []string
+	AllowedFileTypes   []string
+	AllowedUploadTypes []string
+	MaxImageSize       int64
+	MaxFileSize        int64
+	MaxUploadSize      int64
+	MaxImageSizeStr    string
+	MaxFileSizeStr     string
+	MaxUploadSizeStr   string
 }
 
 type contractTypeStruct struct {
@@ -157,10 +160,13 @@ var Common = struct {
 			"application/msword",
 			"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 		},
-		MaxImageSize:    2 * 1024 * 1024,  // 2 MB
-		MaxFileSize:     10 * 1024 * 1024, // 10 MB
-		MaxImageSizeStr: "2MB",
-		MaxFileSizeStr:  "10MB",
+		AllowedUploadTypes: []string{"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"},
+		MaxImageSize:       2 * 1024 * 1024,  // 2 MB
+		MaxFileSize:        10 * 1024 * 1024, // 10 MB
+		MaxUploadSize:      20 * 1024 * 1024, // 20 MB
+		MaxImageSizeStr:    "2MB",
+		MaxFileSizeStr:     "10MB",
+		MaxUploadSizeStr:   "20MB",
 	},
 	Notification: Notification{
 		MarkedStatus:   1,
@@ -201,4 +207,8 @@ func GetTicketImageURL(filePrefix, ticketID, fileName string) string {
 
 func GetNotificationFileURL(filePrefix, notificationID, fileName string) string {
 	return fmt.Sprintf("%s/notifications/%s/%s", filePrefix, notificationID, fileName)
+}
+
+func GetUploadFileURL(filePrefix, uploadID, fileName string) string {
+	return fmt.Sprintf("%s/uploads/%s/%s", filePrefix, uploadID, fileName)
 }

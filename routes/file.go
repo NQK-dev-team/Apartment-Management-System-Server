@@ -19,4 +19,5 @@ func InitFileRoutes(router *gin.RouterGroup) {
 
 	fileRoutes.GET(constants.GetContractFileURL("", ":contractID", ":fileName"), fileController.GetContractFile)
 	fileRoutes.GET(constants.GetNotificationFileURL("", ":notificationID", ":fileName"), fileController.GetNotificationFile)
+	fileRoutes.GET(constants.GetUploadFileURL("", ":uploadID", ":fileName"), fileController.GetUploadFile)
 }

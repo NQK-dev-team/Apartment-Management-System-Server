@@ -16,8 +16,10 @@ func InitCustomValidationRules() {
 	Validate.RegisterValidation("dob_18", ValidateDoB)
 	Validate.RegisterValidation("image_type", ValidateImageType)
 	Validate.RegisterValidation("file_type", ValidateFileType)
+	Validate.RegisterValidation("upload_type", ValidateUploadType)
 	Validate.RegisterValidation("image_size", ValidateImageSize)
 	Validate.RegisterValidation("file_size", ValidateFileSize)
+	Validate.RegisterValidation("upload_size", ValidateUploadSize)
 	Validate.RegisterValidation("check_date_equal_or_after", CheckDateEqualOrAfter)
 	Validate.RegisterValidation("check_date_equal_or_before", CheckDateEqualOrBefore)
 	Validate.RegisterValidation("contract_type_and_end_date", ValidateContractTypeAndEndDate)
@@ -113,6 +115,19 @@ func ValidateFileType(fl validator.FieldLevel) bool {
 	return false
 }
 
+func ValidateUploadType(fl validator.FieldLevel) bool {
+	fileType := fl.Field().String()
+
+	// Check if the file's MIME type is in the list of allowed types
+	for _, t := range Common.FileUpload.AllowedUploadTypes {
+		if t == fileType {
+			return true
+		}
+	}
+
+	return false
+}
+
 func ValidateImageSize(fl validator.FieldLevel) bool {
 	fileSize := fl.Field().Interface().(int64)
 
@@ -123,6 +138,12 @@ func ValidateFileSize(fl validator.FieldLevel) bool {
 	fileSize := fl.Field().Interface().(int64)
 
 	return fileSize < Common.FileUpload.MaxFileSize
+}
+
+func ValidateUploadSize(fl validator.FieldLevel) bool {
+	fileSize := fl.Field().Interface().(int64)
+
+	return fileSize < Common.FileUpload.MaxUploadSize
 }
 
 func GetValidateErrorMessage(err error) string {

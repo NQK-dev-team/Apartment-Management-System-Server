@@ -3,11 +3,13 @@ package controllers
 import (
 	"api/config"
 	"api/constants"
+	"api/models"
 	"api/services"
 	"api/structs"
 	"api/utils"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,6 +19,7 @@ type FileController struct {
 	contractService       *services.ContractService
 	supportTicketService  *services.SupportTicketService
 	notificationService   *services.NotificationService
+	uploadService         *services.UploadService
 }
 
 func NewFileController() *FileController {
@@ -25,6 +28,7 @@ func NewFileController() *FileController {
 		contractService:       services.NewContractService(),
 		supportTicketService:  services.NewSupportTicketService(),
 		notificationService:   services.NewNotificationService(),
+		uploadService:         services.NewUploadService(),
 	}
 }
 
@@ -237,6 +241,39 @@ func (c *FileController) GetNotificationFile(ctx *gin.Context) {
 	}
 
 	if err := utils.GetFile(ctx, constants.GetNotificationFileURL("files", notificationIDStr, filename)); err != nil {
+		response.Message = config.GetMessageCode("FILE_NOT_FOUND")
+		ctx.JSON(http.StatusNotFound, response)
+		return
+	}
+}
+
+func (c *FileController) GetUploadFile(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	uploadIDStr := ctx.Param("uploadID")
+	uploadID, _ := strconv.ParseInt(uploadIDStr, 10, 64)
+	filename := ctx.Param("fileName")
+
+	if uploadID == 0 || filename == "" {
+		response.Message = config.GetMessageCode("FILE_NOT_FOUND")
+		ctx.JSON(http.StatusNotFound, response)
+		return
+	}
+
+	upload := &models.UploadFileModel{}
+	if err := c.uploadService.GetUploadByID(ctx, upload, uploadID); err != nil {
+		response.Message = config.GetMessageCode("FILE_NOT_FOUND")
+		ctx.JSON(http.StatusNotFound, response)
+		return
+	}
+
+	if upload.ID == 0 || strings.Index(upload.URLPath, filename) == -1 {
+		response.Message = config.GetMessageCode("FILE_NOT_FOUND")
+		ctx.JSON(http.StatusNotFound, response)
+		return
+	}
+
+	if err := utils.GetFile(ctx, constants.GetUploadFileURL("files", uploadIDStr, filename)); err != nil {
 		response.Message = config.GetMessageCode("FILE_NOT_FOUND")
 		ctx.JSON(http.StatusNotFound, response)
 		return

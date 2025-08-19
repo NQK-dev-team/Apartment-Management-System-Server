@@ -30,6 +30,7 @@ func InitRoutes(router *gin.RouterGroup) {
 		InitRoomRoutes(r)
 		InitBillRoutes(r)
 		InitNotificationRoutes(r)
+		InitUploadRoutes(r)
 	}
 }
 

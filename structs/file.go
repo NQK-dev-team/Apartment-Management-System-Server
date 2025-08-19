@@ -19,6 +19,11 @@ type FileValidation struct {
 	Size int64  `validate:"file_size"`
 }
 
+type UploadValidation struct {
+	Type string `validate:"upload_type"`
+	Size int64  `validate:"upload_size"`
+}
+
 type ValidateEditBuildingFile struct {
 	NewBuildingImages []ImageValidation      `validate:"dive"`
 	Rooms             []ValidateEditRoomFile `validate:"dive"`
@@ -64,4 +69,8 @@ type ValidateSupportTicketFile struct {
 
 type ValidateNoticeFile struct {
 	Files []FileValidation `validate:"dive"`
+}
+
+type ValidateUploadFile struct {
+	File UploadValidation
 }

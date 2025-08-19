@@ -211,6 +211,43 @@ func StoreFile(file *multipart.FileHeader, folder string) (string, error) {
 	return "", errors.New("failed to save file to all storage services")
 }
 
+func StoreFileSingleMedia(file *multipart.FileHeader, folder string) (string, error) {
+	if folder == "" {
+		return "", errors.New("folder cannot be empty")
+	}
+
+	fileName := generateUniqueFileName() + filepath.Ext(file.Filename)
+	if folder[len(folder)-1:] != "/" {
+		folder = folder + "/"
+	}
+
+	filePath := folder + fileName
+
+	var err1, err2, err3 error
+
+	if s3Client != nil {
+		err1 = saveFileToS3(file, filePath)
+	} else {
+		err1 = errors.New("can not save file to S3")
+	}
+
+	if minioClient != nil && err1 != nil {
+		err2 = saveFileToMinio(file, filePath)
+	} else {
+		err2 = errors.New("can not save file to MinIO")
+	}
+
+	if err1 != nil && err2 != nil {
+		err3 = saveFileToLocal(file, filePath)
+	}
+
+	if err1 == nil || err2 == nil || err3 == nil {
+		return "/api/" + filePath, nil
+	}
+
+	return "", errors.New("failed to save file to any storage service")
+}
+
 func removeFileFromS3(filePath string) error {
 	if filePath == "" {
 		return nil
@@ -291,7 +328,7 @@ func getFileFromS3(ctx *gin.Context, filePath string) error {
 	// file.Header = make(map[string][]string)
 	// file.Header.Set("Content-Type", "application/octet-stream")
 
-	ctx.Header("Content-Type", "image/"+strings.TrimPrefix(filepath.Ext(filepath.Base(filePath)), "."))
+	// ctx.Header("Content-Type", "image/"+strings.TrimPrefix(filepath.Ext(filepath.Base(filePath)), "."))
 	ctx.Header("Content-Disposition", "inline; filename="+filepath.Base(filePath))
 	ctx.Header("Content-Length", strconv.FormatInt(contentLength, 10))
 
@@ -320,7 +357,7 @@ func getFileFromMinio(ctx *gin.Context, filePath string) error {
 		return errors.New("file is empty")
 	}
 
-	ctx.Header("Content-Type", "image/"+strings.TrimPrefix(filepath.Ext(filepath.Base(filePath)), "."))
+	// ctx.Header("Content-Type", "image/"+strings.TrimPrefix(filepath.Ext(filepath.Base(filePath)), "."))
 	ctx.Header("Content-Disposition", "inline; filename="+filepath.Base(filePath))
 	ctx.Header("Content-Length", strconv.FormatInt(contentLength, 10))
 
@@ -357,7 +394,7 @@ func getFileFromLocal(ctx *gin.Context, filePath string) error {
 	// file.Content = fileBytes
 	// file.Header.Set("Content-Type", "application/octet-stream")
 
-	ctx.Header("Content-Type", "image/"+strings.TrimPrefix(filepath.Ext(filepath.Base(filePath)), "."))
+	// ctx.Header("Content-Type", "image/"+strings.TrimPrefix(filepath.Ext(filepath.Base(filePath)), "."))
 	ctx.Header("Content-Disposition", "inline; filename="+filepath.Base(filePath))
 	ctx.Header("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
 
