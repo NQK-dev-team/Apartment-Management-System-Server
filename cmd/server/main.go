@@ -56,8 +56,8 @@ func main() {
 		panic(err)
 	}
 
-	// Init AWS S3 service
-	utils.InitS3Connection()
+	// Init storage services
+	utils.InitStorageServices()
 
 	// Router settings
 	// Limit form size to 500 MB

@@ -17,48 +17,70 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-var s3Error error
-var s3Client *s3.Client
+var (
+	s3Client    *s3.Client    = nil
+	minioClient *minio.Client = nil
+)
 
-func InitS3Connection() {
+func initS3Connection() {
 	awsRegion := appConfig.GetEnv("AWS_REGION")
 	if awsRegion == "" {
 		awsRegion = "ap-southeast-2"
 	}
 
 	if appConfig.GetEnv("AWS_BUCKET") == "" {
-		s3Error = errors.New("AWS_BUCKET is not set")
 		return
 	}
 
 	if appConfig.GetEnv("AWS_ACCESS_KEY_ID") == "" {
-		s3Error = errors.New("AWS_ACCESS_KEY_ID is not set")
 		return
 	}
 
 	if appConfig.GetEnv("AWS_SECRET_ACCESS_KEY") == "" {
-		s3Error = errors.New("AWS_SECRET_ACCESS_KEY is not set")
 		return
 	}
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 
 	if err != nil {
-		s3Error = err
 		return
 	}
 
 	localS3Client := s3.NewFromConfig(cfg)
-	// _, err = localS3Client.HeadObject(context.TODO(), &s3.HeadObjectInput{})
-
-	// if err != nil {
-	// 	s3Error = err
-	// 	return
-	// }
-
 	s3Client = localS3Client
+}
+
+func initMinioConnection() {
+	endpoint := appConfig.GetEnv("MINIO_ENDPOINT")
+	if endpoint == "" {
+		return
+	}
+
+	accessKey := appConfig.GetEnv("MINIO_ACCESS_KEY")
+	if accessKey == "" {
+		return
+	}
+
+	secretKey := appConfig.GetEnv("MINIO_SECRET_KEY")
+	if secretKey == "" {
+		return
+	}
+
+	useSSL := appConfig.GetEnv("MINIO_USE_SSL") == "true"
+
+	minioClient, _ = minio.New(endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
+		Secure: useSSL,
+	})
+}
+
+func InitStorageServices() {
+	initS3Connection()
+	initMinioConnection()
 }
 
 func generateUniqueFileName() string {
@@ -71,16 +93,20 @@ func generateUniqueFileName() string {
 	return fileName
 }
 
-func checkS3Connection() bool {
-	return s3Error == nil
-}
-
 func fileExistsInS3(path string) bool {
 	_, err := s3Client.HeadObject(context.TODO(), &s3.HeadObjectInput{
 		Bucket: aws.String(appConfig.GetEnv("AWS_BUCKET")),
 		Key:    aws.String(path),
 	})
 
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func fileExistsInMinio(path string) bool {
+	_, err := minioClient.StatObject(context.TODO(), appConfig.GetEnv("MINIO_BUCKET"), path, minio.StatObjectOptions{})
 	if err != nil {
 		return false
 	}
@@ -101,6 +127,21 @@ func saveFileToS3(file *multipart.FileHeader, filePath string) error {
 		Body:   fileContent,
 		// ContentType: aws.String(file.Header.Get("Content-Type")),
 	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func saveFileToMinio(file *multipart.FileHeader, filePath string) error {
+	fileContent, err := file.Open()
+	if err != nil {
+		return err
+	}
+	defer fileContent.Close()
+
+	_, err = minioClient.PutObject(context.TODO(), appConfig.GetEnv("MINIO_BUCKET"), filePath, fileContent, file.Size, minio.PutObjectOptions{})
 	if err != nil {
 		return err
 	}
@@ -146,18 +187,28 @@ func StoreFile(file *multipart.FileHeader, folder string) (string, error) {
 
 	filePath := folder + fileName
 
-	if checkS3Connection() {
-		if err := saveFileToS3(file, filePath); err != nil {
-			if err := saveFileToLocal(file, filePath); err != nil {
-				return "", err
-			}
+	var err error
+
+	if s3Client != nil {
+		err = saveFileToS3(file, filePath)
+		if err == nil {
+			return "/api/" + filePath, nil
 		}
+	}
+
+	if minioClient != nil {
+		err = saveFileToMinio(file, filePath)
+		if err == nil {
+			return "/api/" + filePath, nil
+		}
+	}
+
+	err = saveFileToLocal(file, filePath)
+	if err == nil {
 		return "/api/" + filePath, nil
 	}
-	if err := saveFileToLocal(file, filePath); err != nil {
-		return "", err
-	}
-	return "/api/" + filePath, nil
+
+	return "", err
 }
 
 func removeFileFromS3(filePath string) error {
@@ -169,6 +220,18 @@ func removeFileFromS3(filePath string) error {
 		Bucket: aws.String(appConfig.GetEnv("AWS_BUCKET")),
 		Key:    aws.String(filePath),
 	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func removeFileFromMinio(filePath string) error {
+	if filePath == "" {
+		return nil
+	}
+
+	err := minioClient.RemoveObject(context.TODO(), appConfig.GetEnv("MINIO_BUCKET"), filePath, minio.RemoveObjectOptions{})
 	if err != nil {
 		return err
 	}
@@ -187,47 +250,24 @@ func removeFileFromLocal(filePath string) error {
 func RemoveFile(filePath string) {
 	filePath = strings.Replace(filePath, "/api/", "", -1)
 
-	if checkS3Connection() && fileExistsInS3(filePath) {
-		if err := removeFileFromS3(filePath); err != nil {
-			removeFileFromLocal(filePath)
+	var err error
+
+	if s3Client != nil && fileExistsInS3(filePath) {
+		err = removeFileFromS3(filePath)
+		if err == nil {
+			return
 		}
-		return
 	}
+
+	if minioClient != nil && fileExistsInMinio(filePath) {
+		err = removeFileFromMinio(filePath)
+		if err == nil {
+			return
+		}
+	}
+
 	removeFileFromLocal(filePath)
 }
-
-// func getFileFromS3(file *structs.CustomFileStruct, filePath string) error {
-// 	result, err := s3Client.GetObject(context.TODO(), &s3.GetObjectInput{
-// 		Bucket: aws.String(appConfig.GetEnv("AWS_BUCKET")),
-// 		Key:    aws.String(filePath),
-// 	})
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer result.Body.Close()
-
-// 	// Read file content into buffer
-// 	buf := new(bytes.Buffer)
-// 	if _, err := io.Copy(buf, result.Body); err != nil {
-// 		return err
-// 	}
-
-// 	// Extract file metadata
-// 	contentLength := aws.ToInt64(result.ContentLength)
-
-// 	if contentLength == 0 {
-// 		return errors.New("file is empty")
-// 	}
-
-// 	// Populate the file struct
-// 	file.Filename = filepath.Base(filePath)
-// 	file.Content = buf.Bytes()
-// 	file.Size = contentLength
-// 	file.Header = make(map[string][]string)
-// 	file.Header.Set("Content-Type", "application/octet-stream")
-
-// 	return nil
-// }
 
 func getFileFromS3(ctx *gin.Context, filePath string) error {
 	result, err := s3Client.GetObject(context.TODO(), &s3.GetObjectInput{
@@ -270,34 +310,34 @@ func getFileFromS3(ctx *gin.Context, filePath string) error {
 	return nil
 }
 
-// func getFileFromLocal(file *structs.CustomFileStruct, filePath string) error {
-// 	filePath = filepath.Join("assets", "files", filePath)
-// 	fileContent, err := os.Open(filePath)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer fileContent.Close()
+func getFileFromMinio(ctx *gin.Context, filePath string) error {
+	object, err := minioClient.GetObject(context.TODO(), appConfig.GetEnv("MINIO_BUCKET"), filePath, minio.GetObjectOptions{})
+	if err != nil {
+		return err
+	}
+	defer object.Close()
 
-// 	fileInfo, err := fileContent.Stat()
-// 	if err != nil {
-// 		return err
-// 	}
+	fileInfo, err := object.Stat()
+	if err != nil {
+		return err
+	}
 
-// 	fileBytes, err := io.ReadAll(fileContent)
+	contentLength := fileInfo.Size
 
-// 	if err != nil {
-// 		return err
-// 	}
+	if contentLength == 0 {
+		return errors.New("file is empty")
+	}
 
-// 	// *file = *fileHeader
-// 	file.Filename = filepath.Base(filePath)
-// 	file.Size = fileInfo.Size()
-// 	file.Header = make(map[string][]string)
-// 	file.Content = fileBytes
-// 	file.Header.Set("Content-Type", "application/octet-stream")
+	ctx.Header("Content-Type", "image/"+strings.TrimPrefix(filepath.Ext(filepath.Base(filePath)), "."))
+	ctx.Header("Content-Disposition", "inline; filename="+filepath.Base(filePath))
+	ctx.Header("Content-Length", strconv.FormatInt(contentLength, 10))
 
-// 	return nil
-// }
+	if _, err := io.Copy(ctx.Writer, object); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func getFileFromLocal(ctx *gin.Context, filePath string) error {
 	filePath = filepath.Join("assets", "files", filePath)
@@ -336,27 +376,25 @@ func getFileFromLocal(ctx *gin.Context, filePath string) error {
 	return nil
 }
 
-// func GetFile(file *structs.CustomFileStruct, filePath string) error {
-// 	if checkS3Connection() {
-// 		if err := getFileFromS3(file, filePath); err != nil {
-// 			return getFileFromLocal(file, filePath)
-// 		}
-// 		return nil
-// 	}
-
-// 	return getFileFromLocal(file, filePath)
-// }
-
 func GetFile(ctx *gin.Context, filePath string) error {
 	if filePath == "" {
 		return errors.New("file path cannot be empty")
 	}
 
-	if checkS3Connection() && fileExistsInS3(filePath) {
-		if err := getFileFromS3(ctx, filePath); err != nil {
-			return getFileFromLocal(ctx, filePath)
+	var err error
+
+	if s3Client != nil && fileExistsInS3(filePath) {
+		err = getFileFromS3(ctx, filePath)
+		if err == nil {
+			return nil
 		}
-		return nil
+	}
+
+	if minioClient != nil && fileExistsInMinio(filePath) {
+		err = getFileFromMinio(ctx, filePath)
+		if err == nil {
+			return nil
+		}
 	}
 
 	return getFileFromLocal(ctx, filePath)
