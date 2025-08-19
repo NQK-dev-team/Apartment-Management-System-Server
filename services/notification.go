@@ -32,21 +32,9 @@ func (s *NotificationService) UpdateNotificationReadStatus(ctx *gin.Context, id 
 		return false, nil
 	}
 
-	jwt := ctx.GetString("jwt")
-
-	token, err := utils.ValidateJWTToken(jwt)
-
-	if err != nil {
-		return true, err
-	}
-
-	claim := &structs.JTWClaim{}
-
-	utils.ExtractJWTClaim(token, claim)
-
 	relation := &models.NotificationReceiverModel{}
 
-	if err := s.notificationRepository.GetReceiverNotificationRelation(ctx, id, claim.UserID, relation); err != nil {
+	if err := s.notificationRepository.GetReceiverNotificationRelation(ctx, id, ctx.GetInt64("userID"), relation); err != nil {
 		return true, err
 	}
 
@@ -76,21 +64,9 @@ func (s *NotificationService) UpdateNotificationImportantStatus(ctx *gin.Context
 		return false, nil
 	}
 
-	jwt := ctx.GetString("jwt")
-
-	token, err := utils.ValidateJWTToken(jwt)
-
-	if err != nil {
-		return true, err
-	}
-
-	claim := &structs.JTWClaim{}
-
-	utils.ExtractJWTClaim(token, claim)
-
 	relation := &models.NotificationReceiverModel{}
 
-	if err := s.notificationRepository.GetReceiverNotificationRelation(ctx, id, claim.UserID, relation); err != nil {
+	if err := s.notificationRepository.GetReceiverNotificationRelation(ctx, id, ctx.GetInt64("userID"), relation); err != nil {
 		return true, err
 	}
 
@@ -120,22 +96,10 @@ func (s *NotificationService) MarkMultiNotiAsRead(ctx *gin.Context, ids *[]int64
 		return false, nil
 	}
 
-	jwt := ctx.GetString("jwt")
-
-	token, err := utils.ValidateJWTToken(jwt)
-
-	if err != nil {
-		return true, err
-	}
-
-	claim := &structs.JTWClaim{}
-
-	utils.ExtractJWTClaim(token, claim)
-
 	for _, id := range *ids {
 		relation := &models.NotificationReceiverModel{}
 
-		if err := s.notificationRepository.GetReceiverNotificationRelation(ctx, id, claim.UserID, relation); err != nil {
+		if err := s.notificationRepository.GetReceiverNotificationRelation(ctx, id, ctx.GetInt64("userID"), relation); err != nil {
 			return true, err
 		}
 
@@ -148,7 +112,7 @@ func (s *NotificationService) MarkMultiNotiAsRead(ctx *gin.Context, ids *[]int64
 		for _, id := range *ids {
 			relation := &models.NotificationReceiverModel{}
 
-			if err := s.notificationRepository.GetReceiverNotificationRelation(ctx, id, claim.UserID, relation); err != nil {
+			if err := s.notificationRepository.GetReceiverNotificationRelation(ctx, id, ctx.GetInt64("userID"), relation); err != nil {
 				return err
 			}
 

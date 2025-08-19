@@ -25,21 +25,9 @@ func NewUploadService() *UploadService {
 }
 
 func (s *UploadService) UploadFile(ctx *gin.Context, upload *structs.UploadStruct) error {
-	jwt := ctx.GetString("jwt")
-
-	token, err := utils.ValidateJWTToken(jwt)
-
-	if err != nil {
-		return err
-	}
-
-	claim := &structs.JTWClaim{}
-
-	utils.ExtractJWTClaim(token, claim)
-
 	return config.DB.Transaction(func(tx *gorm.DB) error {
 		uploadModel := &models.UploadFileModel{
-			CreatorID:   claim.UserID,
+			CreatorID:   ctx.GetInt64("userID"),
 			FileName:    upload.File.Filename,
 			URLPath:     "",
 			StoragePath: "",

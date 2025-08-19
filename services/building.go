@@ -43,19 +43,7 @@ func (s *BuildingService) GetBuilding(ctx *gin.Context, building *[]models.Build
 	role := ctx.GetString("role")
 
 	if role == constants.Roles.Manager && !getAll {
-		jwt := ctx.GetString("jwt")
-
-		token, err := utils.ValidateJWTToken(jwt)
-
-		if err != nil {
-			return true, err
-		}
-
-		claim := &structs.JTWClaim{}
-
-		utils.ExtractJWTClaim(token, claim)
-
-		return true, s.buildingRepository.GetBuildingBaseOnSchedule(ctx, building, claim.UserID)
+		return true, s.buildingRepository.GetBuildingBaseOnSchedule(ctx, building, ctx.GetInt64("userID"))
 	}
 
 	return true, s.buildingRepository.Get(ctx, building)
@@ -231,19 +219,7 @@ func (s *BuildingService) GetBuildingSchedule(ctx *gin.Context, buildingID int64
 	role := ctx.GetString("role")
 
 	if role == constants.Roles.Manager {
-		jwt := ctx.GetString("jwt")
-
-		token, err := utils.ValidateJWTToken(jwt)
-
-		if err != nil {
-			return true, err
-		}
-
-		claim := &structs.JTWClaim{}
-
-		utils.ExtractJWTClaim(token, claim)
-
-		return true, s.buildingRepository.GetManagerBuildingSchedule(ctx, buildingID, schedules, claim.UserID)
+		return true, s.buildingRepository.GetManagerBuildingSchedule(ctx, buildingID, schedules, ctx.GetInt64("userID"))
 	}
 
 	return true, s.buildingRepository.GetBuildingSchedule(ctx, buildingID, schedules)
@@ -253,21 +229,9 @@ func (s *BuildingService) GetBuildingRoom(ctx *gin.Context, buildingID int64, ro
 	role := ctx.GetString("role")
 
 	if role == constants.Roles.Manager {
-		jwt := ctx.GetString("jwt")
-
-		token, err := utils.ValidateJWTToken(jwt)
-
-		if err != nil {
-			return true, err
-		}
-
-		claim := &structs.JTWClaim{}
-
-		utils.ExtractJWTClaim(token, claim)
-
 		building := &[]models.BuildingModel{}
 
-		if err := s.buildingRepository.GetBuildingBaseOnSchedule(ctx, building, claim.UserID); err != nil {
+		if err := s.buildingRepository.GetBuildingBaseOnSchedule(ctx, building, ctx.GetInt64("userID")); err != nil {
 			return false, err
 		}
 
@@ -587,21 +551,9 @@ func (s *BuildingService) CheckManagerPermission(ctx *gin.Context, buildingID in
 	role := ctx.GetString("role")
 
 	if role == constants.Roles.Manager {
-		jwt := ctx.GetString("jwt")
-
-		token, err := utils.ValidateJWTToken(jwt)
-
-		if err != nil {
-			return false
-		}
-
-		claim := &structs.JTWClaim{}
-
-		utils.ExtractJWTClaim(token, claim)
-
 		buildings := []models.BuildingModel{}
 
-		if err := s.buildingRepository.GetBuildingBaseOnSchedule(ctx, &buildings, claim.UserID); err != nil {
+		if err := s.buildingRepository.GetBuildingBaseOnSchedule(ctx, &buildings, ctx.GetInt64("userID")); err != nil {
 			return false
 		}
 

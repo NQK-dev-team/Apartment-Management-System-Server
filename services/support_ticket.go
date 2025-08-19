@@ -8,7 +8,6 @@ import (
 	"api/structs"
 	"api/utils"
 	"database/sql"
-	"errors"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -35,22 +34,12 @@ func (s *SupportTicketService) GetSupportTickets(ctx *gin.Context, tickets *[]st
 	role := ctx.GetString("role")
 
 	if role == constants.Roles.Manager || role == constants.Roles.Customer {
-		jwt := ctx.GetString("jwt")
-
-		token, err := utils.ValidateJWTToken(jwt)
-
-		if err != nil {
-			return err
-		}
-
-		claim := &structs.JTWClaim{}
-
-		utils.ExtractJWTClaim(token, claim)
+		userID := ctx.GetInt64("userID")
 
 		if role == constants.Roles.Manager {
-			return s.supportTicketRepository.GetSupportTickets(ctx, tickets, limit, offset, startDate, endDate, &claim.UserID)
+			return s.supportTicketRepository.GetSupportTickets(ctx, tickets, limit, offset, startDate, endDate, &userID)
 		} else {
-			return s.supportTicketRepository.GetTicketsByCustomerID2(ctx, tickets, limit, offset, startDate, endDate, claim.UserID)
+			return s.supportTicketRepository.GetTicketsByCustomerID2(ctx, tickets, limit, offset, startDate, endDate, userID)
 		}
 	}
 
@@ -61,22 +50,12 @@ func (s *SupportTicketService) GetSupportTicket(ctx *gin.Context, ticket *struct
 	role := ctx.GetString("role")
 
 	if role == constants.Roles.Manager || role == constants.Roles.Customer {
-		jwt := ctx.GetString("jwt")
-
-		token, err := utils.ValidateJWTToken(jwt)
-
-		if err != nil {
-			return err
-		}
-
-		claim := &structs.JTWClaim{}
-
-		utils.ExtractJWTClaim(token, claim)
+		userID := ctx.GetInt64("userID")
 
 		if role == constants.Roles.Manager {
-			return s.supportTicketRepository.GetSupportTicket(ctx, ticket, ticketID, &claim.UserID)
+			return s.supportTicketRepository.GetSupportTicket(ctx, ticket, ticketID, &userID)
 		} else {
-			return s.supportTicketRepository.GetTicketByCustomerID(ctx, ticket, claim.UserID, ticketID)
+			return s.supportTicketRepository.GetTicketByCustomerID(ctx, ticket, userID, ticketID)
 		}
 	}
 
@@ -95,17 +74,7 @@ func (s *SupportTicketService) CheckManagerPermission(ctx *gin.Context, ticketID
 func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID int64) (bool, error) {
 	role := ctx.GetString("role")
 
-	jwt := ctx.GetString("jwt")
-
-	token, err := utils.ValidateJWTToken(jwt)
-
-	if err != nil {
-		return false, errors.New("jwt not valid")
-	}
-
-	claim := &structs.JTWClaim{}
-
-	utils.ExtractJWTClaim(token, claim)
+	userID := ctx.GetInt64("userID")
 
 	ticket := &models.SupportTicketModel{}
 
@@ -114,7 +83,7 @@ func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID i
 	}
 
 	if role == constants.Roles.Manager {
-		if !s.CheckManagerPermission(ctx, ticketID, claim.UserID) {
+		if !s.CheckManagerPermission(ctx, ticketID, userID) {
 			return false, nil
 		}
 
@@ -126,7 +95,7 @@ func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID i
 			Time:  time.Now(),
 			Valid: true,
 		}
-		ticket.ManagerID = claim.UserID
+		ticket.ManagerID = userID
 		ticket.ManagerResult = sql.NullBool{
 			Bool:  true,
 			Valid: true,
@@ -141,7 +110,7 @@ func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID i
 			Time:  time.Now(),
 			Valid: true,
 		}
-		ticket.OwnerID = claim.UserID
+		ticket.OwnerID = userID
 		ticket.OwnerResult = sql.NullBool{
 			Bool:  true,
 			Valid: true,
@@ -149,7 +118,7 @@ func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID i
 		ticket.Status = constants.Common.SupportTicketStatus.APPROVED
 	}
 
-	err = config.DB.Transaction(func(tx *gorm.DB) error {
+	err := config.DB.Transaction(func(tx *gorm.DB) error {
 		if err := s.supportTicketRepository.Update(ctx, tx, ticket, ticketID); err != nil {
 			return err
 		}
@@ -166,18 +135,7 @@ func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID i
 
 func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int64) (bool, error) {
 	role := ctx.GetString("role")
-
-	jwt := ctx.GetString("jwt")
-
-	token, err := utils.ValidateJWTToken(jwt)
-
-	if err != nil {
-		return false, errors.New("jwt not valid")
-	}
-
-	claim := &structs.JTWClaim{}
-
-	utils.ExtractJWTClaim(token, claim)
+	userID := ctx.GetInt64("userID")
 
 	ticket := &models.SupportTicketModel{}
 
@@ -186,7 +144,7 @@ func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int6
 	}
 
 	if role == constants.Roles.Manager {
-		if !s.CheckManagerPermission(ctx, ticketID, claim.UserID) {
+		if !s.CheckManagerPermission(ctx, ticketID, userID) {
 			return false, nil
 		}
 
@@ -198,7 +156,7 @@ func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int6
 			Time:  time.Now(),
 			Valid: true,
 		}
-		ticket.ManagerID = claim.UserID
+		ticket.ManagerID = userID
 		ticket.ManagerResult = sql.NullBool{
 			Bool:  false,
 			Valid: true,
@@ -212,7 +170,7 @@ func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int6
 			Time:  time.Now(),
 			Valid: true,
 		}
-		ticket.OwnerID = claim.UserID
+		ticket.OwnerID = userID
 		ticket.OwnerResult = sql.NullBool{
 			Bool:  false,
 			Valid: true,
@@ -220,7 +178,7 @@ func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int6
 	}
 	ticket.Status = constants.Common.SupportTicketStatus.REJECTED
 
-	err = config.DB.Transaction(func(tx *gorm.DB) error {
+	err := config.DB.Transaction(func(tx *gorm.DB) error {
 		if err := s.supportTicketRepository.Update(ctx, tx, ticket, ticketID); err != nil {
 			return err
 		}
@@ -236,20 +194,8 @@ func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int6
 }
 
 func (s *SupportTicketService) DeleteTickets(ctx *gin.Context, ids []int64) (bool, error) {
-	jwt := ctx.GetString("jwt")
-
-	token, err := utils.ValidateJWTToken(jwt)
-
-	if err != nil {
-		return true, errors.New("jwt not valid")
-	}
-
-	claim := &structs.JTWClaim{}
-
-	utils.ExtractJWTClaim(token, claim)
-
 	deletableTickets := &[]models.SupportTicketModel{}
-	if err := s.supportTicketRepository.GetDeletableTickets(ctx, deletableTickets, ids, claim.UserID); err != nil {
+	if err := s.supportTicketRepository.GetDeletableTickets(ctx, deletableTickets, ids, ctx.GetInt64("userID")); err != nil {
 		return true, err
 	}
 
@@ -266,20 +212,8 @@ func (s *SupportTicketService) DeleteTickets(ctx *gin.Context, ids []int64) (boo
 }
 
 func (s *SupportTicketService) UpdateSupportTicket(ctx *gin.Context, ticketID int64, ticket *structs.UpdateSupportTicketRequest) (bool, bool, error) {
-	jwt := ctx.GetString("jwt")
-
-	token, err := utils.ValidateJWTToken(jwt)
-
-	if err != nil {
-		return true, true, err
-	}
-
-	claim := &structs.JTWClaim{}
-
-	utils.ExtractJWTClaim(token, claim)
-
 	structTicket := &structs.SupportTicket{}
-	if err := s.supportTicketRepository.GetTicketByCustomerID(ctx, structTicket, claim.UserID, ticketID); err != nil {
+	if err := s.supportTicketRepository.GetTicketByCustomerID(ctx, structTicket, ctx.GetInt64("userID"), ticketID); err != nil {
 		return true, true, err
 	}
 
@@ -287,13 +221,13 @@ func (s *SupportTicketService) UpdateSupportTicket(ctx *gin.Context, ticketID in
 		return true, false, nil
 	}
 
-	if !(structTicket.CustomerID == claim.UserID && structTicket.Status == constants.Common.SupportTicketStatus.PENDING && structTicket.OwnerID == 0 && structTicket.ManagerID == 0) {
+	if !(structTicket.CustomerID == ctx.GetInt64("userID") && structTicket.Status == constants.Common.SupportTicketStatus.PENDING && structTicket.OwnerID == 0 && structTicket.ManagerID == 0) {
 		return false, true, nil
 	}
 
 	deleteFileList := []string{}
 
-	err = config.DB.Transaction(func(tx *gorm.DB) error {
+	err := config.DB.Transaction(func(tx *gorm.DB) error {
 		if len(ticket.DeletedFiles) > 0 {
 			if err := s.supportTicketRepository.DeleteTicketFiles(ctx, tx, ticketID, ticket.DeletedFiles); err != nil {
 				return err
@@ -350,17 +284,7 @@ func (s *SupportTicketService) UpdateSupportTicket(ctx *gin.Context, ticketID in
 }
 
 func (s *SupportTicketService) AddSupportTicket(ctx *gin.Context, ticket *structs.CreateSupportTicketRequest) (bool, error) {
-	jwt := ctx.GetString("jwt")
-
-	token, err := utils.ValidateJWTToken(jwt)
-
-	if err != nil {
-		return true, err
-	}
-
-	claim := &structs.JTWClaim{}
-
-	utils.ExtractJWTClaim(token, claim)
+	userID := ctx.GetInt64("userID")
 
 	contract := &structs.Contract{}
 
@@ -374,12 +298,12 @@ func (s *SupportTicketService) AddSupportTicket(ctx *gin.Context, ticket *struct
 
 	isAllowed := false
 
-	if contract.HouseholderID == claim.UserID {
+	if contract.HouseholderID == userID {
 		isAllowed = true
 	}
 
 	for _, resident := range contract.Residents {
-		if resident.UserAccountID.Int64 == claim.UserID {
+		if resident.UserAccountID.Int64 == userID {
 			isAllowed = true
 			break
 		}
@@ -392,13 +316,13 @@ func (s *SupportTicketService) AddSupportTicket(ctx *gin.Context, ticket *struct
 	newTicket := &models.SupportTicketModel{
 		Title:      ticket.Title,
 		Content:    ticket.Content,
-		CustomerID: claim.UserID,
+		CustomerID: userID,
 		ContractID: contract.ID,
 	}
 
 	deleteFileList := []string{}
 
-	err = config.DB.Transaction(func(tx *gorm.DB) error {
+	err := config.DB.Transaction(func(tx *gorm.DB) error {
 		if err := s.supportTicketRepository.Add(ctx, tx, newTicket); err != nil {
 			return err
 		}

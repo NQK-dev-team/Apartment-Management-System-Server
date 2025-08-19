@@ -60,19 +60,7 @@ func (s *RoomService) GetRoomDetail(ctx *gin.Context, room *models.RoomModel, id
 }
 
 func (s *RoomService) GetRoomDetail2(ctx *gin.Context, room *structs.BuildingRoom, roomID int64) error {
-	jwt := ctx.GetString("jwt")
-
-	token, err := utils.ValidateJWTToken(jwt)
-
-	if err != nil {
-		return err
-	}
-
-	claim := &structs.JTWClaim{}
-
-	utils.ExtractJWTClaim(token, claim)
-
-	if err := s.roomRepository.GetById2(ctx, room, roomID, claim.UserID); err != nil {
+	if err := s.roomRepository.GetById2(ctx, room, roomID, ctx.GetInt64("userID")); err != nil {
 		return err
 	}
 
@@ -209,19 +197,7 @@ func (s *RoomService) UpdateRoomStatus() error {
 }
 
 func (s *RoomService) GetRoomList(ctx *gin.Context, rooms *[]structs.BuildingRoom) error {
-	jwt := ctx.GetString("jwt")
-
-	token, err := utils.ValidateJWTToken(jwt)
-
-	if err != nil {
-		return err
-	}
-
-	claim := &structs.JTWClaim{}
-
-	utils.ExtractJWTClaim(token, claim)
-
-	if err := s.roomRepository.GetRoomList(ctx, rooms, claim.UserID); err != nil {
+	if err := s.roomRepository.GetRoomList(ctx, rooms, ctx.GetInt64("userID")); err != nil {
 		return err
 	}
 
@@ -229,18 +205,6 @@ func (s *RoomService) GetRoomList(ctx *gin.Context, rooms *[]structs.BuildingRoo
 }
 
 func (s *RoomService) GetRoomSupportTicket(ctx *gin.Context, supportTickets *[]structs.SupportTicket, roomID int64) error {
-	jwt := ctx.GetString("jwt")
-
-	token, err := utils.ValidateJWTToken(jwt)
-
-	if err != nil {
-		return err
-	}
-
-	claim := &structs.JTWClaim{}
-
-	utils.ExtractJWTClaim(token, claim)
-
 	contract := &structs.Contract{}
 
 	if err := s.contractRepository.GetRoomActiveContract(ctx, contract, roomID); err != nil {
@@ -253,12 +217,12 @@ func (s *RoomService) GetRoomSupportTicket(ctx *gin.Context, supportTickets *[]s
 
 	isCustomerFound := false
 
-	if contract.HouseholderID == claim.UserID {
+	if contract.HouseholderID == ctx.GetInt64("userID") {
 		isCustomerFound = true
 	}
 
 	for _, resident := range contract.Residents {
-		if resident.UserAccountID.Int64 == claim.UserID {
+		if resident.UserAccountID.Int64 == ctx.GetInt64("userID") {
 			isCustomerFound = true
 			break
 		}

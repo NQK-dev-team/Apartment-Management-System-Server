@@ -35,22 +35,12 @@ func (s *BillService) GetBillList(ctx *gin.Context, bills *[]structs.Bill, limit
 	role := ctx.GetString("role")
 
 	if role == constants.Roles.Manager || role == constants.Roles.Customer {
-		jwt := ctx.GetString("jwt")
-
-		token, err := utils.ValidateJWTToken(jwt)
-		if err != nil {
-			return err
-		}
-
-		claim := &structs.JTWClaim{}
-		utils.ExtractJWTClaim(token, claim)
-
 		if role == constants.Roles.Manager {
-			if err := s.billRepository.GetBillListForManager(ctx, bills, startMonth, endMonth, limit, offset, claim.UserID); err != nil {
+			if err := s.billRepository.GetBillListForManager(ctx, bills, startMonth, endMonth, limit, offset, ctx.GetInt64("userID")); err != nil {
 				return err
 			}
 		} else {
-			if err := s.billRepository.GetBillListForCustomer(ctx, bills, startMonth, endMonth, limit, offset, claim.UserID); err != nil {
+			if err := s.billRepository.GetBillListForCustomer(ctx, bills, startMonth, endMonth, limit, offset, ctx.GetInt64("userID")); err != nil {
 				return err
 			}
 		}
@@ -68,20 +58,10 @@ func (s *BillService) DeleteBill(ctx *gin.Context, IDs []int64) (bool, error) {
 	role := ctx.GetString("role")
 
 	if constants.Roles.Owner == constants.Roles.Manager {
-		jwt := ctx.GetString("jwt")
-
-		token, err := utils.ValidateJWTToken(jwt)
-
-		if err != nil {
-			return true, err
-		}
-
-		claim := &structs.JTWClaim{}
-
-		utils.ExtractJWTClaim(token, claim)
+		userID := ctx.GetInt64("userID")
 
 		bills := []models.BillModel{}
-		if err := s.billRepository.GetDeletableBills(ctx, &bills, IDs, &claim.UserID); err != nil {
+		if err := s.billRepository.GetDeletableBills(ctx, &bills, IDs, &userID); err != nil {
 			return true, err
 		}
 
@@ -135,18 +115,8 @@ func (s *BillService) CheckManagerPermission(ctx *gin.Context, billID int64) boo
 }
 
 func (s *BillService) CheckCustomerPermission(ctx *gin.Context, billID int64) bool {
-	jwt := ctx.GetString("jwt")
-
-	token, err := utils.ValidateJWTToken(jwt)
-	if err != nil {
-		return false
-	}
-
-	claim := &structs.JTWClaim{}
-	utils.ExtractJWTClaim(token, claim)
-
 	bill := &structs.Bill{}
-	if err := s.billRepository.GetBillByIDForCustomer(ctx, bill, claim.UserID, billID); err != nil {
+	if err := s.billRepository.GetBillByIDForCustomer(ctx, bill, ctx.GetInt64("userID"), billID); err != nil {
 		return false
 	}
 
@@ -301,17 +271,7 @@ func (s *BillService) AddBill(ctx *gin.Context, bill *structs.AddBill, newBillID
 	role := ctx.GetString("role")
 
 	if role == constants.Roles.Manager {
-		jwt := ctx.GetString("jwt")
-
-		token, err := utils.ValidateJWTToken(jwt)
-		if err != nil {
-			return true, true, err
-		}
-
-		claim := &structs.JTWClaim{}
-		utils.ExtractJWTClaim(token, claim)
-
-		isAllowed, err := s.contractService.CheckManagerContractPermission(ctx, claim.UserID, bill.ContractID)
+		isAllowed, err := s.contractService.CheckManagerContractPermission(ctx, ctx.GetInt64("userID"), bill.ContractID)
 		if err != nil {
 			return true, true, err
 		}

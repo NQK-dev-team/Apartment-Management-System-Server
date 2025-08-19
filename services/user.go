@@ -8,7 +8,6 @@ import (
 	"api/structs"
 	"api/utils"
 	"database/sql"
-	"errors"
 	"strconv"
 	"time"
 
@@ -285,19 +284,7 @@ func (s *UserService) GetStaffList(ctx *gin.Context, users *[]models.UserModel) 
 	role := ctx.GetString("role")
 
 	if role == constants.Roles.Manager {
-		jwt := ctx.GetString("jwt")
-
-		token, err := utils.ValidateJWTToken(jwt)
-
-		if err != nil {
-			return errors.New("jwt not valid")
-		}
-
-		claim := &structs.JTWClaim{}
-
-		utils.ExtractJWTClaim(token, claim)
-
-		if err := s.userRepository.GetByIDs(ctx, users, []int64{claim.UserID}); err != nil {
+		if err := s.userRepository.GetByIDs(ctx, users, []int64{ctx.GetInt64("userID")}); err != nil {
 			return err
 		}
 		return nil
@@ -378,17 +365,7 @@ func (s *UserService) CheckDuplicateData(ctx *gin.Context, email string, ssn str
 }
 
 func (s *UserService) CheckDuplicateData2(ctx *gin.Context, ssn string, phone string, oldSSN string) (string, error) {
-	jwt := ctx.GetString("jwt")
-
-	token, err := utils.ValidateJWTToken(jwt)
-
-	if err != nil {
-		return "", errors.New("jwt not valid")
-	}
-
-	claim := &structs.JTWClaim{}
-
-	utils.ExtractJWTClaim(token, claim)
+	userID := ctx.GetInt64("userID")
 
 	user := &models.UserModel{}
 
@@ -396,7 +373,7 @@ func (s *UserService) CheckDuplicateData2(ctx *gin.Context, ssn string, phone st
 		return "", err
 	}
 
-	if user.ID != 0 && user.ID != claim.UserID {
+	if user.ID != 0 && user.ID != userID {
 		return config.GetMessageCode("SSN_ALREADY_EXISTS"), nil
 	}
 
@@ -406,7 +383,7 @@ func (s *UserService) CheckDuplicateData2(ctx *gin.Context, ssn string, phone st
 		return "", err
 	}
 
-	if user.ID != 0 && user.ID != claim.UserID {
+	if user.ID != 0 && user.ID != userID {
 		return config.GetMessageCode("PHONE_ALREADY_EXISTS"), nil
 	}
 
@@ -417,7 +394,7 @@ func (s *UserService) CheckDuplicateData2(ctx *gin.Context, ssn string, phone st
 			return "", err
 		}
 
-		if user.ID != 0 && user.ID != claim.UserID {
+		if user.ID != 0 && user.ID != userID {
 			return config.GetMessageCode("OLD_SSN_ALREADY_EXISTS"), nil
 		}
 	}
@@ -552,19 +529,7 @@ func (s *UserService) CreateCustomer(ctx *gin.Context, newCustomer *structs.NewC
 }
 
 func (s *UserService) GetUserInfo(ctx *gin.Context, user *models.UserModel) error {
-	jwt := ctx.GetString("jwt")
-
-	token, err := utils.ValidateJWTToken(jwt)
-
-	if err != nil {
-		return errors.New("jwt not valid")
-	}
-
-	claim := &structs.JTWClaim{}
-
-	utils.ExtractJWTClaim(token, claim)
-
-	if err := s.userRepository.GetByID(ctx, user, claim.UserID); err != nil {
+	if err := s.userRepository.GetByID(ctx, user, ctx.GetInt64("userID")); err != nil {
 		return err
 	}
 
@@ -572,24 +537,12 @@ func (s *UserService) GetUserInfo(ctx *gin.Context, user *models.UserModel) erro
 }
 
 func (s *UserService) UpdateProfile(ctx *gin.Context, profile *structs.UpdateProfile) error {
-	jwt := ctx.GetString("jwt")
-
-	token, err := utils.ValidateJWTToken(jwt)
-
-	if err != nil {
-		return errors.New("jwt not valid")
-	}
-
-	claim := &structs.JTWClaim{}
-
-	utils.ExtractJWTClaim(token, claim)
-
 	deleteFileList := []string{}
 
-	err = config.DB.Transaction(func(tx *gorm.DB) error {
+	err := config.DB.Transaction(func(tx *gorm.DB) error {
 		user := &models.UserModel{}
 
-		if err := s.userRepository.GetByID(ctx, user, claim.UserID); err != nil {
+		if err := s.userRepository.GetByID(ctx, user, ctx.GetInt64("userID")); err != nil {
 			return err
 		}
 
@@ -658,21 +611,9 @@ func (s *UserService) UpdateProfile(ctx *gin.Context, profile *structs.UpdatePro
 }
 
 func (s *UserService) ChangePassword(ctx *gin.Context, changePassword *structs.ChangePassword) (bool, error) {
-	jwt := ctx.GetString("jwt")
-
-	token, err := utils.ValidateJWTToken(jwt)
-
-	if err != nil {
-		return true, errors.New("jwt not valid")
-	}
-
-	claim := &structs.JTWClaim{}
-
-	utils.ExtractJWTClaim(token, claim)
-
 	user := &models.UserModel{}
 
-	if err := s.userRepository.GetByID(ctx, user, claim.UserID); err != nil {
+	if err := s.userRepository.GetByID(ctx, user, ctx.GetInt64("userID")); err != nil {
 		return true, err
 	}
 
@@ -701,29 +642,20 @@ func (s *UserService) ChangePassword(ctx *gin.Context, changePassword *structs.C
 }
 
 func (s *UserService) ChangeEmail(ctx *gin.Context, changeEmail *structs.ChangeEmail) (bool, bool, error) {
-	jwt := ctx.GetString("jwt")
-
-	token, err := utils.ValidateJWTToken(jwt)
-	if err != nil {
-		return true, true, errors.New("jwt not valid")
-	}
-
-	claim := &structs.JTWClaim{}
-
-	utils.ExtractJWTClaim(token, claim)
+	userID := ctx.GetInt64("userID")
 
 	user := &models.UserModel{}
 	if err := s.userRepository.GetByEmail(ctx, user, changeEmail.NewEmail); err != nil {
 		return true, true, err
 	}
 
-	if user.ID != 0 && user.ID != claim.UserID {
+	if user.ID != 0 && user.ID != userID {
 		return true, false, nil
 	}
 
 	user = &models.UserModel{}
 
-	if err := s.userRepository.GetByID(ctx, user, claim.UserID); err != nil {
+	if err := s.userRepository.GetByID(ctx, user, userID); err != nil {
 		return true, true, err
 	}
 
