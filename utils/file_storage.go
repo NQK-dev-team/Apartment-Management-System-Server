@@ -72,10 +72,16 @@ func initMinioConnection() {
 
 	useSSL := appConfig.GetEnv("MINIO_USE_SSL") == "true"
 
-	minioClient, _ = minio.New(endpoint, &minio.Options{
+	client, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
 		Secure: useSSL,
 	})
+
+	if err != nil {
+		return
+	}
+
+	minioClient = client
 }
 
 func InitStorageServices() {
