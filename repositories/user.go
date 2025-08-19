@@ -138,7 +138,9 @@ func (r *UserRepository) GetStaffDetail(ctx *gin.Context, user *models.UserModel
 }
 
 func (r *UserRepository) GetStaffSchedule(ctx *gin.Context, schedules *[]models.ManagerScheduleModel, staffID int64) error {
-	if err := config.DB.Model(&models.ManagerScheduleModel{}).Preload("Building").Preload("Manager").Where("manager_id = ?", staffID).Find(schedules).Error; err != nil {
+	if err := config.DB.Model(&models.ManagerScheduleModel{}).Preload("Building").Preload("Manager").
+		Joins("JOIN \"user\" ON \"user\".id = manager_id AND \"user\".deleted_at IS NULL").
+		Where("manager_id = ?", staffID).Find(schedules).Error; err != nil {
 		return err
 	}
 	return nil

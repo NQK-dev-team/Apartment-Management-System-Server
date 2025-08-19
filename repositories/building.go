@@ -182,7 +182,9 @@ func (r *BuildingRepository) GetServiceByID(ctx *gin.Context, service *models.Bu
 }
 
 func (r *BuildingRepository) GetBuildingSchedule(ctx *gin.Context, buildingID int64, schedule *[]models.ManagerScheduleModel) error {
-	if err := config.DB.Model(&models.ManagerScheduleModel{}).Preload("Manager").Preload("Building").
+	if err := config.DB.Model(&models.ManagerScheduleModel{}).Preload("Manager", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Building").
 		Joins("JOIN building on building.id = manager_schedule.building_id").
 		Where("building_id = ? AND building.deleted_at IS NULL AND manager_schedule.deleted_at IS NULL", buildingID).Find(schedule).Error; err != nil {
 		return err
@@ -198,7 +200,9 @@ func (r *BuildingRepository) GetBuildingRoom(ctx *gin.Context, buildingID int64,
 }
 
 func (r *BuildingRepository) GetManagerBuildingSchedule(ctx *gin.Context, buildingID int64, schedule *[]models.ManagerScheduleModel, mangerID int64) error {
-	if err := config.DB.Model(&models.ManagerScheduleModel{}).Preload("Manager").Preload("Building").
+	if err := config.DB.Model(&models.ManagerScheduleModel{}).Preload("Manager", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Building").
 		Joins("JOIN building on building.id = manager_schedule.building_id").
 		Where("building_id = ? AND manager_id = ? AND building.deleted_at IS NULL AND manager_schedule.deleted_at IS NULL", buildingID, mangerID).Find(schedule).Error; err != nil {
 		return err

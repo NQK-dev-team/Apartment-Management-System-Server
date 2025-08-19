@@ -43,7 +43,13 @@ func (r *SupportTicketRepository) GetById(ctx *gin.Context, ticket *models.Suppo
 
 func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[]structs.SupportTicket, limit int64, offset int64, startDate string, endDate string, managerID *int64) error {
 	if managerID == nil {
-		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager", func(db *gorm.DB) *gorm.DB {
+			return db.Unscoped()
+		}).Preload("Customer", func(db *gorm.DB) *gorm.DB {
+			return db.Unscoped()
+		}).Preload("Owner", func(db *gorm.DB) *gorm.DB {
+			return db.Unscoped()
+		}).Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 			Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
 			Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
 			Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
@@ -53,7 +59,13 @@ func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[
 			return err
 		}
 	} else {
-		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager", func(db *gorm.DB) *gorm.DB {
+			return db.Unscoped()
+		}).Preload("Customer", func(db *gorm.DB) *gorm.DB {
+			return db.Unscoped()
+		}).Preload("Owner", func(db *gorm.DB) *gorm.DB {
+			return db.Unscoped()
+		}).Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 			Joins("JOIN contract ON contract.id = support_ticket.contract_id AND contract.deleted_at IS NULL").
 			Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 			Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
@@ -72,7 +84,13 @@ func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[
 
 func (r *SupportTicketRepository) GetSupportTicket(ctx *gin.Context, ticket *structs.SupportTicket, ticketID int64, managerID *int64) error {
 	if managerID == nil {
-		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager", func(db *gorm.DB) *gorm.DB {
+			return db.Unscoped()
+		}).Preload("Customer", func(db *gorm.DB) *gorm.DB {
+			return db.Unscoped()
+		}).Preload("Owner", func(db *gorm.DB) *gorm.DB {
+			return db.Unscoped()
+		}).Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 			Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
 			Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
 			Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
@@ -81,7 +99,13 @@ func (r *SupportTicketRepository) GetSupportTicket(ctx *gin.Context, ticket *str
 			return err
 		}
 	} else {
-		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager", func(db *gorm.DB) *gorm.DB {
+			return db.Unscoped()
+		}).Preload("Customer", func(db *gorm.DB) *gorm.DB {
+			return db.Unscoped()
+		}).Preload("Owner", func(db *gorm.DB) *gorm.DB {
+			return db.Unscoped()
+		}).Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 			Joins("JOIN contract ON contract.id = support_ticket.contract_id AND contract.deleted_at IS NULL").
 			Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 			Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
@@ -98,7 +122,13 @@ func (r *SupportTicketRepository) GetSupportTicket(ctx *gin.Context, ticket *str
 }
 
 func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, tickets *[]structs.SupportTicket, managerID int64, limit int64, offset int64, startDate string, endDate string) error {
-	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Customer", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Owner", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 		Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
 		Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
@@ -112,7 +142,13 @@ func (r *SupportTicketRepository) GetTicketsByManagerID(ctx *gin.Context, ticket
 }
 
 func (r *SupportTicketRepository) GetTicketsByCustomerID(ctx *gin.Context, tickets *[]structs.SupportTicket, customerID int64) error {
-	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Customer", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Owner", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 		Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
 		Joins("LEFT JOIN room_resident_list ON room_resident_list.contract_id = contract.id").
 		Joins("JOIN room_resident ON room_resident_list.resident_id = room_resident.id AND room_resident.deleted_at IS NULL").
@@ -128,7 +164,13 @@ func (r *SupportTicketRepository) GetTicketsByCustomerID(ctx *gin.Context, ticke
 }
 
 func (r *SupportTicketRepository) GetTicketByCustomerID(ctx *gin.Context, ticket *structs.SupportTicket, customerID int64, ticketID int64) error {
-	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Customer", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Owner", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 		Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
 		Joins("LEFT JOIN room_resident_list ON room_resident_list.contract_id = contract.id").
 		Joins("JOIN room_resident ON room_resident_list.resident_id = room_resident.id AND room_resident.deleted_at IS NULL").
@@ -144,7 +186,13 @@ func (r *SupportTicketRepository) GetTicketByCustomerID(ctx *gin.Context, ticket
 }
 
 func (r *SupportTicketRepository) GetTicketsByCustomerID2(ctx *gin.Context, tickets *[]structs.SupportTicket, limit, offset int64, startDate string, endDate string, customerID int64) error {
-	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Customer", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Owner", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 		Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
 		Joins("LEFT JOIN room_resident_list ON room_resident_list.contract_id = contract.id").
 		Joins("JOIN room_resident ON room_resident_list.resident_id = room_resident.id AND room_resident.deleted_at IS NULL").
@@ -161,7 +209,13 @@ func (r *SupportTicketRepository) GetTicketsByCustomerID2(ctx *gin.Context, tick
 }
 
 func (r *SupportTicketRepository) GetTicketByRoomIDAndBuildingID(ctx *gin.Context, roomID int64, buildingID int64, startDate string, endDate string, tickets *[]models.SupportTicketModel) error {
-	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").
+	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Customer", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Owner", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).
 		Joins("JOIN contract ON contract.id = support_ticket.contract_id AND contract.deleted_at IS NULL").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
@@ -271,7 +325,13 @@ func (r *SupportTicketRepository) Add(ctx *gin.Context, tx *gorm.DB, ticket *mod
 }
 
 func (r *SupportTicketRepository) GetSupportTicketsByContractID(ctx *gin.Context, tickets *[]structs.SupportTicket, contractID int64) error {
-	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager").Preload("Customer").Preload("Owner").Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+	if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Customer", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Owner", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 		Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
 		Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").

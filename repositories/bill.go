@@ -19,7 +19,11 @@ func NewBillRepository() *BillRepository {
 }
 
 func (r *BillRepository) GetById(ctx *gin.Context, bill *structs.Bill, id int64) error {
-	if err := config.DB.Model(&models.BillModel{}).Preload("Contract").Preload("Contract.Householder").Preload("Payer").Preload("BillPayments").Select("bill.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+	if err := config.DB.Model(&models.BillModel{}).Preload("Contract").Preload("Contract.Householder", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Payer", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("BillPayments").Select("bill.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 		Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
@@ -30,7 +34,11 @@ func (r *BillRepository) GetById(ctx *gin.Context, bill *structs.Bill, id int64)
 }
 
 func (r *BillRepository) GetById2(ctx *gin.Context, bill *models.BillModel, id int64) error {
-	if err := config.DB.Model(&models.BillModel{}).Preload("Contract").Preload("Contract.Householder").Preload("Payer").Preload("BillPayments").
+	if err := config.DB.Model(&models.BillModel{}).Preload("Contract").Preload("Contract.Householder", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Payer", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("BillPayments").
 		Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
@@ -41,7 +49,9 @@ func (r *BillRepository) GetById2(ctx *gin.Context, bill *models.BillModel, id i
 }
 
 func (r *BillRepository) GetBillList(ctx *gin.Context, bills *[]structs.Bill, startMonth, endMonth string, limit, offset int64) error {
-	if err := config.DB.Model(&models.BillModel{}).Preload("Contract").Preload("Payer").Preload("BillPayments").Select("bill.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+	if err := config.DB.Model(&models.BillModel{}).Preload("Contract").Preload("Payer", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("BillPayments").Select("bill.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 		Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
@@ -54,7 +64,9 @@ func (r *BillRepository) GetBillList(ctx *gin.Context, bills *[]structs.Bill, st
 }
 
 func (r *BillRepository) GetBillListForManager(ctx *gin.Context, bills *[]structs.Bill, startMonth, endMonth string, limit, offset int64, managerID int64) error {
-	if err := config.DB.Model(&models.BillModel{}).Preload("Contract").Preload("Payer").Preload("BillPayments").Select("bill.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+	if err := config.DB.Model(&models.BillModel{}).Preload("Contract").Preload("Payer", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("BillPayments").Select("bill.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 		Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
@@ -75,7 +87,9 @@ func (r *BillRepository) GetBillListForCustomer(ctx *gin.Context, bills *[]struc
 		Joins("JOIN room_resident ON room_resident.id = room_resident_list.resident_id AND room_resident.deleted_at IS NULL").
 		Where("contract.deleted_at IS NULL AND (contract.householder_id = ? OR room_resident.user_account_id = ?)", customerID, customerID)
 
-	if err := config.DB.Model(&models.BillModel{}).Preload("Contract").Preload("Payer").Preload("BillPayments").Select("bill.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+	if err := config.DB.Model(&models.BillModel{}).Preload("Contract").Preload("Payer", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("BillPayments").Select("bill.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 		Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
@@ -92,7 +106,9 @@ func (r *BillRepository) GetByContractId(ctx *gin.Context, bills *[]models.BillM
 		Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
-		Where("contract_id = ? AND bill.deleted_at IS NULL", contractID).Preload("Payer").Preload("BillPayments").Find(bills).Error; err != nil {
+		Where("contract_id = ? AND bill.deleted_at IS NULL", contractID).Preload("Payer", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("BillPayments").Find(bills).Error; err != nil {
 		return err
 	}
 	return nil
@@ -179,7 +195,9 @@ func (r *BillRepository) GetBillByIDForCustomer(ctx *gin.Context, bill *structs.
 		Joins("JOIN room_resident ON room_resident.id = room_resident_list.resident_id AND room_resident.deleted_at IS NULL").
 		Where("contract.deleted_at IS NULL AND (contract.householder_id = ? OR room_resident.user_account_id = ?)", customerID, customerID)
 
-	if err := config.DB.Model(&models.BillModel{}).Preload("Contract").Preload("Payer").Preload("BillPayments").Select("bill.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+	if err := config.DB.Model(&models.BillModel{}).Preload("Contract").Preload("Payer", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("BillPayments").Select("bill.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 		Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").

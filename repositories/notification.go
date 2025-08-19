@@ -65,21 +65,27 @@ func (r *NotificationRepository) GetNotificationByID(ctx *gin.Context, id int64,
 // }
 
 func (r *NotificationRepository) GetSentNotification(ctx *gin.Context, notifications *[]models.NotificationModel, userID, limit, offset int64) error {
-	return config.DB.Model(&models.NotificationModel{}).Preload("Files").Preload("Sender").Where("sender_id = ?", userID).Order("send_time DESC").Limit(int(limit)).Offset(int(offset)).Find(notifications).Error
+	return config.DB.Model(&models.NotificationModel{}).Preload("Files").Preload("Sender", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Where("sender_id = ?", userID).Order("send_time DESC").Limit(int(limit)).Offset(int(offset)).Find(notifications).Error
 }
 
 func (r *NotificationRepository) GetInboxNotification(ctx *gin.Context, notifications *[]structs.Notification, userID, limit, offset int64) error {
-	return config.DB.Model(&models.NotificationModel{}).Preload("Sender").Preload("Files").Distinct().Select("notification.*, notification_receiver.mark_as_read as is_read, notification_receiver.mark_as_important as is_marked, \"user\".first_name as sender_first_name, \"user\".last_name as sender_last_name, \"user\".middle_name as sender_middle_name").
+	return config.DB.Model(&models.NotificationModel{}).Preload("Sender", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Files").Distinct().Select("notification.*, notification_receiver.mark_as_read as is_read, notification_receiver.mark_as_important as is_marked, \"user\".first_name as sender_first_name, \"user\".last_name as sender_last_name, \"user\".middle_name as sender_middle_name").
 		Joins("JOIN notification_receiver ON notification_receiver.notification_id = notification.id").
 		Joins("JOIN \"user\" ON \"user\".id = notification.sender_id").
-		Where("notification_receiver.user_id = ?", userID).Order("notification.send_time DESC").Limit(int(limit)).Offset(int(offset)).Find(notifications).Error
+		Where("notification_receiver.user_id = ? AND notification.deleted_at IS NULL", userID).Order("notification.send_time DESC").Limit(int(limit)).Offset(int(offset)).Find(notifications).Error
 }
 
 func (r *NotificationRepository) GetMarkedNotification(ctx *gin.Context, notifications *[]structs.Notification, userID, limit, offset int64) error {
-	return config.DB.Model(&models.NotificationModel{}).Preload("Sender").Preload("Files").Distinct().Select("notification.*, notification_receiver.mark_as_read as is_read, notification_receiver.mark_as_important as is_marked, \"user\".first_name as sender_first_name, \"user\".last_name as sender_last_name, \"user\".middle_name as sender_middle_name").
+	return config.DB.Model(&models.NotificationModel{}).Preload("Sender", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Files").Distinct().Select("notification.*, notification_receiver.mark_as_read as is_read, notification_receiver.mark_as_important as is_marked, \"user\".first_name as sender_first_name, \"user\".last_name as sender_last_name, \"user\".middle_name as sender_middle_name").
 		Joins("JOIN notification_receiver ON notification_receiver.notification_id = notification.id").
 		Joins("JOIN \"user\" ON \"user\".id = notification.sender_id").
-		Where("notification_receiver.user_id = ? AND is_marked = ?", userID, constants.Common.Notification.MarkedStatus).Order("notification.send_time DESC").Limit(int(limit)).Offset(int(offset)).Find(notifications).Error
+		Where("notification_receiver.user_id = ? AND is_marked = ? AND notification.deleted_at IS NULL", userID, constants.Common.Notification.MarkedStatus).Order("notification.send_time DESC").Limit(int(limit)).Offset(int(offset)).Find(notifications).Error
 }
 
 func (r *NotificationRepository) CreateNotification(ctx *gin.Context, tx *gorm.DB, notification *models.NotificationModel) error {

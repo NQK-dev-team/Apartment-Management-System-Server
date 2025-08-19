@@ -41,7 +41,9 @@ func (r *ContractRepository) GetRoomActiveContract(ctx *gin.Context, contract *s
 		return err
 	}
 
-	if err := config.DB.Model(&models.RoomResidentModel{}).Preload("UserAccount").Distinct().
+	if err := config.DB.Model(&models.RoomResidentModel{}).Preload("UserAccount", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Distinct().
 		Joins("JOIN room_resident_list ON room_resident_list.resident_id = room_resident.ID").
 		Where("room_resident_list.contract_id = ? AND room_resident.deleted_at IS NULL", (*contract).ID).
 		Find(&(*contract).Residents).Error; err != nil {
@@ -62,7 +64,11 @@ func (r *ContractRepository) GetContractByRoomID(ctx *gin.Context, contract *[]m
 }
 
 func (r *ContractRepository) GetContractsByManagerID(ctx *gin.Context, contracts *[]models.ContractModel, managerID int64) error {
-	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Householder", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).
 		Where("creator_id = ? AND contract.deleted_at IS NULL", managerID).Order("start_date DESC, end_date DESC, sign_date DESC").
 		Find(contracts).Error; err != nil {
 		return err
@@ -71,7 +77,11 @@ func (r *ContractRepository) GetContractsByManagerID(ctx *gin.Context, contracts
 }
 
 func (r *ContractRepository) GetContractByID(ctx *gin.Context, contract *structs.Contract, id int64) error {
-	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").Preload("Files").Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address").
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Householder", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Files").Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Where("contract.id = ? AND contract.deleted_at IS NULL", id).
@@ -79,7 +89,9 @@ func (r *ContractRepository) GetContractByID(ctx *gin.Context, contract *structs
 		return err
 	}
 
-	if err := config.DB.Model(&models.RoomResidentModel{}).Preload("UserAccount").Distinct().
+	if err := config.DB.Model(&models.RoomResidentModel{}).Preload("UserAccount", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Distinct().
 		Joins("JOIN room_resident_list ON room_resident_list.resident_id = room_resident.ID").
 		Where("room_resident_list.contract_id = ? AND room_resident.deleted_at IS NULL", (*contract).ID).
 		Find(&(*contract).Residents).Error; err != nil {
@@ -90,7 +102,11 @@ func (r *ContractRepository) GetContractByID(ctx *gin.Context, contract *structs
 }
 
 func (r *ContractRepository) GetContracts(ctx *gin.Context, contracts *[]structs.Contract, limit int64, offset int64) error {
-	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address").
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Householder", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Where("contract.deleted_at IS NULL").
@@ -103,7 +119,9 @@ func (r *ContractRepository) GetContracts(ctx *gin.Context, contracts *[]structs
 }
 
 func (r *ContractRepository) GetActiveContracts(ctx *gin.Context, contracts *[]structs.Contract, limit int64, offset int64) error {
-	if err := config.DB.Model(&models.ContractModel{}).Preload("Householder").Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address, building.id AS building_id").
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Householder", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address, building.id AS building_id").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 		Where("contract.deleted_at IS NULL AND contract.status = ?", constants.Common.ContractStatus.ACTIVE).
@@ -149,7 +167,11 @@ func (r *ContractRepository) GetContractsByManagerID2(ctx *gin.Context, contract
 		Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id AND manager_schedule.deleted_at IS NULL").
 		Where("contract.deleted_at IS NULL AND manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ?", managerID)
 
-	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Householder", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).
 		Table("(?) as all_contracts", query).
 		Select("all_contracts.*").
 		Limit(int(limit)).Offset(int(offset)).Order("all_contracts.start_date DESC, all_contracts.end_date DESC, all_contracts.sign_date DESC").
@@ -167,7 +189,9 @@ func (r *ContractRepository) GetActiveContractsByManagerID(ctx *gin.Context, con
 		Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id AND manager_schedule.deleted_at IS NULL").
 		Where("contract.deleted_at IS NULL AND manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ? AND contract.status = ?", managerID, constants.Common.ContractStatus.ACTIVE)
 
-	if err := config.DB.Model(&models.ContractModel{}).Preload("Householder").
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Householder", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).
 		Table("(?) as all_contracts", query).
 		Select("all_contracts.*").
 		Limit(int(limit)).Offset(int(offset)).Order("all_contracts.start_date DESC, all_contracts.end_date DESC, all_contracts.sign_date DESC").
@@ -188,7 +212,11 @@ func (r *ContractRepository) GetActiveContractsByManagerID(ctx *gin.Context, con
 }
 
 func (r *ContractRepository) GetContractsByCustomerID(ctx *gin.Context, contracts *[]structs.Contract, customerID int64) error {
-	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Householder", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).
 		Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
@@ -201,7 +229,11 @@ func (r *ContractRepository) GetContractsByCustomerID(ctx *gin.Context, contract
 }
 
 func (r *ContractRepository) GetContractsByCustomerID2(ctx *gin.Context, contracts *[]structs.Contract, customerID int64, limit int64, offset int64) error {
-	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").Distinct().
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Householder", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Distinct().
 		Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
@@ -216,7 +248,11 @@ func (r *ContractRepository) GetContractsByCustomerID2(ctx *gin.Context, contrac
 }
 
 func (r *ContractRepository) GetContractByRoomIDAndBuildingID(ctx *gin.Context, contracts *[]structs.Contract, roomID int64, buildingID int64) error {
-	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Householder", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).
 		Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
@@ -229,7 +265,11 @@ func (r *ContractRepository) GetContractByRoomIDAndBuildingID(ctx *gin.Context, 
 }
 
 func (r *ContractRepository) GetContractByRoomIDAndBuildingIDAndManagerID(ctx *gin.Context, contracts *[]structs.Contract, roomID int64, buildingID int64, managerID int64) error {
-	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator").Preload("Householder").
+	if err := config.DB.Model(&models.ContractModel{}).Preload("Creator", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).Preload("Householder", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}).
 		Select("contract.*, room.no AS room_no, room.floor AS room_floor, building.name AS building_name, building.address AS building_address").
 		Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
