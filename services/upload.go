@@ -58,6 +58,6 @@ func (s *UploadService) UploadFile(ctx *gin.Context, upload *structs.UploadStruc
 	})
 }
 
-func (s *UploadService) GetUploads(ctx *gin.Context, uploads *[]models.UploadFileModel, uploadType int, isProcessed bool) error {
-	return s.repository.Get(ctx, uploads, uploadType, isProcessed)
+func (s *UploadService) GetUploads(ctx *gin.Context, uploads *[]models.UploadFileModel, uploadType int, isProcessed bool, date string) error {
+	return s.repository.Get(ctx, uploads, uploadType, isProcessed, date)
 }

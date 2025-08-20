@@ -8,6 +8,7 @@ import (
 	"api/structs"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -88,7 +89,7 @@ func (c *UploadController) GetNotProcessedFiles(ctx *gin.Context) {
 		uploadType = 0
 	}
 
-	if err := c.service.GetUploads(ctx, uploads, uploadType, false); err != nil {
+	if err := c.service.GetUploads(ctx, uploads, uploadType, false, ""); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(http.StatusInternalServerError, response)
 		return
@@ -104,6 +105,7 @@ func (c *UploadController) GetProcessedFiles(ctx *gin.Context) {
 	uploads := &[]models.UploadFileModel{}
 
 	typeStr := ctx.DefaultQuery("type", "0")
+	dateStr := ctx.DefaultQuery("date", time.Now().Format("2006-01-02"))
 
 	uploadType, err := strconv.Atoi(typeStr)
 
@@ -111,7 +113,12 @@ func (c *UploadController) GetProcessedFiles(ctx *gin.Context) {
 		uploadType = 0
 	}
 
-	if err := c.service.GetUploads(ctx, uploads, uploadType, true); err != nil {
+	_, err = time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		dateStr = time.Now().Format("2006-01-02")
+	}
+
+	if err := c.service.GetUploads(ctx, uploads, uploadType, true, dateStr); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(http.StatusInternalServerError, response)
 		return

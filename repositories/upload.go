@@ -14,7 +14,7 @@ func NewUploadRepository() *UploadRepository {
 	return &UploadRepository{}
 }
 
-func (r *UploadRepository) Get(ctx *gin.Context, uploads *[]models.UploadFileModel, uploadType int, isProcessed bool) error {
+func (r *UploadRepository) Get(ctx *gin.Context, uploads *[]models.UploadFileModel, uploadType int, isProcessed bool, date string) error {
 	query := config.DB.Model(&models.UploadFileModel{}).Preload("Creator", func(db *gorm.DB) *gorm.DB {
 		return db.Unscoped().Select("id", "no", "first_name", "middle_name", "last_name", "is_owner", "is_manager", "is_customer")
 	})
@@ -22,7 +22,7 @@ func (r *UploadRepository) Get(ctx *gin.Context, uploads *[]models.UploadFileMod
 	query = query.Where("upload_type = ?", uploadType)
 
 	if isProcessed {
-		query = query.Where("process_result IS NOT NULL")
+		query = query.Where("process_result IS NOT NULL").Where("process_date = ?", date)
 	} else {
 		query = query.Where("process_result IS NULL")
 	}
