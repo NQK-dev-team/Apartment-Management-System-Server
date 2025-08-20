@@ -30,7 +30,7 @@ type userGenderStruct struct {
 	OTHER  int
 }
 
-type importTypeStruct struct {
+type uploadTypeStruct struct {
 	ADD_CUSTOMERS int
 	ADD_CONTRACTS int
 	ADD_BILLS     int
@@ -81,9 +81,12 @@ type Notification struct {
 }
 
 type WebsocketSignalType struct {
-	NewInbox     int
-	NewImportant int
-	NewSent      int
+	NewInbox       int
+	NewImportant   int
+	NewSent        int
+	UploadCustomer int
+	UploadContract int
+	UploadBill     int
 }
 
 var Common = struct {
@@ -92,7 +95,7 @@ var Common = struct {
 	ContractStatus       contractStatusStruct
 	RoomStatus           roomStatusStruct
 	UserGender           userGenderStruct
-	ImportType           importTypeStruct
+	UploadType           uploadTypeStruct
 	BillStatus           billStatusStruct
 	ResidentRelationship residentRelationshipStruct
 	FileUpload           fileUploadStruct
@@ -130,7 +133,7 @@ var Common = struct {
 		FEMALE: 2,
 		OTHER:  3,
 	},
-	ImportType: importTypeStruct{
+	UploadType: uploadTypeStruct{
 		ADD_CUSTOMERS: 1,
 		ADD_CONTRACTS: 2,
 		ADD_BILLS:     3,
@@ -175,9 +178,12 @@ var Common = struct {
 		UnreadStatus:   0,
 	},
 	WebsocketSignalType: WebsocketSignalType{
-		NewInbox:     1,
-		NewImportant: 2,
-		NewSent:      3,
+		NewInbox:       1,
+		NewImportant:   2,
+		NewSent:        3,
+		UploadCustomer: 4,
+		UploadContract: 5,
+		UploadBill:     6,
 	},
 	ImportProcessResult: importProcessResultStruct{
 		SUCCESS: 1,

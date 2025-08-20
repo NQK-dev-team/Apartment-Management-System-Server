@@ -60,6 +60,18 @@ func (c *UploadController) UploadFile(ctx *gin.Context) {
 		return
 	}
 
+	signal := &structs.BaseWSStruct{}
+
+	if upload.UploadType == constants.Common.UploadType.ADD_CUSTOMERS {
+		signal.Type = constants.Common.WebsocketSignalType.UploadCustomer
+	} else if upload.UploadType == constants.Common.UploadType.ADD_CONTRACTS {
+		signal.Type = constants.Common.WebsocketSignalType.UploadContract
+	} else if upload.UploadType == constants.Common.UploadType.ADD_BILLS {
+		signal.Type = constants.Common.WebsocketSignalType.UploadBill
+	}
+
+	AddBroadcast(signal)
+
 	response.Message = config.GetMessageCode("CREATE_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }
