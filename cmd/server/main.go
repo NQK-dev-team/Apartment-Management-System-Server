@@ -68,7 +68,7 @@ func main() {
 	routes.InitRoutes(httpRoutes)
 
 	// Init websocket routes
-	wsRoutes := router.Group("")
+	wsRoutes := router.Group("ws")
 	routes.InitWebSocketRoutes(wsRoutes)
 
 	// Init custom validation rules
