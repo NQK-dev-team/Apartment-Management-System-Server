@@ -33,7 +33,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func HandleNotificationConnection(ctx *gin.Context) {
+func HandleConnection(ctx *gin.Context) {
 	ws, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
 		// log.Printf("Failed to upgrade connection: %v", err)
