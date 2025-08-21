@@ -8,7 +8,6 @@ import (
 	"api/structs"
 	"api/utils"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -27,12 +26,12 @@ func NewUploadService() *UploadService {
 func (s *UploadService) UploadFile(ctx *gin.Context, upload *structs.UploadStruct) error {
 	return config.DB.Transaction(func(tx *gorm.DB) error {
 		uploadModel := &models.UploadFileModel{
-			CreatorID:   ctx.GetInt64("userID"),
-			FileName:    upload.File.Filename,
-			URLPath:     "",
-			StoragePath: "",
-			Size:        upload.File.Size,
-			UploadType:  upload.UploadType,
+			CreatorID: ctx.GetInt64("userID"),
+			FileName:  upload.File.Filename,
+			URLPath:   "",
+			// StoragePath: "",
+			Size:       upload.File.Size,
+			UploadType: upload.UploadType,
 		}
 
 		if err := s.repository.Create(ctx, tx, uploadModel); err != nil {
@@ -48,7 +47,7 @@ func (s *UploadService) UploadFile(ctx *gin.Context, upload *structs.UploadStruc
 		}
 
 		uploadModel.URLPath = filePath
-		uploadModel.StoragePath = strings.ReplaceAll(filePath, "/api/", "")
+		// uploadModel.StoragePath = strings.ReplaceAll(filePath, "/api/", "")
 
 		if err := s.repository.Update(ctx, tx, uploadModel); err != nil {
 			return err
