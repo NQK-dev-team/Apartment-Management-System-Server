@@ -163,7 +163,8 @@ var Common = struct {
 			"application/msword",
 			"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 		},
-		AllowedUploadTypes: []string{"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"},
+		// AllowedUploadTypes: []string{"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"},
+		AllowedUploadTypes: []string{"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
 		MaxImageSize:       2 * 1024 * 1024,  // 2 MB
 		MaxFileSize:        10 * 1024 * 1024, // 10 MB
 		MaxUploadSize:      20 * 1024 * 1024, // 20 MB
