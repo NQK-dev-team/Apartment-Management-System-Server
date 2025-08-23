@@ -8,6 +8,7 @@ import (
 	"api/utils"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -45,10 +46,22 @@ func (c *BillController) GetBillList(ctx *gin.Context) {
 	if startMonth == "" {
 		startMonth = utils.GetFirstDayOfQuarter()
 	} else {
-		startMonth = utils.GetFirstDayOfMonth(startMonth)
+		if _, err := time.Parse("2006-01", startMonth); err != nil {
+			startMonth = utils.GetFirstDayOfQuarter()
+		} else {
+			startMonth = utils.GetFirstDayOfMonth(startMonth)
+		}
 	}
 
-	endMonth = utils.GetLastDayOfMonth(endMonth)
+	if endMonth != "" {
+		if _, err := time.Parse("2006-01", endMonth); err != nil {
+			endMonth = utils.GetLastDayOfMonth("")
+		} else {
+			endMonth = utils.GetLastDayOfMonth(endMonth)
+		}
+	} else {
+		endMonth = utils.GetLastDayOfMonth(endMonth)
+	}
 
 	bills := []structs.Bill{}
 

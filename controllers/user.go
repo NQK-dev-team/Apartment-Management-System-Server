@@ -9,6 +9,7 @@ import (
 	"api/utils"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -140,10 +141,18 @@ func (c *UserController) GetStaffRelatedTicket(ctx *gin.Context) {
 
 	if startDate == "" {
 		startDate = utils.GetFirstDayOfMonth("")
+	} else {
+		if _, err := time.Parse("2006-01-02", startDate); err != nil {
+			startDate = utils.GetFirstDayOfMonth("")
+		}
 	}
 
 	if endDate == "" {
 		endDate = utils.GetCurrentDate()
+	} else {
+		if _, err := time.Parse("2006-01-02", endDate); err != nil {
+			endDate = utils.GetCurrentDate()
+		}
 	}
 
 	tickets := []structs.SupportTicket{}

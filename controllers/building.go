@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -596,10 +597,18 @@ func (c *BuildingController) GetRoomTicket(ctx *gin.Context) {
 
 	if startDate == "" {
 		startDate = utils.GetFirstDayOfMonth("")
+	} else {
+		if _, err := time.Parse("2006-01-02", startDate); err != nil {
+			startDate = utils.GetFirstDayOfMonth("")
+		}
 	}
 
 	if endDate == "" {
 		endDate = utils.GetCurrentDate()
+	} else {
+		if _, err := time.Parse("2006-01-02", endDate); err != nil {
+			endDate = utils.GetCurrentDate()
+		}
 	}
 
 	if permission := c.buildingService.CheckManagerPermission(ctx, buildingID); !permission {
