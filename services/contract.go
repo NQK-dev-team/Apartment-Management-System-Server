@@ -386,13 +386,15 @@ func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.Edi
 					UserAccountID:           sql.NullInt64{Int64: customer.ID, Valid: true},
 				}
 			} else {
+				dob, _ := time.Parse("2006-01-02", resident.DOB)
+
 				residentData = &models.RoomResidentModel{
 					FirstName:               resident.FirstName,
 					LastName:                resident.LastName,
 					MiddleName:              sql.NullString{String: resident.MiddleName, Valid: resident.MiddleName != ""},
 					SSN:                     sql.NullString{String: resident.SSN, Valid: resident.SSN != ""},
 					OldSSN:                  sql.NullString{String: resident.OldSSN, Valid: resident.OldSSN != ""},
-					DOB:                     resident.DOB,
+					DOB:                     dob,
 					POB:                     resident.POB,
 					Phone:                   sql.NullString{String: resident.Phone, Valid: resident.Phone != ""},
 					Email:                   sql.NullString{String: resident.Email, Valid: resident.Email != ""},
@@ -627,13 +629,15 @@ func (s *ContractService) CreateContract(ctx *gin.Context, contract *structs.New
 						UserAccountID:           sql.NullInt64{Int64: customer.ID, Valid: true},
 					}
 				} else {
+					dob, _ := time.Parse("2006-01-02", resident.DOB)
+
 					residentData = &models.RoomResidentModel{
 						FirstName:               resident.FirstName,
 						LastName:                resident.LastName,
 						MiddleName:              sql.NullString{String: resident.MiddleName, Valid: resident.MiddleName != ""},
 						SSN:                     sql.NullString{String: resident.SSN, Valid: resident.SSN != ""},
 						OldSSN:                  sql.NullString{String: resident.OldSSN, Valid: resident.OldSSN != ""},
-						DOB:                     resident.DOB,
+						DOB:                     dob,
 						POB:                     resident.POB,
 						Phone:                   sql.NullString{String: resident.Phone, Valid: resident.Phone != ""},
 						Email:                   sql.NullString{String: resident.Email, Valid: resident.Email != ""},

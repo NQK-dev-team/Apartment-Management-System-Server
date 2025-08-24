@@ -87,6 +87,8 @@ func (s *UserService) CreateStaff(ctx *gin.Context, newStaff *structs.NewStaff, 
 	backSSNPath := ""
 
 	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		dob, _ := time.Parse("2006-01-02", newStaff.Dob)
+
 		newUser := &models.UserModel{
 			LastName:  newStaff.LastName,
 			FirstName: newStaff.FirstName,
@@ -94,7 +96,7 @@ func (s *UserService) CreateStaff(ctx *gin.Context, newStaff *structs.NewStaff, 
 				String: newStaff.MiddleName,
 				Valid:  newStaff.MiddleName != "",
 			},
-			DOB:    newStaff.Dob,
+			DOB:    dob,
 			POB:    newStaff.Pob,
 			Gender: newStaff.Gender,
 			SSN:    newStaff.SSN,
@@ -447,6 +449,8 @@ func (s *UserService) CreateCustomer(ctx *gin.Context, newCustomer *structs.NewC
 	backSSNPath := ""
 
 	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		dob, _ := time.Parse("2006-01-02", newCustomer.Dob)
+
 		newUser := &models.UserModel{
 			LastName:  newCustomer.LastName,
 			FirstName: newCustomer.FirstName,
@@ -454,7 +458,7 @@ func (s *UserService) CreateCustomer(ctx *gin.Context, newCustomer *structs.NewC
 				String: newCustomer.MiddleName,
 				Valid:  newCustomer.MiddleName != "",
 			},
-			DOB:    newCustomer.Dob,
+			DOB:    dob,
 			POB:    newCustomer.Pob,
 			Gender: newCustomer.Gender,
 			SSN:    newCustomer.SSN,
@@ -546,6 +550,8 @@ func (s *UserService) UpdateProfile(ctx *gin.Context, profile *structs.UpdatePro
 			return err
 		}
 
+		dob, _ := time.Parse("2006-01-02", profile.Dob)
+
 		user.FirstName = profile.FirstName
 		user.LastName = profile.LastName
 		user.Phone = profile.Phone
@@ -555,7 +561,7 @@ func (s *UserService) UpdateProfile(ctx *gin.Context, profile *structs.UpdatePro
 			String: profile.MiddleName,
 			Valid:  profile.MiddleName != "",
 		}
-		user.DOB = profile.Dob
+		user.DOB = dob
 		user.POB = profile.Pob
 		user.Gender = profile.Gender
 		user.SSN = profile.SSN

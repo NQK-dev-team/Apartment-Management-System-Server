@@ -14,7 +14,7 @@ type RoomResidentModel struct {
 	LastName                string         `json:"lastName" gorm:"column:last_name;type:varchar(255);not null;"`
 	SSN                     sql.NullString `json:"ssn" gorm:"column:ssn;type:varchar(12);"`
 	OldSSN                  sql.NullString `json:"oldSSN" gorm:"column:old_ssn;type:varchar(9);"`
-	DOB                     string         `json:"dob" gorm:"column:dob;type:date;not null;"`
+	DOB                     time.Time      `json:"dob" gorm:"column:dob;type:date;not null;"`
 	POB                     string         `json:"pob" gorm:"column:pob;type:varchar(255);not null;"`
 	Email                   sql.NullString `json:"email" gorm:"column:email;type:varchar(255);"`
 	Phone                   sql.NullString `json:"phone" gorm:"column:phone;type:varchar(10);"`
