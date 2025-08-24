@@ -8,6 +8,7 @@ import (
 	"api/utils"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -181,6 +182,9 @@ func (c *SupportTicketController) UpdateSupportTicket(ctx *gin.Context) {
 		return
 	}
 
+	ticket.Title = strings.TrimSpace(ticket.Title)
+	ticket.Content = strings.TrimSpace(ticket.Content)
+
 	form, _ := ctx.MultipartForm()
 	ticket.NewFiles = form.File["newFiles[]"]
 
@@ -241,6 +245,9 @@ func (c *SupportTicketController) AddSupportTicket(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
+
+	ticket.Title = strings.TrimSpace(ticket.Title)
+	ticket.Content = strings.TrimSpace(ticket.Content)
 
 	form, _ := ctx.MultipartForm()
 	ticket.Files = form.File["files[]"]

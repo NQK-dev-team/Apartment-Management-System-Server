@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -213,6 +214,17 @@ func (c *ContractController) UpdateContract(ctx *gin.Context) {
 		})
 	}
 
+	for index, resident := range contract.Residents {
+		contract.Residents[index].FirstName = strings.TrimSpace(resident.FirstName)
+		contract.Residents[index].LastName = strings.TrimSpace(resident.LastName)
+		contract.Residents[index].MiddleName = strings.TrimSpace(resident.MiddleName)
+		contract.Residents[index].SSN = strings.TrimSpace(resident.SSN)
+		contract.Residents[index].OldSSN = strings.TrimSpace(resident.OldSSN)
+		contract.Residents[index].POB = strings.TrimSpace(resident.POB)
+		contract.Residents[index].Email = strings.TrimSpace(resident.Email)
+		contract.Residents[index].Phone = strings.TrimSpace(resident.Phone)
+	}
+
 	if err := constants.Validate.Struct(contract); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = constants.GetValidateErrorMessage(err)
@@ -284,6 +296,17 @@ func (c *ContractController) AddContract(ctx *gin.Context) {
 			File:  fileHeader,
 			Title: title,
 		})
+	}
+
+	for index, resident := range contract.Residents {
+		contract.Residents[index].FirstName = strings.TrimSpace(resident.FirstName)
+		contract.Residents[index].LastName = strings.TrimSpace(resident.LastName)
+		contract.Residents[index].MiddleName = strings.TrimSpace(resident.MiddleName)
+		contract.Residents[index].SSN = strings.TrimSpace(resident.SSN)
+		contract.Residents[index].OldSSN = strings.TrimSpace(resident.OldSSN)
+		contract.Residents[index].POB = strings.TrimSpace(resident.POB)
+		contract.Residents[index].Email = strings.TrimSpace(resident.Email)
+		contract.Residents[index].Phone = strings.TrimSpace(resident.Phone)
 	}
 
 	if err := constants.Validate.Struct(contract); err != nil {

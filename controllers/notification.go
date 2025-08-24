@@ -127,6 +127,9 @@ func (c *NotificationController) AddNotification(ctx *gin.Context) {
 		return
 	}
 
+	newNotification.Title = strings.TrimSpace(newNotification.Title)
+	newNotification.Content = strings.TrimSpace(newNotification.Content)
+
 	// Replace any whitespace in the receiver string
 	newNotification.ReceiverStr = strings.ReplaceAll(newNotification.ReceiverStr, " ", "")
 	// Convert ReceiverStr data to Receivers of []int64

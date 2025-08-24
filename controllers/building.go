@@ -83,6 +83,15 @@ func (c *BuildingController) CreateBuilding(ctx *gin.Context) {
 		building.Rooms[index].Images = roomImages
 	}
 
+	building.Name = strings.TrimSpace(building.Name)
+	building.Address = strings.TrimSpace(building.Address)
+	for index, service := range building.Services {
+		building.Services[index].Name = strings.TrimSpace(service.Name)
+	}
+	for index, room := range building.Rooms {
+		building.Rooms[index].Description = strings.TrimSpace(room.Description)
+	}
+
 	if err := constants.Validate.Struct(building); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = constants.GetValidateErrorMessage(err)
@@ -334,6 +343,21 @@ func (c *BuildingController) UpdateBuilding(ctx *gin.Context) {
 
 	building.TotalImage = len(oldBuildingData.Images) + len(building.NewBuildingImages) - len(building.DeletedBuildingImages)
 
+	building.Name = strings.TrimSpace(building.Name)
+	building.Address = strings.TrimSpace(building.Address)
+	for index, service := range building.NewServices {
+		building.NewServices[index].Name = strings.TrimSpace(service.Name)
+	}
+	for index, service := range building.Services {
+		building.Services[index].Name = strings.TrimSpace(service.Name)
+	}
+	for index, room := range building.NewRooms {
+		building.NewRooms[index].Description = strings.TrimSpace(room.Description)
+	}
+	for index, room := range building.Rooms {
+		building.Rooms[index].Description = strings.TrimSpace(room.Description)
+	}
+
 	if err := constants.Validate.Struct(building); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = constants.GetValidateErrorMessage(err)
@@ -510,6 +534,8 @@ func (c *BuildingController) UpdateRoomInformation(ctx *gin.Context) {
 		ctx.JSON(http.StatusForbidden, response)
 		return
 	}
+
+	room.Description = strings.TrimSpace(room.Description)
 
 	if err := constants.Validate.Struct(room); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")

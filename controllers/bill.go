@@ -8,6 +8,7 @@ import (
 	"api/utils"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -162,6 +163,17 @@ func (c *BillController) UpdateBill(ctx *gin.Context) {
 		return
 	}
 
+	bill.Title = strings.TrimSpace(bill.Title)
+	bill.Note = strings.TrimSpace(bill.Note)
+	for index, _ := range bill.Payments {
+		bill.Payments[index].Note = strings.TrimSpace(bill.Payments[index].Note)
+		bill.Payments[index].Name = strings.TrimSpace(bill.Payments[index].Name)
+	}
+	for index, _ := range bill.NewPayments {
+		bill.NewPayments[index].Note = strings.TrimSpace(bill.NewPayments[index].Note)
+		bill.NewPayments[index].Name = strings.TrimSpace(bill.NewPayments[index].Name)
+	}
+
 	if err := constants.Validate.Struct(bill); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = constants.GetValidateErrorMessage(err)
@@ -201,6 +213,13 @@ func (c *BillController) AddBill(ctx *gin.Context) {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
 		ctx.JSON(http.StatusBadRequest, response)
 		return
+	}
+
+	bill.Title = strings.TrimSpace(bill.Title)
+	bill.Note = strings.TrimSpace(bill.Note)
+	for index, _ := range bill.BillPayments {
+		bill.BillPayments[index].Note = strings.TrimSpace(bill.BillPayments[index].Note)
+		bill.BillPayments[index].Name = strings.TrimSpace(bill.BillPayments[index].Name)
 	}
 
 	if err := constants.Validate.Struct(bill); err != nil {

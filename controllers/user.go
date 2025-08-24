@@ -9,6 +9,7 @@ import (
 	"api/utils"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -230,6 +231,17 @@ func (c *UserController) AddStaff(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
+
+	newStaff.FirstName = strings.TrimSpace(newStaff.FirstName)
+	newStaff.LastName = strings.TrimSpace(newStaff.LastName)
+	newStaff.MiddleName = strings.TrimSpace(newStaff.MiddleName)
+	newStaff.SSN = strings.TrimSpace(newStaff.SSN)
+	newStaff.OldSSN = strings.TrimSpace(newStaff.OldSSN)
+	newStaff.Pob = strings.TrimSpace(newStaff.Pob)
+	newStaff.Email = strings.TrimSpace(newStaff.Email)
+	newStaff.Phone = strings.TrimSpace(newStaff.Phone)
+	newStaff.PermanentAddress = strings.TrimSpace(newStaff.PermanentAddress)
+	newStaff.TemporaryAddress = strings.TrimSpace(newStaff.TemporaryAddress)
 
 	if err := constants.Validate.Struct(newStaff); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
@@ -486,6 +498,17 @@ func (c *UserController) AddCustomer(ctx *gin.Context) {
 		return
 	}
 
+	newCustomer.FirstName = strings.TrimSpace(newCustomer.FirstName)
+	newCustomer.LastName = strings.TrimSpace(newCustomer.LastName)
+	newCustomer.MiddleName = strings.TrimSpace(newCustomer.MiddleName)
+	newCustomer.SSN = strings.TrimSpace(newCustomer.SSN)
+	newCustomer.OldSSN = strings.TrimSpace(newCustomer.OldSSN)
+	newCustomer.Pob = strings.TrimSpace(newCustomer.Pob)
+	newCustomer.Email = strings.TrimSpace(newCustomer.Email)
+	newCustomer.Phone = strings.TrimSpace(newCustomer.Phone)
+	newCustomer.PermanentAddress = strings.TrimSpace(newCustomer.PermanentAddress)
+	newCustomer.TemporaryAddress = strings.TrimSpace(newCustomer.TemporaryAddress)
+
 	if err := constants.Validate.Struct(newCustomer); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = constants.GetValidateErrorMessage(err)
@@ -558,6 +581,16 @@ func (c *UserController) UpdateUserInfo(ctx *gin.Context) {
 	profile.NewFrontSSNImage, _ = ctx.FormFile("newFrontSSN")
 	profile.NewBackSSNImage, _ = ctx.FormFile("newBackSSN")
 
+	profile.FirstName = strings.TrimSpace(profile.FirstName)
+	profile.LastName = strings.TrimSpace(profile.LastName)
+	profile.MiddleName = strings.TrimSpace(profile.MiddleName)
+	profile.SSN = strings.TrimSpace(profile.SSN)
+	profile.OldSSN = strings.TrimSpace(profile.OldSSN)
+	profile.Pob = strings.TrimSpace(profile.Pob)
+	profile.Phone = strings.TrimSpace(profile.Phone)
+	profile.PermanentAddress = strings.TrimSpace(profile.PermanentAddress)
+	profile.TemporaryAddress = strings.TrimSpace(profile.TemporaryAddress)
+
 	if err := constants.Validate.Struct(profile); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = constants.GetValidateErrorMessage(err)
@@ -625,6 +658,10 @@ func (c *UserController) ChangePassword(ctx *gin.Context) {
 		return
 	}
 
+	changePassword.ConfirmNewPassword = strings.TrimSpace(changePassword.ConfirmNewPassword)
+	changePassword.NewPassword = strings.TrimSpace(changePassword.NewPassword)
+	changePassword.OldPassword = strings.TrimSpace(changePassword.OldPassword)
+
 	if err := constants.Validate.Struct(changePassword); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = constants.GetValidateErrorMessage(err)
@@ -659,6 +696,9 @@ func (c *UserController) ChangeEmail(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
+
+	changeEmail.NewEmail = strings.TrimSpace(changeEmail.NewEmail)
+	changeEmail.Password = strings.TrimSpace(changeEmail.Password)
 
 	if err := constants.Validate.Struct(changeEmail); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
