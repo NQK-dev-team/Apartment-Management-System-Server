@@ -155,7 +155,8 @@ func (s *ContractService) GetContractBill(ctx *gin.Context, bills *[]models.Bill
 func (s *ContractService) DeleteContract(ctx *gin.Context, IDs []int64, roomID int64, buildingID int64) (bool, error) {
 	role := ctx.GetString("role")
 
-	if role == constants.Roles.Manager {
+	switch role {
+	case constants.Roles.Manager:
 		userID := ctx.GetInt64("userID")
 
 		contracts := []models.ContractModel{}
@@ -166,7 +167,7 @@ func (s *ContractService) DeleteContract(ctx *gin.Context, IDs []int64, roomID i
 		if len(contracts) != len(IDs) {
 			return false, nil
 		}
-	} else if role == constants.Roles.Owner {
+	case constants.Roles.Owner:
 		contracts := []models.ContractModel{}
 		if err := s.contractRepository.GetDeletableContracts(ctx, &contracts, IDs, nil, roomID, buildingID); err != nil {
 			return true, err
@@ -184,7 +185,8 @@ func (s *ContractService) DeleteContract(ctx *gin.Context, IDs []int64, roomID i
 func (s *ContractService) DeleteContract2(ctx *gin.Context, IDs []int64) (bool, error) {
 	role := ctx.GetString("role")
 
-	if role == constants.Roles.Manager {
+	switch role {
+	case constants.Roles.Manager:
 		userID := ctx.GetInt64("userID")
 
 		contracts := []models.ContractModel{}
@@ -195,7 +197,7 @@ func (s *ContractService) DeleteContract2(ctx *gin.Context, IDs []int64) (bool, 
 		if len(contracts) != len(IDs) {
 			return false, nil
 		}
-	} else if role == constants.Roles.Owner {
+	case constants.Roles.Owner:
 		contracts := []models.ContractModel{}
 		if err := s.contractRepository.GetDeletableContracts2(ctx, &contracts, IDs, nil); err != nil {
 			return true, err

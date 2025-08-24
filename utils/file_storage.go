@@ -105,18 +105,12 @@ func fileExistsInS3(path string) bool {
 		Key:    aws.String(path),
 	})
 
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 func fileExistsInMinio(path string) bool {
 	_, err := minioClient.StatObject(context.TODO(), appConfig.GetEnv("MINIO_BUCKET"), path, minio.StatObjectOptions{})
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 func saveFileToS3(file *multipart.FileHeader, filePath string) error {

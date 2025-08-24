@@ -63,11 +63,12 @@ func (c *UploadController) UploadFile(ctx *gin.Context) {
 
 	signal := &structs.BaseWSStruct{}
 
-	if upload.UploadType == constants.Common.UploadType.ADD_CUSTOMERS {
+	switch upload.UploadType {
+	case constants.Common.UploadType.ADD_CUSTOMERS:
 		signal.Type = constants.Common.WebsocketSignalType.UploadCustomer
-	} else if upload.UploadType == constants.Common.UploadType.ADD_CONTRACTS {
+	case constants.Common.UploadType.ADD_CONTRACTS:
 		signal.Type = constants.Common.WebsocketSignalType.UploadContract
-	} else if upload.UploadType == constants.Common.UploadType.ADD_BILLS {
+	case constants.Common.UploadType.ADD_BILLS:
 		signal.Type = constants.Common.WebsocketSignalType.UploadBill
 	}
 

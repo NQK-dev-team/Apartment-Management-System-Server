@@ -34,7 +34,8 @@ func NewBillService() *BillService {
 func (s *BillService) GetBillList(ctx *gin.Context, bills *[]structs.Bill, limit, offset int64, startMonth, endMonth string) error {
 	role := ctx.GetString("role")
 
-	if role == constants.Roles.Manager || role == constants.Roles.Customer {
+	switch role {
+	case constants.Roles.Manager, constants.Roles.Customer:
 		if role == constants.Roles.Manager {
 			if err := s.billRepository.GetBillListForManager(ctx, bills, startMonth, endMonth, limit, offset, ctx.GetInt64("userID")); err != nil {
 				return err
@@ -45,7 +46,7 @@ func (s *BillService) GetBillList(ctx *gin.Context, bills *[]structs.Bill, limit
 			}
 		}
 
-	} else if role == constants.Roles.Owner {
+	case constants.Roles.Owner:
 		if err := s.billRepository.GetBillList(ctx, bills, startMonth, endMonth, limit, offset); err != nil {
 			return err
 		}
