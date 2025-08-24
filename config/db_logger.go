@@ -21,6 +21,10 @@ type CustomDBLogger struct {
 	logLevel     logger.LogLevel
 	fileHandles  map[string]*os.File // Cache for open log files, key is the full filename
 	mu           sync.Mutex          // Mutex to protect concurrent access to fileHandles map
+	selectRegex  *regexp.Regexp
+	updateRegex  *regexp.Regexp
+	deleteRegex  *regexp.Regexp
+	intoRegex    *regexp.Regexp
 }
 
 // NewCustomDBLogger creates a new instance of our custom logger
@@ -33,33 +37,29 @@ func NewCustomDBLogger(dir string, level logger.LogLevel) *CustomDBLogger {
 		logDirectory: dir,
 		logLevel:     level,
 		fileHandles:  make(map[string]*os.File),
+		selectRegex:  regexp.MustCompile(`(?i)SELECT\s+.*?\s+FROM\s+"?([a-zA-Z0-9_]+)"?`),
+		updateRegex:  regexp.MustCompile(`(?i)UPDATE\s+"([^"]+)"`),
+		deleteRegex:  regexp.MustCompile(`(?i)DELETE FROM\s+"([^"]+)"`),
+		intoRegex:    regexp.MustCompile(`(?i)INTO\s+"([^"]+)"`),
 	}
 }
 
-// Regular expressions to extract table names from SQL queries
-var (
-	selectRegex = regexp.MustCompile(`(?i)SELECT\s+.*?\s+FROM\s+"?([a-zA-Z0-9_]+)"?`)
-	intoRegex   = regexp.MustCompile(`(?i)INTO\s+"([^"]+)"`)
-	updateRegex = regexp.MustCompile(`(?i)UPDATE\s+"([^"]+)"`)
-	deleteRegex = regexp.MustCompile(`(?i)DELETE FROM\s+"([^"]+)"`)
-)
-
 // extractTableName parses SQL to find the table name
-func extractTableName(sql string) string {
+func (l *CustomDBLogger) extractTableName(sql string) string {
 	var match []string
 
 	if GetEnv("APP_ENV") == "development" {
-		if match = selectRegex.FindStringSubmatch(sql); len(match) > 1 {
+		if match = l.selectRegex.FindStringSubmatch(sql); len(match) > 1 {
 			return match[1]
 		}
 	}
-	if match = intoRegex.FindStringSubmatch(sql); len(match) > 1 {
+	if match = l.intoRegex.FindStringSubmatch(sql); len(match) > 1 {
 		return match[1]
 	}
-	if match = updateRegex.FindStringSubmatch(sql); len(match) > 1 {
+	if match = l.updateRegex.FindStringSubmatch(sql); len(match) > 1 {
 		return match[1]
 	}
-	if match = deleteRegex.FindStringSubmatch(sql); len(match) > 1 {
+	if match = l.deleteRegex.FindStringSubmatch(sql); len(match) > 1 {
 		return match[1]
 	}
 	return "gorm_default"
@@ -101,7 +101,7 @@ func (l *CustomDBLogger) Trace(ctx context.Context, begin time.Time, fc func() (
 
 	elapsed := time.Since(begin)
 	sql, rows := fc()
-	tableName := extractTableName(sql)
+	tableName := l.extractTableName(sql)
 	dateStr := time.Now().Format("2006-01-02") // YYYY-MM-DD format
 
 	if tableName == "gorm_default" {
