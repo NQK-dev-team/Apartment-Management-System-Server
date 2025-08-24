@@ -37,7 +37,6 @@ func (c *AuthenticationController) Login(ctx *gin.Context) {
 	}
 
 	account.Email = strings.TrimSpace(account.Email)
-	account.Password = strings.TrimSpace(account.Password)
 
 	if err := constants.Validate.Struct(&account); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
@@ -102,8 +101,6 @@ func (c *AuthenticationController) VerifyToken(ctx *gin.Context) {
 		return
 	}
 
-	token.JWTToken = strings.TrimSpace(token.JWTToken)
-
 	if err := constants.Validate.Struct(&token); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = constants.GetValidateErrorMessage(err)
@@ -134,8 +131,6 @@ func (c *AuthenticationController) RefreshToken(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
-
-	token.RefreshToken = strings.TrimSpace(token.RefreshToken)
 
 	if err := constants.Validate.Struct(&token); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
@@ -221,7 +216,6 @@ func (c *AuthenticationController) CheckResetPasswordToken(ctx *gin.Context) {
 	}
 
 	token.Email = strings.TrimSpace(token.Email)
-	token.Token = strings.TrimSpace(token.Token)
 
 	if err := constants.Validate.Struct(&token); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
@@ -258,10 +252,7 @@ func (c *AuthenticationController) ResetPassword(ctx *gin.Context) {
 		return
 	}
 
-	resetPassword.ConfirmPassword = strings.TrimSpace(resetPassword.ConfirmPassword)
 	resetPassword.Email = strings.TrimSpace(resetPassword.Email)
-	resetPassword.Password = strings.TrimSpace(resetPassword.Password)
-	resetPassword.Token = strings.TrimSpace(resetPassword.Token)
 
 	if err := constants.Validate.Struct(&resetPassword); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
@@ -328,7 +319,6 @@ func (c *AuthenticationController) VerifyEmail(ctx *gin.Context) {
 	}
 
 	token.Email = strings.TrimSpace(token.Email)
-	token.Token = strings.TrimSpace(token.Token)
 
 	if err := constants.Validate.Struct(&token); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
@@ -424,9 +414,7 @@ func (c *AuthenticationController) VerifyPassword(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
-
-	verifyPasswordStruct.Password = strings.TrimSpace(verifyPasswordStruct.Password)
-
+	
 	if err := constants.Validate.Struct(&verifyPasswordStruct); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = constants.GetValidateErrorMessage(err)
