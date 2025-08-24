@@ -64,7 +64,7 @@ func (l *CustomMigrationLogger) Error(ctx context.Context, msg string, data ...i
 	}
 }
 
-func isCreateOrDropStatement(sql string) bool {
+func (l *CustomMigrationLogger) isCreateOrDropStatement(sql string) bool {
 	return strings.HasPrefix(strings.TrimSpace(sql), "CREATE") || strings.HasPrefix(strings.TrimSpace(sql), "DROP")
 }
 
@@ -78,7 +78,7 @@ func (l *CustomMigrationLogger) Trace(ctx context.Context, begin time.Time, fc f
 	sql, _ := fc()
 
 	// Only select CREATE or DROP statements
-	if !isCreateOrDropStatement(sql) {
+	if !l.isCreateOrDropStatement(sql) {
 		return
 	}
 
