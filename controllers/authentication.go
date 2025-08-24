@@ -414,7 +414,7 @@ func (c *AuthenticationController) VerifyPassword(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
-	
+
 	if err := constants.Validate.Struct(&verifyPasswordStruct); err != nil {
 		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
 		response.ValidateError = constants.GetValidateErrorMessage(err)
