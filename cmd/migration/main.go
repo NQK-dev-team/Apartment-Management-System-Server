@@ -28,6 +28,7 @@ func migrateUp() {
 	supportTicketMigration.Up()
 	systemMigration.Up()
 	fmt.Println("--------- Migrate Up Finish ---------")
+	fmt.Println("Check log files at assets/migration/*.log")
 }
 
 func migrateDown() {
@@ -40,6 +41,7 @@ func migrateDown() {
 	userMigration.Down()
 	systemMigration.Down()
 	fmt.Println("--------- Migrating Down Finish ---------")
+	fmt.Println("Check log files at assets/migration/*.log")
 }
 
 func initMigrations() {

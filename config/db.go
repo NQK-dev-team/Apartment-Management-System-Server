@@ -35,7 +35,7 @@ func InitDB() error {
 	var err error
 
 	DB, err = gorm.Open(postgresDriver.Open(dsn), &gorm.Config{
-		Logger:      NewModelFileLogger("assets/logs", logger.Info),
+		Logger:      NewCustomDBLogger("assets/logs", logger.Info),
 		PrepareStmt: true,
 	})
 
@@ -53,7 +53,8 @@ func InitDB() error {
 	}
 
 	MigrationDB, err = gorm.Open(postgresDriver.Open(dsn), &gorm.Config{
-		Logger:      logger.Default.LogMode(logMode),
+		// Logger:      logger.Default.LogMode(logMode),
+		Logger:      NewCustomMigrationLogger("assets/migration", logger.Info),
 		PrepareStmt: true,
 	})
 

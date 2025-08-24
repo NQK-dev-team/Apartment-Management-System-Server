@@ -15,21 +15,21 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// ModelFileLogger implements gorm.logger.Interface
-type ModelFileLogger struct {
+// CustomDBLogger implements gorm.logger.Interface
+type CustomDBLogger struct {
 	logDirectory string
 	logLevel     logger.LogLevel
 	fileHandles  map[string]*os.File // Cache for open log files, key is the full filename
 	mu           sync.Mutex          // Mutex to protect concurrent access to fileHandles map
 }
 
-// NewModelFileLogger creates a new instance of our custom logger
-func NewModelFileLogger(dir string, level logger.LogLevel) *ModelFileLogger {
+// NewCustomDBLogger creates a new instance of our custom logger
+func NewCustomDBLogger(dir string, level logger.LogLevel) *CustomDBLogger {
 	// Ensure the log directory exists
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		log.Fatalf("Failed to create log directory: %v", err)
 	}
-	return &ModelFileLogger{
+	return &CustomDBLogger{
 		logDirectory: dir,
 		logLevel:     level,
 		fileHandles:  make(map[string]*os.File),
@@ -66,35 +66,35 @@ func extractTableName(sql string) string {
 }
 
 // LogMode sets the log level
-func (l *ModelFileLogger) LogMode(level logger.LogLevel) logger.Interface {
+func (l *CustomDBLogger) LogMode(level logger.LogLevel) logger.Interface {
 	newLogger := *l
 	newLogger.logLevel = level
 	return &newLogger
 }
 
 // Info logs general information
-func (l *ModelFileLogger) Info(ctx context.Context, msg string, data ...interface{}) {
+func (l *CustomDBLogger) Info(ctx context.Context, msg string, data ...interface{}) {
 	if l.logLevel >= logger.Info {
 		log.Printf("[INFO] "+msg, data...)
 	}
 }
 
 // Warn logs warnings
-func (l *ModelFileLogger) Warn(ctx context.Context, msg string, data ...interface{}) {
+func (l *CustomDBLogger) Warn(ctx context.Context, msg string, data ...interface{}) {
 	if l.logLevel >= logger.Warn {
 		log.Printf("[WARN] "+msg, data...)
 	}
 }
 
 // Error logs errors
-func (l *ModelFileLogger) Error(ctx context.Context, msg string, data ...interface{}) {
+func (l *CustomDBLogger) Error(ctx context.Context, msg string, data ...interface{}) {
 	if l.logLevel >= logger.Error {
 		log.Printf("[ERROR] "+msg, data...)
 	}
 }
 
 // Trace is the core method for logging SQL queries
-func (l *ModelFileLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
+func (l *CustomDBLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
 	if l.logLevel <= logger.Silent {
 		return
 	}
