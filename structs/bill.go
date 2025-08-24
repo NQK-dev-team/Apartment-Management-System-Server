@@ -59,3 +59,13 @@ type AddBill struct {
 	PaymentTime  string       `json:"paymentTime" validation:"required_unless=PayerID 0,datetime=2006-01-02"`
 	BillPayments []NewPayment `json:"billPayments" validation:"min=1,dive"`
 }
+
+type UploadBill struct {
+	Title       string `json:"title" validation:"required"`
+	Period      string `json:"period" validation:"required,datetime=2006-01"`
+	Status      int    `json:"status" validation:"required,min=1,max=5"`
+	Note        string `json:"note"`
+	ContractID  int64  `json:"contractID" validation:"required"`
+	PayerID     int64  `json:"payerID" validation:"required_if=Status 2"`
+	PaymentTime string `json:"paymentTime" validation:"required_unless=PayerID 0,datetime=2006-01-02"`
+}

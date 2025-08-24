@@ -201,7 +201,7 @@ func (s *EmailService) SendAccountCreatedEmailVerificationEmail(ctx *gin.Context
 	return false, nil
 }
 
-func (s *EmailService) SendAccountCreationEmail(ctx *gin.Context, email string, name string, password string) error {
+func (s *EmailService) SendAccountCreationEmail(loginLink string, email string, name string, password string) error {
 	// Get the current working directory
 	cwd, _ := os.Getwd()
 	emailNewAccountTemplate := filepath.Join(cwd, "mails", "new_account.html")
@@ -213,7 +213,7 @@ func (s *EmailService) SendAccountCreationEmail(ctx *gin.Context, email string, 
 	var body bytes.Buffer
 	data := structs.NewAccountTemplateData{
 		Name:      name,
-		LoginLink: ctx.GetHeader("Origin") + "/login",
+		LoginLink: loginLink,
 		Password:  password,
 		Email:     email,
 	}

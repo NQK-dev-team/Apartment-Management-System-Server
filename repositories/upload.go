@@ -33,6 +33,14 @@ func (r *UploadRepository) Get(ctx *gin.Context, uploads *[]models.UploadFileMod
 	return nil
 }
 
+func (r *UploadRepository) GetUploadFileForCron(uploads *[]models.UploadFileModel) error {
+	query := config.DB.Model(&models.UploadFileModel{}).Where("process_result IS NULL").Order("upload_type ASC")
+	if err := query.Find(uploads).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *UploadRepository) Create(ctx *gin.Context, tx *gorm.DB, upload *models.UploadFileModel) error {
 	if err := tx.Model(&models.UploadFileModel{}).Omit("ID").Create(upload).Error; err != nil {
 		return err

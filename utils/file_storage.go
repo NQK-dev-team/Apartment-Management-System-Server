@@ -428,3 +428,133 @@ func GetFile(ctx *gin.Context, filePath string) error {
 
 	return getFileFromLocal(ctx, filePath)
 }
+
+func readFileFromS3(filePath string) ([]byte, error) {
+	result, err := s3Client.GetObject(context.TODO(), &s3.GetObjectInput{
+		Bucket: aws.String(appConfig.GetEnv("AWS_BUCKET")),
+		Key:    aws.String(filePath),
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer result.Body.Close()
+
+	return io.ReadAll(result.Body)
+}
+
+func readFileFromMinio(filePath string) ([]byte, error) {
+	object, err := minioClient.GetObject(context.TODO(), appConfig.GetEnv("MINIO_BUCKET"), filePath, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, err
+	}
+	defer object.Close()
+
+	return io.ReadAll(object)
+}
+
+func readFileFromLocal(filePath string) ([]byte, error) {
+	filePath = filepath.Join("assets", "files", filePath)
+	fileContent, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer fileContent.Close()
+
+	return io.ReadAll(fileContent)
+}
+
+func ReadFile(filePath string) ([]byte, error) {
+	if filePath == "" {
+		return nil, errors.New("file path cannot be empty")
+	}
+
+	if s3Client != nil && fileExistsInS3(filePath) {
+		return readFileFromS3(filePath)
+	}
+
+	if minioClient != nil && fileExistsInMinio(filePath) {
+		return readFileFromMinio(filePath)
+	}
+
+	return readFileFromLocal(filePath)
+}
+
+func ovewriteFileToS3(targetPath string, sourcePath string) error {
+	fileContent, err := os.Open(sourcePath)
+	if err != nil {
+		return err
+	}
+	defer fileContent.Close()
+
+	_, err = s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
+		Bucket: aws.String(appConfig.GetEnv("AWS_BUCKET")),
+		Key:    aws.String(targetPath),
+		Body:   fileContent,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ovewriteFileToMinio(targetPath string, sourcePath string) error {
+	fileContent, err := os.Open(sourcePath)
+	if err != nil {
+		return err
+	}
+	defer fileContent.Close()
+
+	fileStat, err := fileContent.Stat()
+	if err != nil {
+		return err
+	}
+
+	_, err = minioClient.PutObject(context.TODO(), appConfig.GetEnv("MINIO_BUCKET"), targetPath, fileContent, fileStat.Size(), minio.PutObjectOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ovewriteFileToLocal(targetPath string, sourcePath string) error {
+	sourceFile, err := os.Open(sourcePath)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+
+	targetFile, err := os.Create(targetPath)
+	if err != nil {
+		return err
+	}
+	defer targetFile.Close()
+
+	_, err = io.Copy(targetFile, sourceFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func OverWriteFile(targetPath string, sourcePath string) error {
+	if targetPath == "" {
+		return errors.New("target path cannot be empty")
+	}
+
+	if sourcePath == "" {
+		return errors.New("source path cannot be empty")
+	}
+
+	if s3Client != nil && fileExistsInS3(targetPath) {
+		return ovewriteFileToS3(targetPath, sourcePath)
+	}
+
+	if minioClient != nil && fileExistsInMinio(targetPath) {
+		return ovewriteFileToMinio(targetPath, sourcePath)
+	}
+
+	return ovewriteFileToLocal(targetPath, sourcePath)
+}

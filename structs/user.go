@@ -86,3 +86,21 @@ type ChangeEmail struct {
 	Password string `json:"password" validate:"required"`
 	NewEmail string `json:"newEmail" validate:"required,email"`
 }
+
+type NewUploadCustomer struct {
+	FirstName        string `validate:"required"`
+	LastName         string `validate:"required"`
+	MiddleName       string
+	SSN              string `validate:"required,alphanum,len=12"`
+	OldSSN           string `validate:"omitempty,alphanum,len=9"`
+	Dob              string `validate:"required,datetime=2006-01-02,dob_18"`
+	Pob              string `validate:"required"`
+	Phone            string `validate:"required,alphanum,len=10"`
+	PermanentAddress string `validate:"required"`
+	TemporaryAddress string `validate:"required"`
+	Email            string `validate:"required,email"`
+	Gender           int    `validate:"required,min=1,max=3"`
+	ProfileImage     string `validate:"required"`
+	FrontSSNImage    string `validate:"required"`
+	BackSSNImage     string `validate:"required"`
+}

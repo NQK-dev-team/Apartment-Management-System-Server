@@ -36,9 +36,9 @@ type uploadTypeStruct struct {
 	ADD_BILLS     int
 }
 
-type importProcessResultStruct struct {
-	SUCCESS int
-	FAILED  int
+type cronUploadProcessResultStruct struct {
+	SUCCESS int64
+	FAILED  int64
 }
 
 type billStatusStruct struct {
@@ -90,20 +90,20 @@ type WebsocketSignalType struct {
 }
 
 var Common = struct {
-	SupportTicketStatus  supportTicketStatusStruct
-	ContractType         contractTypeStruct
-	ContractStatus       contractStatusStruct
-	RoomStatus           roomStatusStruct
-	UserGender           userGenderStruct
-	UploadType           uploadTypeStruct
-	BillStatus           billStatusStruct
-	ResidentRelationship residentRelationshipStruct
-	FileUpload           fileUploadStruct
-	EmailTokenLimit      int
-	NewPasswordLength    int
-	Notification         Notification
-	WebsocketSignalType  WebsocketSignalType
-	ImportProcessResult  importProcessResultStruct
+	SupportTicketStatus     supportTicketStatusStruct
+	ContractType            contractTypeStruct
+	ContractStatus          contractStatusStruct
+	RoomStatus              roomStatusStruct
+	UserGender              userGenderStruct
+	UploadType              uploadTypeStruct
+	BillStatus              billStatusStruct
+	ResidentRelationship    residentRelationshipStruct
+	FileUpload              fileUploadStruct
+	EmailTokenLimit         int
+	NewPasswordLength       int
+	Notification            Notification
+	WebsocketSignalType     WebsocketSignalType
+	CronUploadProcessResult cronUploadProcessResultStruct
 }{
 	SupportTicketStatus: supportTicketStatusStruct{
 		PENDING:  1,
@@ -186,7 +186,7 @@ var Common = struct {
 		UploadContract: 5,
 		UploadBill:     6,
 	},
-	ImportProcessResult: importProcessResultStruct{
+	CronUploadProcessResult: cronUploadProcessResultStruct{
 		SUCCESS: 1,
 		FAILED:  2,
 	},

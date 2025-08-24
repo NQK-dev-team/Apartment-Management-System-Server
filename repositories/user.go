@@ -72,6 +72,14 @@ func (r *UserRepository) GetByEmail(ctx *gin.Context, user *models.UserModel, em
 	return nil
 }
 
+func (r *UserRepository) GetCustomerByUserNo(ctx *gin.Context, user *models.UserModel, no string) error {
+	if err := config.DB.Model(&models.UserModel{}).Where("no = ? AND is_owner = FALSE AND is_manager = FALSE AND is_customer = TRUE", no).Find(user).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *UserRepository) Get(ctx *gin.Context, user *[]models.UserModel) error {
 	if err := config.DB.Model(&models.UserModel{}).Find(user).Error; err != nil {
 		return err

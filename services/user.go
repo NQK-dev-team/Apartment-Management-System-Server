@@ -174,7 +174,7 @@ func (s *UserService) CreateStaff(ctx *gin.Context, newStaff *structs.NewStaff, 
 			fullName = newUser.LastName + " " + newUser.FirstName
 		}
 
-		if err := s.emailService.SendAccountCreationEmail(ctx, newUser.Email, fullName, newPassword); err != nil {
+		if err := s.emailService.SendAccountCreationEmail(ctx.GetHeader("Origin")+"/login", newUser.Email, fullName, newPassword); err != nil {
 			return err
 		}
 
@@ -513,7 +513,7 @@ func (s *UserService) CreateCustomer(ctx *gin.Context, newCustomer *structs.NewC
 			fullName = newUser.LastName + " " + newUser.FirstName
 		}
 
-		if err := s.emailService.SendAccountCreationEmail(ctx, newUser.Email, fullName, newPassword); err != nil {
+		if err := s.emailService.SendAccountCreationEmail(ctx.GetHeader("Origin")+"/login", newUser.Email, fullName, newPassword); err != nil {
 			return err
 		}
 

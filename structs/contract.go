@@ -77,3 +77,16 @@ type NewContract struct {
 	NewFiles      []ContractFile      `form:"newFiles[]" validate:"omitempty,dive"`
 	Residents     []ContractResidents `form:"residents[]" validate:"dive"`
 }
+
+type NewUploadContract struct {
+	RoomID        int64               `validate:"required"`
+	CreatorID     int64               `validate:"required"`
+	HouseholderID int64               `validate:"required"`
+	ContractType  int                 `validate:"required,min=1,max=2"` // 1: Rent, 2: Buy
+	ContractValue float64             `validate:"required,min=0"`
+	CreatedAt     string              `validate:"required,datetime=2006-01-02,check_date_equal_or_before=StartDate"`
+	StartDate     string              `validate:"required,datetime=2006-01-02,check_date_equal_or_after=CreatedAt"`
+	EndDate       string              `validate:"contract_type_and_end_date=ContractType,omitempty,datetime=2006-01-02,check_date_equal_or_after=StartDate"`
+	SignDate      string              `validate:"omitempty,datetime=2006-01-02,check_date_equal_or_before=StartDate,check_date_equal_or_after=CreatedAt"`
+	Residents     []ContractResidents `validate:"dive"`
+}

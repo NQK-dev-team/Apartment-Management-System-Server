@@ -271,3 +271,11 @@ func (r *BillRepository) UpdateBillStatus(tx *gorm.DB) error {
 	}
 	return nil
 }
+
+func (r *BillRepository) AddNewPayment2(ctx *gin.Context, tx *gorm.DB, payment *models.BillPaymentModel) error {
+	userID := ctx.GetInt64("userID")
+	if err := tx.Set("userID", userID).Model(&models.BillPaymentModel{}).Omit("ID").Save(payment).Error; err != nil {
+		return err
+	}
+	return nil
+}
