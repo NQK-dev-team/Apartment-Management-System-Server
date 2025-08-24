@@ -65,7 +65,7 @@ func (l *CustomMigrationLogger) Error(ctx context.Context, msg string, data ...i
 }
 
 func (l *CustomMigrationLogger) isCreateOrDropStatement(sql string) bool {
-	return strings.HasPrefix(strings.TrimSpace(sql), "CREATE") || strings.HasPrefix(strings.TrimSpace(sql), "DROP")
+	return strings.Contains(strings.ToLower(strings.TrimSpace(sql)), "create") || strings.Contains(strings.ToLower(strings.TrimSpace(sql)), "drop")
 }
 
 // Trace is the core method for logging SQL queries
