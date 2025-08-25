@@ -24,6 +24,7 @@ func InitCustomValidationRules() {
 	Validate.RegisterValidation("check_date_equal_or_before", CheckDateEqualOrBefore)
 	Validate.RegisterValidation("contract_type_and_end_date", ValidateContractTypeAndEndDate)
 	Validate.RegisterValidation("not_after_current_date", ValidateNotAfterCurrentDate)
+	Validate.RegisterValidation("validate_payment_time", ValidatePaymentTime)
 }
 
 func customPasswordRule(password string) bool {
@@ -215,4 +216,33 @@ func ValidateNotAfterCurrentDate(fl validator.FieldLevel) bool {
 
 	currentDate := time.Now().UTC()
 	return !date.UTC().After(currentDate)
+}
+
+func ValidatePaymentTime(fl validator.FieldLevel) bool {
+	paymentTimeStr := fl.Field().String()
+	if paymentTimeStr != "" {
+		paymentTime, err := time.Parse("2006-01-02", paymentTimeStr)
+		if err != nil {
+			return false // Invalid date format
+		}
+
+		currentDate := time.Now().UTC()
+
+		if paymentTime.UTC().After(currentDate) {
+			return false // PaymentTime cannot be in the future
+		}
+
+		// Get value of Period
+		periodStr := fl.Parent().FieldByName("Period").String()
+		period, err := time.Parse("2006-01-02", periodStr+"-01")
+		if err != nil {
+			return true // Do not validate if Period is invalid, the validation rule for Period will handle it
+		}
+
+		if paymentTime.UTC().Before(period.UTC()) {
+			return false // PaymentTime cannot be before Period
+		}
+	}
+
+	return true
 }
