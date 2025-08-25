@@ -807,13 +807,13 @@ func (s *UploadService) ProcessUploadFile(upload *models.UploadFileModel) error 
 	if err != nil {
 		return err
 	}
-	// defer file.Close()
+	defer file.Close()
 
 	logFile, err := os.Create(filepath.Join(filepath.Dir(filePath), "result.log"))
 	if err != nil {
 		return err
 	}
-	// defer logFile.Close()
+	defer logFile.Close()
 
 	if _, err := file.Write(bytes); err != nil {
 		return err
@@ -833,12 +833,7 @@ func (s *UploadService) ProcessUploadFile(upload *models.UploadFileModel) error 
 		fmt.Fprintf(logFile, "failed to open file %s: %v\n", fileName, err)
 		return err
 	}
-	// defer f.Close()
-	defer func() {
-		file.Close()
-		logFile.Close()
-		f.Close()
-	}()
+	defer f.Close()
 
 	var fileError []error = []error{}
 
