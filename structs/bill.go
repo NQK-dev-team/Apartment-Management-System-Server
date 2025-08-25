@@ -26,47 +26,47 @@ type Bill struct {
 }
 
 type OldPayment struct {
-	ID     int64   `json:"ID" validation:"required"`
-	Amount float64 `json:"amount" validation:"required,min=0"`
-	Name   string  `json:"name" validation:"required"`
+	ID     int64   `json:"ID" validate:"required"`
+	Amount float64 `json:"amount" validate:"required,min=0"`
+	Name   string  `json:"name" validate:"required"`
 	Note   string  `json:"note"`
 }
 
 type NewPayment struct {
-	Amount float64 `json:"amount" validation:"required,min=0"`
-	Name   string  `json:"name" validation:"required"`
+	Amount float64 `json:"amount" validate:"required,min=0"`
+	Name   string  `json:"name" validate:"required"`
 	Note   string  `json:"note"`
 }
 
 type UpdateBill struct {
-	Title           string       `json:"title" validation:"required"`
-	Period          string       `json:"period" validation:"required,datetime=2006-01"`
-	Status          int          `json:"status" validation:"required,min=1,max=5"`
+	Title           string       `json:"title" validate:"required"`
+	Period          string       `json:"period" validate:"required,datetime=2006-01"`
+	Status          int          `json:"status" validate:"required,min=1,max=5"`
 	Note            string       `json:"note"`
-	Payments        []OldPayment `json:"payments" validation:"dive"`
-	NewPayments     []NewPayment `json:"newPayments" validation:"dive"`
+	Payments        []OldPayment `json:"payments" validate:"dive"`
+	NewPayments     []NewPayment `json:"newPayments" validate:"dive"`
 	DeletedPayments []int64      `json:"deletedPayments"`
-	PayerID         int64        `json:"payerID" validation:"required_if=Status 2"`
-	PaymentTime     string       `json:"paymentTime" validation:"required_unless=PayerID 0,datetime=2006-01-02,validate_payment_time"`
+	PayerID         int64        `json:"payerID" validate:"required_if=Status 2"`
+	PaymentTime     string       `json:"paymentTime" validate:"required_unless=PayerID 0,omitempty,datetime=2006-01-02,validate_payment_time"`
 }
 
 type AddBill struct {
-	Title        string       `json:"title" validation:"required"`
-	Period       string       `json:"period" validation:"required,datetime=2006-01"`
-	Status       int          `json:"status" validation:"required,min=1,max=5"`
+	Title        string       `json:"title" validate:"required"`
+	Period       string       `json:"period" validate:"required,datetime=2006-01"`
+	Status       int          `json:"status" validate:"required,min=1,max=5"`
 	Note         string       `json:"note"`
-	ContractID   int64        `json:"contractID" validation:"required"`
-	PayerID      int64        `json:"payerID" validation:"required_if=Status 2"`
-	PaymentTime  string       `json:"paymentTime" validation:"required_unless=PayerID 0,datetime=2006-01-02,validate_payment_time"`
-	BillPayments []NewPayment `json:"billPayments" validation:"min=1,dive"`
+	ContractID   int64        `json:"contractID" validate:"required"`
+	PayerID      int64        `json:"payerID" validate:"required_if=Status 2"`
+	PaymentTime  string       `json:"paymentTime" validate:"required_unless=PayerID 0,omitempty,datetime=2006-01-02,validate_payment_time"`
+	BillPayments []NewPayment `json:"billPayments" validate:"min=1,dive"`
 }
 
 type UploadBill struct {
-	Title       string `json:"title" validation:"required"`
-	Period      string `json:"period" validation:"required,datetime=2006-01"`
-	Status      int    `json:"status" validation:"required,min=1,max=5"`
+	Title       string `json:"title" validate:"required"`
+	Period      string `json:"period" validate:"required,datetime=2006-01"`
+	Status      int    `json:"status" validate:"required,min=1,max=5"`
 	Note        string `json:"note"`
-	ContractID  int64  `json:"contractID" validation:"required"`
-	PayerID     int64  `json:"payerID" validation:"required_if=Status 2"`
-	PaymentTime string `json:"paymentTime" validation:"required_unless=PayerID 0,datetime=2006-01-02"`
+	ContractID  int64  `json:"contractID" validate:"required"`
+	PayerID     int64  `json:"payerID" validate:"required_if=Status 2"`
+	PaymentTime string `json:"paymentTime" validate:"required_unless=PayerID 0,omitempty,datetime=2006-01-02,validate_payment_time"`
 }
