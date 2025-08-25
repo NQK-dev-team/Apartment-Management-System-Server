@@ -30,12 +30,9 @@ func (s *EmailQueueService) SendEmail() {
 
 	for _, email := range emails {
 		receiverEmail := email.ReceiverEmail
-		appEnv := config.GetEnv("APP_ENV")
-		if appEnv == "development" {
-			testEmail := config.GetEnv("TEST_MAIL_TO")
-			if testEmail != "" {
-				receiverEmail = testEmail
-			}
+		testEmail := config.GetEnv("TEST_MAIL_TO")
+		if testEmail != "" {
+			receiverEmail = testEmail
 		}
 
 		// Send email

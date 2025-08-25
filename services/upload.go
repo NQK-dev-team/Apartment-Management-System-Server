@@ -931,10 +931,12 @@ func (s *UploadService) RunUploadCron() {
 		func(upload *models.UploadFileModel) {
 			// defer wg.Done()
 			// Process each upload file
+			fileDecompositions := strings.Split(upload.URLPath, "/")
+			fileName := fileDecompositions[len(fileDecompositions)-1]
 			if err := s.ProcessUploadFile(upload); err == nil {
-				fileDecompositions := strings.Split(upload.URLPath, "/")
-				fileName := fileDecompositions[len(fileDecompositions)-1]
 				fmt.Printf("File %s processed successfully\n", fileName)
+			} else {
+				fmt.Printf("Failed to process file %s\nCheck the log file for more details\n", fileName)
 			}
 		}(&upload)
 	}
