@@ -21,5 +21,5 @@ func RemoveDiacritics(str string) string {
 }
 
 func CompareStringRaw(str1, str2 string) bool {
-	return strings.ToLower(RemoveDiacritics(str1)) == RemoveDiacritics(str2)
+	return strings.ToLower(RemoveDiacritics(str1)) == strings.ToLower(RemoveDiacritics(str2))
 }

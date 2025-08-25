@@ -82,22 +82,6 @@ func (s *UploadService) GetUploads(ctx *gin.Context, uploads *[]models.UploadFil
 }
 
 func (s *UploadService) CronFileFail(tx *gorm.DB, upload *models.UploadFileModel) error {
-	// if tx == nil {
-	// 	return config.DB.Transaction(func(tx *gorm.DB) error {
-	// 		upload.ProcessResult = sql.NullInt64{
-	// 			Int64: constants.Common.CronUploadProcessResult.FAILED,
-	// 			Valid: true,
-	// 		}
-
-	// 		upload.ProcessDate = sql.NullTime{
-	// 			Time:  time.Now(),
-	// 			Valid: true,
-	// 		}
-
-	// 		return s.repository.Update(nil, tx, upload)
-	// 	})
-	// }
-
 	upload.ProcessResult = sql.NullInt64{
 		Int64: constants.Common.CronUploadProcessResult.FAILED,
 		Valid: true,
@@ -112,22 +96,6 @@ func (s *UploadService) CronFileFail(tx *gorm.DB, upload *models.UploadFileModel
 }
 
 func (s *UploadService) CronFileSuccess(tx *gorm.DB, upload *models.UploadFileModel) error {
-	// if tx == nil {
-	// 	return config.DB.Transaction(func(tx *gorm.DB) error {
-	// 		upload.ProcessResult = sql.NullInt64{
-	// 			Int64: constants.Common.CronUploadProcessResult.SUCCESS,
-	// 			Valid: true,
-	// 		}
-
-	// 		upload.ProcessDate = sql.NullTime{
-	// 			Time:  time.Now(),
-	// 			Valid: true,
-	// 		}
-
-	// 		return s.repository.Update(nil, tx, upload)
-	// 	})
-	// }
-
 	upload.ProcessResult = sql.NullInt64{
 		Int64: constants.Common.CronUploadProcessResult.SUCCESS,
 		Valid: true,
@@ -144,16 +112,16 @@ func (s *UploadService) CronFileSuccess(tx *gorm.DB, upload *models.UploadFileMo
 func (s *UploadService) ProcessAddCustomer(f *excelize.File, tx *gorm.DB, upload *models.UploadFileModel) []error {
 	listSheet := f.GetSheetName(0)
 	if listSheet == "" {
-		return []error{errors.New("first sheet not found"), s.CronFileFail(tx, upload)}
+		return []error{errors.New("first sheet not found")}
 	}
 
 	rows, err := f.GetRows(listSheet)
 	if err != nil {
-		return []error{err, s.CronFileFail(tx, upload)}
+		return []error{err}
 	}
 
 	if len(rows) < 6 {
-		return []error{errors.New("no data rows found"), s.CronFileFail(tx, upload)}
+		return []error{errors.New("no data rows found")}
 	}
 
 	dataRows := rows[5:]
@@ -162,7 +130,7 @@ func (s *UploadService) ProcessAddCustomer(f *excelize.File, tx *gorm.DB, upload
 
 	for index, data := range dataRows {
 		processSuccess := true
-		row := index + 5
+		row := index + 6
 
 		// Process customer gender string
 		gender := 0
@@ -177,12 +145,12 @@ func (s *UploadService) ProcessAddCustomer(f *excelize.File, tx *gorm.DB, upload
 		// Generate customer's password
 		newPassword, err := utils.GeneratePassword(constants.Common.NewPasswordLength)
 		if err != nil {
-			fileError = append(fileError, fmt.Errorf("row %d: failed to generate password", row))
+			fileError = append(fileError, fmt.Errorf("row %d: failed to generate password", row-5))
 			newPassword = "123456"
 		}
 		hashedPassword, err := utils.HashPassword(newPassword)
 		if err != nil {
-			fileError = append(fileError, fmt.Errorf("row %d: failed to hash password", row))
+			fileError = append(fileError, fmt.Errorf("row %d: failed to hash password", row-5))
 			hashedPassword = "$12$xG0qlWDqXflwTqTBgFRnjuA1J5zZRSd6dbzOT353TAQS7ScjVfqXW"
 		}
 
@@ -206,7 +174,7 @@ func (s *UploadService) ProcessAddCustomer(f *excelize.File, tx *gorm.DB, upload
 		}
 
 		if err := constants.Validate.Struct(newUser); err != nil {
-			fileError = append(fileError, fmt.Errorf("row %d: %v", row, err))
+			fileError = append(fileError, fmt.Errorf("row %d: %v", row-5, err))
 			processSuccess = false
 		}
 
@@ -236,26 +204,25 @@ func (s *UploadService) ProcessAddCustomer(f *excelize.File, tx *gorm.DB, upload
 			}
 
 			ctx := &gin.Context{}
+			ctx.Set("userID", upload.CreatorID)
+			tx.SavePoint(fmt.Sprintf("sp_customer_%d", row-5))
 			if err := s.userRepository.Create(ctx, tx, customerModel); err != nil {
-				fileError = append(fileError, fmt.Errorf("row %d: failed to create user: %v", row, err))
+				fileError = append(fileError, fmt.Errorf("row %d: failed to create user: %v", row-5, err))
 				processSuccess = false
+				tx.RollbackTo(fmt.Sprintf("sp_customer_%d", row-5))
 			}
 
 			if err := s.emailService.SendAccountCreationEmail(config.GetEnv("APM_CLIENT_BASE_URL")+"/login", customerModel.Email, utils.GetUserFullName(customerModel), newPassword); err != nil {
-				fileError = append(fileError, fmt.Errorf("row %d: failed to send account creation email: %v", row, err))
+				fileError = append(fileError, fmt.Errorf("row %d: failed to send account creation email: %v", row-5, err))
 				processSuccess = false
 			}
 		}
 
 		if !processSuccess {
-			f.SetCellValue(listSheet, fmt.Sprintf("N%d", row), "FALSE")
+			f.SetCellValue(listSheet, fmt.Sprintf("N%d", row), "✘")
 		} else {
-			f.SetCellValue(listSheet, fmt.Sprintf("N%d", row), "TRUE")
+			f.SetCellValue(listSheet, fmt.Sprintf("N%d", row), "✔")
 		}
-	}
-
-	if len(fileError) > 0 {
-		return []error{s.CronFileFail(tx, upload)}
 	}
 
 	return fileError
@@ -264,16 +231,16 @@ func (s *UploadService) ProcessAddCustomer(f *excelize.File, tx *gorm.DB, upload
 func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload *models.UploadFileModel) []error {
 	listSheet := f.GetSheetName(0)
 	if listSheet == "" {
-		return []error{errors.New("first sheet not found"), s.CronFileFail(tx, upload)}
+		return []error{errors.New("first sheet not found")}
 	}
 
 	rows, err := f.GetRows(listSheet)
 	if err != nil {
-		return []error{err, s.CronFileFail(tx, upload)}
+		return []error{err}
 	}
 
 	if len(rows) < 6 {
-		return []error{errors.New("no data rows found"), s.CronFileFail(tx, upload)}
+		return []error{errors.New("no data rows found")}
 	}
 
 	ctx := &gin.Context{}
@@ -284,14 +251,14 @@ func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload
 	buildingIDStr := strings.TrimSpace(buildingInfoRow[3])
 	buildingID, err := strconv.ParseInt(buildingIDStr, 10, 64)
 	if err != nil {
-		return []error{err, s.CronFileFail(tx, upload)}
+		return []error{err}
 	}
 
 	buildingModel := &models.BuildingModel{}
 	if err := s.buildingRepository.GetById(nil, buildingModel, buildingID); err != nil {
-		return []error{err, s.CronFileFail(tx, upload)}
+		return []error{err}
 	} else if buildingModel.ID == 0 { // || !utils.CompareStringRaw(strings.ReplaceAll(buildingModel.Name, " ", ""), strings.ReplaceAll(buildingName, " ", ""))
-		return []error{fmt.Errorf("building with ID %d not found", buildingID), s.CronFileFail(tx, upload)}
+		return []error{fmt.Errorf("building with ID %d not found", buildingID)}
 	}
 
 	dataRows := rows[5:]
@@ -305,27 +272,27 @@ func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload
 		// // Get room floor
 		// floor, err := strconv.ParseInt(strings.TrimSpace(data[1]), 10, 64)
 		// if err != nil {
-		// 	fileError = append(fileError, fmt.Errorf("row %d: failed to parse room floor: %v", row, err))
+		// 	fileError = append(fileError, fmt.Errorf("row %d: failed to parse room floor: %v", row-5, err))
 		// 	processSuccess = false
 		// }
 
 		// Get room no
 		roomNo, err := strconv.ParseInt(strings.TrimSpace(data[2]), 10, 64)
 		if err != nil {
-			fileError = append(fileError, fmt.Errorf("row %d: failed to parse room no: %v", row, err))
+			fileError = append(fileError, fmt.Errorf("row %d: failed to parse room no: %v", row-5, err))
 			processSuccess = false
 		}
 
 		roomModel := &models.RoomModel{}
 
 		if err := s.roomRepository.GetRoomInfoForUpload(roomModel, buildingID, int(roomNo)); err != nil {
-			fileError = append(fileError, fmt.Errorf("row %d: failed to get room info: %v", row, err))
+			fileError = append(fileError, fmt.Errorf("row %d: failed to get room info: %v", row-5, err))
 			processSuccess = false
 		} else if roomModel.ID == 0 {
-			fileError = append(fileError, fmt.Errorf("row %d: failed to get info of room no: %d", row, roomNo))
+			fileError = append(fileError, fmt.Errorf("row %d: failed to get info of room no: %d", row-5, roomNo))
 			processSuccess = false
 		} else if len(roomModel.Contracts) > 0 {
-			fileError = append(fileError, fmt.Errorf("row %d: room is already contracted", row))
+			fileError = append(fileError, fmt.Errorf("row %d: room is already contracted", row-5))
 			processSuccess = false
 		}
 
@@ -335,10 +302,10 @@ func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload
 		customerModel := &models.UserModel{}
 
 		if err := s.userRepository.GetCustomerByUserNo(nil, customerModel, customerNo); err != nil {
-			fileError = append(fileError, fmt.Errorf("row %d: failed to get customer info: %v", row, err))
+			fileError = append(fileError, fmt.Errorf("row %d: failed to get customer info: %v", row-5, err))
 			processSuccess = false
 		} else if customerModel.ID == 0 { //|| !utils.CompareStringRaw(strings.ReplaceAll(utils.GetUserFullName(customerModel), " ", ""), customerName) {
-			fileError = append(fileError, fmt.Errorf("row %d: customer of number %s not found", row, customerNo))
+			fileError = append(fileError, fmt.Errorf("row %d: customer of number %s not found", row-5, customerNo))
 			processSuccess = false
 		}
 
@@ -347,9 +314,9 @@ func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload
 			contractNo := strings.TrimSpace(data[0])
 
 			// Get contract value
-			value, err := strconv.ParseFloat(strings.TrimSpace(data[3]), 64)
+			value, err := strconv.ParseFloat(strings.TrimSpace(strings.ReplaceAll(data[3], ",", "")), 64)
 			if err != nil {
-				fileError = append(fileError, fmt.Errorf("row %d: failed to parse contract value: %v", row, err))
+				fileError = append(fileError, fmt.Errorf("row %d: failed to parse contract value: %v", row-5, err))
 				processSuccess = false
 			}
 
@@ -374,7 +341,7 @@ func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload
 			}
 
 			if err := constants.Validate.Struct(newContract); err != nil {
-				fileError = append(fileError, fmt.Errorf("row %d: %v", row, err))
+				fileError = append(fileError, fmt.Errorf("row %d: %v", row-5, err))
 				processSuccess = false
 			}
 
@@ -389,7 +356,7 @@ func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload
 			if newContract.SignDate == "" {
 				result, err := utils.CompareDates(newContract.StartDate, currentDate)
 				if err != nil {
-					fileError = append(fileError, fmt.Errorf("row %d: %v", row, err))
+					fileError = append(fileError, fmt.Errorf("row %d: %v", row-5, err))
 					processSuccess = false
 				} else {
 					switch result {
@@ -402,7 +369,7 @@ func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload
 			} else {
 				result, err := utils.CompareDates(newContract.StartDate, currentDate)
 				if err != nil {
-					fileError = append(fileError, fmt.Errorf("row %d: %v", row, err))
+					fileError = append(fileError, fmt.Errorf("row %d: %v", row-5, err))
 					processSuccess = false
 				} else {
 					switch result {
@@ -414,7 +381,7 @@ func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload
 						} else {
 							result, err := utils.CompareDates(newContract.EndDate, currentDate)
 							if err != nil {
-								fileError = append(fileError, fmt.Errorf("row %d: %v", row, err))
+								fileError = append(fileError, fmt.Errorf("row %d: %v", row-5, err))
 								processSuccess = false
 							} else {
 								switch result {
@@ -446,9 +413,11 @@ func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload
 					Status:        status,
 				}
 
+				tx.SavePoint(fmt.Sprintf("sp_contract_%d", row-5))
 				if err := s.contractRepository.CreateContract(ctx, tx, contractModel); err != nil {
-					fileError = append(fileError, fmt.Errorf("row %d: %v", row, err))
+					fileError = append(fileError, fmt.Errorf("row %d: %v", row-5, err))
 					processSuccess = false
+					tx.RollbackTo(fmt.Sprintf("sp_contract_%d", row-5))
 				} else {
 					residentSheetRows, err := f.GetRows(contractNo)
 					residentRows := [][]string{}
@@ -469,11 +438,11 @@ func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload
 							residentMiddleName := strings.TrimSpace(residentRow[3])
 							residentFirstName := strings.TrimSpace(residentRow[4])
 							residentGender := 0
-							if utils.CompareStringRaw("Nam", strings.TrimSpace(data[5])) || utils.CompareStringRaw("Male", strings.TrimSpace(data[5])) {
+							if utils.CompareStringRaw("Nam", strings.TrimSpace(residentRow[5])) || utils.CompareStringRaw("Male", strings.TrimSpace(residentRow[5])) {
 								residentGender = constants.Common.UserGender.MALE
-							} else if utils.CompareStringRaw("Nữ", strings.TrimSpace(data[5])) || utils.CompareStringRaw("Female", strings.TrimSpace(data[5])) {
+							} else if utils.CompareStringRaw("Nữ", strings.TrimSpace(residentRow[5])) || utils.CompareStringRaw("Female", strings.TrimSpace(residentRow[5])) {
 								residentGender = constants.Common.UserGender.FEMALE
-							} else if utils.CompareStringRaw("Khác", strings.TrimSpace(data[5])) || utils.CompareStringRaw("Other", strings.TrimSpace(data[5])) {
+							} else if utils.CompareStringRaw("Khác", strings.TrimSpace(residentRow[5])) || utils.CompareStringRaw("Other", strings.TrimSpace(residentRow[5])) {
 								residentGender = constants.Common.UserGender.OTHER
 							}
 							residentSSN := strings.TrimSpace(residentRow[6])
@@ -483,24 +452,24 @@ func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload
 							residentEmail := strings.TrimSpace(residentRow[10])
 							residentPhone := strings.TrimSpace(residentRow[11])
 							residentRelation := 0
-							if utils.CompareStringRaw("Con cái", strings.TrimSpace(data[12])) || utils.CompareStringRaw("Child", strings.TrimSpace(data[12])) {
+							if utils.CompareStringRaw("Con cái", strings.TrimSpace(residentRow[12])) || utils.CompareStringRaw("Child", strings.TrimSpace(residentRow[12])) {
 								residentRelation = constants.Common.ResidentRelationship.CHILD
-							} else if utils.CompareStringRaw("Vợ/Chồng", strings.TrimSpace(data[12])) || utils.CompareStringRaw("Spouse", strings.TrimSpace(data[12])) {
+							} else if utils.CompareStringRaw("Vợ/Chồng", strings.TrimSpace(residentRow[12])) || utils.CompareStringRaw("Spouse", strings.TrimSpace(residentRow[12])) {
 								residentRelation = constants.Common.ResidentRelationship.SPOUSE
-							} else if utils.CompareStringRaw("Cha/Mẹ", strings.TrimSpace(data[12])) || utils.CompareStringRaw("Parent", strings.TrimSpace(data[12])) {
+							} else if utils.CompareStringRaw("Cha/Mẹ", strings.TrimSpace(residentRow[12])) || utils.CompareStringRaw("Parent", strings.TrimSpace(residentRow[12])) {
 								residentRelation = constants.Common.ResidentRelationship.PARENT
-							} else if utils.CompareStringRaw("Khác", strings.TrimSpace(data[12])) || utils.CompareStringRaw("Other", strings.TrimSpace(data[12])) {
+							} else if utils.CompareStringRaw("Khác", strings.TrimSpace(residentRow[12])) || utils.CompareStringRaw("Other", strings.TrimSpace(residentRow[12])) {
 								residentRelation = constants.Common.ResidentRelationship.OTHER
 							}
 
 							if residentNo != "" {
 								if err := s.userRepository.GetCustomerByUserNo(nil, residentUserModel, residentNo); err != nil {
-									fileError = append(fileError, fmt.Errorf("row %d, resident %d: failed to get resident's customer account info: %v", row, residentRowNo, err))
+									fileError = append(fileError, fmt.Errorf("row %d, resident %d: failed to get resident's customer account info: %v", row-5, residentRowNo-5, err))
 									processSuccess = false
 									subProcessSuccess = false
 								} else {
 									if residentUserModel.ID == 0 {
-										fileError = append(fileError, fmt.Errorf("row %d, resident %d: customer of number %s not found", row, residentRowNo, residentNo))
+										fileError = append(fileError, fmt.Errorf("row %d, resident %d: customer of number %s not found", row-5, residentRowNo-5, residentNo))
 										processSuccess = false
 										subProcessSuccess = false
 									}
@@ -521,7 +490,7 @@ func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload
 								}
 
 								if err := constants.Validate.Struct(residentData); err != nil {
-									fileError = append(fileError, fmt.Errorf("row %d, resident %d: %v", row, residentRowNo, err))
+									fileError = append(fileError, fmt.Errorf("row %d, resident %d: %v", row-5, residentRowNo-5, err))
 									processSuccess = false
 									subProcessSuccess = false
 								}
@@ -564,17 +533,19 @@ func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload
 									}
 								}
 
+								tx.SavePoint(fmt.Sprintf("sp_contract_%d_resident_%d", row-5, residentRowNo-5))
 								if err := s.contractRepository.AddNewRoomResident(ctx, tx, residentData, contractModel.ID); err != nil {
-									fileError = append(fileError, fmt.Errorf("row %d, resident %d: %v", row, residentRowNo, err))
+									fileError = append(fileError, fmt.Errorf("row %d, resident %d: %v", row-5, residentRowNo-5, err))
 									subProcessSuccess = false
 									processSuccess = false
+									tx.RollbackTo(fmt.Sprintf("sp_contract_%d_resident_%d", row-5, residentRowNo-5))
 								}
 							}
 
 							if subProcessSuccess {
-								f.SetCellValue(contractNo, fmt.Sprintf("N%d", residentRowNo), "TRUE")
+								f.SetCellValue(contractNo, fmt.Sprintf("N%d", residentRowNo), "✔")
 							} else {
-								f.SetCellValue(contractNo, fmt.Sprintf("N%d", residentRowNo), "FALSE")
+								f.SetCellValue(contractNo, fmt.Sprintf("N%d", residentRowNo), "✘")
 							}
 						}
 					}
@@ -583,14 +554,10 @@ func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload
 		}
 
 		if !processSuccess {
-			f.SetCellValue(listSheet, fmt.Sprintf("L%d", row), "FALSE")
+			f.SetCellValue(listSheet, fmt.Sprintf("L%d", row), "✘")
 		} else {
-			f.SetCellValue(listSheet, fmt.Sprintf("L%d", row), "TRUE")
+			f.SetCellValue(listSheet, fmt.Sprintf("L%d", row), "✔")
 		}
-	}
-
-	if len(fileError) > 0 {
-		return []error{s.CronFileFail(tx, upload)}
 	}
 
 	return fileError
@@ -599,18 +566,17 @@ func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload
 func (s *UploadService) ProcessAddBill(f *excelize.File, tx *gorm.DB, upload *models.UploadFileModel) []error {
 	listSheet := f.GetSheetName(0)
 	if listSheet == "" {
-		return []error{errors.New("first sheet not found"), s.CronFileFail(tx, upload)}
+		return []error{errors.New("first sheet not found")}
 	}
 
 	rows, err := f.GetRows(listSheet)
 	if err != nil {
-		return []error{err, s.CronFileFail(tx, upload)}
+		return []error{err}
 	}
 
 	if len(rows) < 6 {
-		return []error{errors.New("no data rows found"), s.CronFileFail(tx, upload)}
+		return []error{errors.New("no data rows found")}
 	}
-
 	ctx := &gin.Context{}
 	ctx.Set("userID", upload.CreatorID)
 
@@ -619,7 +585,7 @@ func (s *UploadService) ProcessAddBill(f *excelize.File, tx *gorm.DB, upload *mo
 	buildingIDStr := buildingInfoRow[3]
 	buildingID, err := strconv.ParseInt(buildingIDStr, 10, 64)
 	if err != nil {
-		return []error{err, s.CronFileFail(tx, upload)}
+		return []error{err}
 	}
 	paymentPeriodRow := rows[1]
 	paymentYearStr := paymentPeriodRow[1]
@@ -627,7 +593,7 @@ func (s *UploadService) ProcessAddBill(f *excelize.File, tx *gorm.DB, upload *mo
 	paymentPeriodStr := paymentYearStr + "-" + fmt.Sprintf("%02s", paymentMonthStr)
 	paymentPeriod, err := time.Parse("2006-01-02", paymentPeriodStr+"-01")
 	if err != nil {
-		return []error{errors.New("invalid payment period"), s.CronFileFail(tx, upload)}
+		return []error{errors.New("invalid payment period")}
 	}
 
 	dataRows := rows[5:]
@@ -640,36 +606,36 @@ func (s *UploadService) ProcessAddBill(f *excelize.File, tx *gorm.DB, upload *mo
 		billNo := strings.TrimSpace(data[0])
 		paymentDetailSheet, err := f.GetRows(billNo)
 		if err != nil {
-			fileError = append(fileError, fmt.Errorf("row %d: failed to get bill's payment detail sheet: %v", row, err))
+			fileError = append(fileError, fmt.Errorf("row %d: failed to get bill's payment detail sheet: %v", row-5, err))
 			processSuccess = false
 		} else if len(paymentDetailSheet) < 6 {
-			fileError = append(fileError, fmt.Errorf("row %d: bill's payment detail sheet does not contain any data", row))
+			fileError = append(fileError, fmt.Errorf("row %d: bill's payment detail sheet does not contain any data", row-5))
 			processSuccess = false
 		}
 
 		// // Get room floor
 		// floor, err := strconv.ParseInt(strings.TrimSpace(data[1]), 10, 64)
 		// if err != nil {
-		// 	fileError = append(fileError, fmt.Errorf("row %d: failed to parse room floor: %v", row, err))
+		// 	fileError = append(fileError, fmt.Errorf("row %d: failed to parse room floor: %v", row-5, err))
 		// 	processSuccess = false
 		// }
 
 		// Get room no
 		roomNo, err := strconv.ParseInt(strings.TrimSpace(data[2]), 10, 64)
 		if err != nil {
-			fileError = append(fileError, fmt.Errorf("row %d: failed to parse room no: %v", row, err))
+			fileError = append(fileError, fmt.Errorf("row %d: failed to parse room no: %v", row-5, err))
 			processSuccess = false
 		}
 
 		roomModel := &models.RoomModel{}
 		if err := s.roomRepository.GetRoomInfoForUpload(roomModel, buildingID, int(roomNo)); err != nil {
-			fileError = append(fileError, fmt.Errorf("row %d: failed to get room info: %v", row, err))
+			fileError = append(fileError, fmt.Errorf("row %d: failed to get room info: %v", row-5, err))
 			processSuccess = false
 		} else if roomModel.ID == 0 {
-			fileError = append(fileError, fmt.Errorf("row %d: failed to get info of room no: %d", row, roomNo))
+			fileError = append(fileError, fmt.Errorf("row %d: failed to get info of room no: %d", row-5, roomNo))
 			processSuccess = false
 		} else if len(roomModel.Contracts) == 0 {
-			fileError = append(fileError, fmt.Errorf("row %d: no active contract in this room", row))
+			fileError = append(fileError, fmt.Errorf("row %d: no active contract in this room", row-5))
 			processSuccess = false
 		}
 
@@ -681,10 +647,10 @@ func (s *UploadService) ProcessAddBill(f *excelize.File, tx *gorm.DB, upload *mo
 		customerModel := &models.UserModel{}
 		if payerCustomerNo != "" && paymentTime != "" {
 			if err := s.userRepository.GetCustomerByUserNo(nil, customerModel, payerCustomerNo); err != nil {
-				fileError = append(fileError, fmt.Errorf("row %d: failed to get customer info: %v", row, err))
+				fileError = append(fileError, fmt.Errorf("row %d: failed to get customer info: %v", row-5, err))
 				processSuccess = false
 			} else if customerModel.ID == 0 { //|| !utils.CompareStringRaw(strings.ReplaceAll(utils.GetUserFullName(customerModel), " ", ""), customerName) {
-				fileError = append(fileError, fmt.Errorf("row %d: customer of number %s not found", row, payerCustomerNo))
+				fileError = append(fileError, fmt.Errorf("row %d: customer of number %s not found", row-5, payerCustomerNo))
 				processSuccess = false
 			}
 		}
@@ -717,7 +683,7 @@ func (s *UploadService) ProcessAddBill(f *excelize.File, tx *gorm.DB, upload *mo
 			}
 
 			if err := constants.Validate.Struct(billStruct); err != nil {
-				fileError = append(fileError, fmt.Errorf("row %d: %v", row, err))
+				fileError = append(fileError, fmt.Errorf("row %d: %v", row-5, err))
 				processSuccess = false
 			}
 		}
@@ -736,9 +702,11 @@ func (s *UploadService) ProcessAddBill(f *excelize.File, tx *gorm.DB, upload *mo
 				Amount:      0.0,
 			}
 
+			tx.SavePoint(fmt.Sprintf("sp_bill_%d", row-5))
 			if err := s.billRepository.CreateBill(ctx, tx, billModel); err != nil {
-				fileError = append(fileError, fmt.Errorf("row %d: %v", row, err))
+				fileError = append(fileError, fmt.Errorf("row %d: %v", row-5, err))
 				processSuccess = false
+				tx.RollbackTo(fmt.Sprintf("sp_bill_%d", row-5))
 			} else {
 				paymentRows := paymentDetailSheet[5:]
 				totalAmount := 0.0
@@ -749,7 +717,7 @@ func (s *UploadService) ProcessAddBill(f *excelize.File, tx *gorm.DB, upload *mo
 					paymentName := strings.TrimSpace(paymentRow[1])
 					paymentAmount, err := strconv.ParseFloat(strings.TrimSpace(paymentRow[2]), 64)
 					if err != nil {
-						fileError = append(fileError, fmt.Errorf("row %d, payment detail %d: failed to parse payment amount: %v", row, paymentRowNo, err))
+						fileError = append(fileError, fmt.Errorf("row %d, payment detail %d: failed to parse payment amount: %v", row-5, paymentRowNo-5, err))
 						processSuccess = false
 						subProcessSuccess = false
 					}
@@ -763,7 +731,7 @@ func (s *UploadService) ProcessAddBill(f *excelize.File, tx *gorm.DB, upload *mo
 						}
 
 						if err := constants.Validate.Struct(paymentStruct); err != nil {
-							fileError = append(fileError, fmt.Errorf("row %d, payment detail %d: %v", row, paymentRowNo, err))
+							fileError = append(fileError, fmt.Errorf("row %d, payment detail %d: %v", row-5, paymentRowNo-5, err))
 							processSuccess = false
 							subProcessSuccess = false
 						}
@@ -779,24 +747,26 @@ func (s *UploadService) ProcessAddBill(f *excelize.File, tx *gorm.DB, upload *mo
 							BillID: billModel.ID,
 						}
 
+						tx.SavePoint(fmt.Sprintf("sp_bill_%d_payment_%d", row-5, paymentRowNo-5))
 						if err := s.billRepository.AddNewPayment2(ctx, tx, paymentModel); err != nil {
-							fileError = append(fileError, fmt.Errorf("row %d, payment detail %d: %v", row, paymentRowNo, err))
+							fileError = append(fileError, fmt.Errorf("row %d, payment detail %d: %v", row-5, paymentRowNo-5, err))
 							processSuccess = false
 							subProcessSuccess = false
+							tx.RollbackTo(fmt.Sprintf("sp_bill_%d_payment_%d", row-5, paymentRowNo-5))
 						}
 					}
 
 					if subProcessSuccess {
-						f.SetCellValue(listSheet, fmt.Sprintf("E%d", paymentRowNo), "TRUE")
+						f.SetCellValue(listSheet, fmt.Sprintf("E%d", paymentRowNo), "✔")
 					} else {
-						f.SetCellValue(listSheet, fmt.Sprintf("E%d", paymentRowNo), "FALSE")
+						f.SetCellValue(listSheet, fmt.Sprintf("E%d", paymentRowNo), "✘")
 					}
 				}
 
 				if processSuccess {
 					billModel.Amount = totalAmount
 					if err := s.billRepository.UpdateBill(ctx, tx, billModel, billModel.ID); err != nil {
-						fileError = append(fileError, fmt.Errorf("row %d: failed to update bill total amount: %v", row, err))
+						fileError = append(fileError, fmt.Errorf("row %d: failed to update bill total amount: %v", row-5, err))
 						processSuccess = false
 					}
 				}
@@ -804,115 +774,126 @@ func (s *UploadService) ProcessAddBill(f *excelize.File, tx *gorm.DB, upload *mo
 		}
 
 		if processSuccess {
-			f.SetCellValue(listSheet, fmt.Sprintf("I%d", row), "TRUE")
+			f.SetCellValue(listSheet, fmt.Sprintf("I%d", row), "✔")
 		} else {
-			f.SetCellValue(listSheet, fmt.Sprintf("I%d", row), "FALSE")
+			f.SetCellValue(listSheet, fmt.Sprintf("I%d", row), "✘")
 		}
-	}
-
-	if len(fileError) > 0 {
-		return []error{s.CronFileFail(tx, upload)}
 	}
 
 	return fileError
 }
 
 func (s *UploadService) ProcessUploadFile(upload *models.UploadFileModel) error {
-	return config.DB.Transaction(func(tx *gorm.DB) error {
-		filePath := strings.ReplaceAll(upload.URLPath, "/api/", "")
-		fileDecompositions := strings.Split(upload.URLPath, "/")
-		fileName := fileDecompositions[len(fileDecompositions)-1]
+	filePath := strings.ReplaceAll(upload.URLPath, "/api/", "")
+	fileDecompositions := strings.Split(upload.URLPath, "/")
+	fileName := fileDecompositions[len(fileDecompositions)-1]
 
-		// Read the file content
-		bytes, err := utils.ReadFile(filePath)
-		if err != nil {
-			return err
+	// Read the file content
+	bytes, err := utils.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	// From the file content create a .xlsx/.xls file for go-exelize to read on
+	currentDate := time.Now().Format("2006-01-02")
+	currentYear := time.Now().Format("2006")
+	currentMonth := time.Now().Format("2006-01")
+	filePath = filepath.Join("assets", "cron", currentYear, currentMonth, currentDate, filePath)
+	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+		return err
+	}
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	// defer file.Close()
+
+	logFile, err := os.Create(filepath.Join(filepath.Dir(filePath), "result.log"))
+	if err != nil {
+		return err
+	}
+	// defer logFile.Close()
+
+	if _, err := file.Write(bytes); err != nil {
+		return err
+	}
+
+	tx := config.DB.Begin()
+	if tx.Error != nil {
+		fmt.Fprintf(logFile, "failed to start transaction for file %s: %v\n", fileName, tx.Error)
+		return tx.Error
+	}
+
+	// Use go-excelize to read the file
+	f, err := excelize.OpenFile(filePath)
+	if err != nil {
+		s.CronFileFail(tx, upload)
+		tx.Commit()
+		fmt.Fprintf(logFile, "failed to open file %s: %v\n", fileName, err)
+		return err
+	}
+	// defer f.Close()
+	defer func() {
+		file.Close()
+		logFile.Close()
+		f.Close()
+	}()
+
+	var fileError []error = []error{}
+
+	tx.SavePoint("sp_start")
+	switch upload.UploadType {
+	case constants.Common.UploadType.ADD_CUSTOMERS:
+		fileError = s.ProcessAddCustomer(f, tx, upload)
+	case constants.Common.UploadType.ADD_CONTRACTS:
+		fileError = s.ProcessAddContract(f, tx, upload)
+	case constants.Common.UploadType.ADD_BILLS:
+		fileError = s.ProcessAddBill(f, tx, upload)
+	}
+	f.Save()
+
+	if len(fileError) > 0 {
+		tx.RollbackTo("sp_start")
+		for _, err := range fileError {
+			// Write the result to logFile
+			fmt.Fprintf(logFile, "%v\n", err)
 		}
-
-		// From the file content create a .xlsx/.xls file for go-exelize to read on
-		currentDate := time.Now().Format("2006-01-02")
-		currentYear := time.Now().Format("2006")
-		currentMonth := time.Now().Format("2006-01")
-		filePath = filepath.Join("assets", "cron", currentYear, currentMonth, currentDate, filePath)
-		if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
-			return err
-		}
-
-		file, err := os.Create(filePath)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-
-		logFile, err := os.Create(filepath.Join(filepath.Dir(filePath), "result.log"))
-		if err != nil {
-			return err
-		}
-		defer logFile.Close()
-
-		if _, err := file.Write(bytes); err != nil {
-			return err
-		}
-
-		// Use go-excelize to read the file
-		f, err := excelize.OpenFile(filePath)
-		if err != nil {
-			return s.CronFileFail(tx, upload)
-		}
-		defer f.Close()
-
-		var fileError []error = []error{}
-
-		switch upload.UploadType {
-		case constants.Common.UploadType.ADD_CUSTOMERS:
-			fileError = s.ProcessAddCustomer(f, tx, upload)
-		case constants.Common.UploadType.ADD_CONTRACTS:
-			fileError = s.ProcessAddContract(f, tx, upload)
-		case constants.Common.UploadType.ADD_BILLS:
-			fileError = s.ProcessAddBill(f, tx, upload)
-		}
-
-		if len(fileError) > 0 {
-			for _, err := range fileError {
-				// fmt.Println(err)
-				// Write the result to logFile
-				fmt.Fprintf(logFile, "%v\n", err)
-			}
-			fmt.Fprintf(logFile, "File %s failed to process with %d errors\n", fileName, len(fileError))
-
-			if err := utils.OverWriteFile(strings.ReplaceAll(upload.URLPath, "/api/", ""), filePath); err != nil {
-				fmt.Fprintf(logFile, "failed to overwrite file %s result: %v\n", fileName, err)
-				return fmt.Errorf("failed to overwrite file %s result: %v", fileName, err)
-			}
-
-			upload.ProcessResult = sql.NullInt64{Int64: constants.Common.CronUploadProcessResult.FAILED, Valid: true}
-			upload.ProcessDate = sql.NullTime{Time: time.Now(), Valid: true}
-
-			if err := s.repository.Update(nil, tx, upload); err != nil {
-				fmt.Fprintf(logFile, "failed to update upload file %s: %v\n", fileName, err)
-				return fmt.Errorf("failed to update upload file %s: %v", fileName, err)
-			}
-
-			return fmt.Errorf("file %s failed to process with %d errors", fileName, len(fileError))
-		}
+		fmt.Fprintf(logFile, "File %s failed to process with %d errors\n", fileName, len(fileError))
 
 		if err := utils.OverWriteFile(strings.ReplaceAll(upload.URLPath, "/api/", ""), filePath); err != nil {
 			fmt.Fprintf(logFile, "failed to overwrite file %s result: %v\n", fileName, err)
-			return fmt.Errorf("failed to overwrite file %s result: %v", fileName, err)
+			tx.Rollback()
+			return err
 		}
 
-		upload.ProcessResult = sql.NullInt64{Int64: constants.Common.CronUploadProcessResult.SUCCESS, Valid: true}
-		upload.ProcessDate = sql.NullTime{Time: time.Now(), Valid: true}
-
-		if err := s.repository.Update(nil, tx, upload); err != nil {
+		if err := s.CronFileFail(tx, upload); err != nil {
 			fmt.Fprintf(logFile, "failed to update upload file %s: %v\n", fileName, err)
-			return fmt.Errorf("failed to update upload file %s: %v", fileName, err)
+			tx.Rollback()
+			return err
 		}
 
-		fmt.Fprintf(logFile, "File %s processed successfully\n", fileName)
+		tx.Commit()
+		return fmt.Errorf("file %s failed to process with %d errors", fileName, len(fileError))
+	}
 
-		return nil
-	})
+	if err := utils.OverWriteFile(strings.ReplaceAll(upload.URLPath, "/api/", ""), filePath); err != nil {
+		fmt.Fprintf(logFile, "failed to overwrite file %s result: %v\n", fileName, err)
+		tx.Rollback()
+		return err
+	}
+
+	if err := s.CronFileSuccess(tx, upload); err != nil {
+		fmt.Fprintf(logFile, "failed to update upload file %s: %v\n", fileName, err)
+		tx.Rollback()
+		return err
+	}
+
+	fmt.Fprintf(logFile, "File %s processed successfully\n", fileName)
+
+	tx.Commit()
+
+	return nil
 }
 
 func (s *UploadService) RunUploadCron() {
@@ -936,9 +917,12 @@ func (s *UploadService) RunUploadCron() {
 			if err := s.ProcessUploadFile(upload); err == nil {
 				fmt.Printf("File %s processed successfully\n", fileName)
 			} else {
-				fmt.Printf("Failed to process file %s\nCheck the log file for more details\n", fileName)
+				fmt.Printf("Failed to process file %s\n", fileName)
 			}
 		}(&upload)
+	}
+	if len(*uploads) > 0 {
+		fmt.Println("Check the log files for more details")
 	}
 
 	// wg.Wait()

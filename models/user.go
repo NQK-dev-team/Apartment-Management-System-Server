@@ -57,8 +57,8 @@ func (u *UserModel) BeforeCreate(tx *gorm.DB) error {
 		u.No = userNo
 	}
 
-	userID, _ := tx.Get("userID")
-	if userID != nil {
+	userID, exists := tx.Get("userID")
+	if exists && userID != nil {
 		u.CreatedBy = userID.(int64)
 		u.UpdatedBy = userID.(int64)
 	}

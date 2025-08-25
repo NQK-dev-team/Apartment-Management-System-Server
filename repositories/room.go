@@ -29,7 +29,7 @@ func (r *RoomRepository) GetById(ctx *gin.Context, room *models.RoomModel, id in
 func (r *RoomRepository) GetRoomInfoForUpload(room *models.RoomModel, buildingID int64, roomNo int) error {
 	if err := config.DB.Model(&models.RoomModel{}).
 		Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
-		Where("room.building_id = ? AND room.room_no = ? AND room.deleted_at IS NULL", buildingID, roomNo).Find(room).Error; err != nil {
+		Where("room.building_id = ? AND room.no = ? AND room.deleted_at IS NULL", buildingID, roomNo).Find(room).Error; err != nil {
 		return err
 	}
 

@@ -550,5 +550,5 @@ func OverWriteFile(targetPath string, sourcePath string) error {
 		return ovewriteFileToMinio(targetPath, sourcePath)
 	}
 
-	return ovewriteFileToLocal(targetPath, sourcePath)
+	return ovewriteFileToLocal(filepath.Join("assets", "files", targetPath), sourcePath)
 }

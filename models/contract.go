@@ -12,9 +12,9 @@ type ContractModel struct {
 	Status        int          `json:"status" gorm:"column:status;type:int;not null;"` // 1: Active, 2: Expired, 3: Cancelled, 4: Waiting for signatures, 5: Not in effect yet
 	Value         float64      `json:"value" gorm:"column:value;type:float;not null;"`
 	Type          int          `json:"type" gorm:"column:type;type:int;not null;"` // 1: Rent, 2: Buy
-	StartDate     time.Time    `json:"startDate" gorm:"column:start_date;type:date;not null;default:now();"`
+	StartDate     time.Time    `json:"startDate" gorm:"column:start_date;type:date;not null;"`
 	EndDate       sql.NullTime `json:"endDate" gorm:"column:end_date;type:date;"`
-	SignDate      sql.NullTime `json:"signDate" gorm:"column:sign_date;type:date;default:now();"`
+	SignDate      sql.NullTime `json:"signDate" gorm:"column:sign_date;type:date;"`
 	CreatorID     int64        `json:"creatorID" gorm:"column:creator_id;not null;"`
 	Creator       UserModel    `json:"creator" gorm:"foreignKey:creator_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	HouseholderID int64        `json:"householderID" gorm:"column:householder_id;not null;"`
