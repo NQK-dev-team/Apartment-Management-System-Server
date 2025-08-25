@@ -52,11 +52,11 @@ type ContractResidents struct {
 	FirstName               string `form:"firstName" validate:"required_if=UserAccountID 0,omitempty"`
 	LastName                string `form:"lastName" validate:"required_if=UserAccountID 0,omitempty"`
 	MiddleName              string `form:"middleName" validate:"omitempty"`
-	SSN                     string `form:"ssn" validate:"omitempty,omitempty,alphanum,len=12"`
-	OldSSN                  string `form:"oldSSN" validate:"omitempty,alphanum,len=9"`
+	SSN                     string `form:"ssn" validate:"omitempty,omitempty,number,len=12"`
+	OldSSN                  string `form:"oldSSN" validate:"omitempty,number,len=9"`
 	DOB                     string `form:"dob" validate:"required_if=UserAccountID 0,omitempty,datetime=2006-01-02,not_after_current_date"`
 	POB                     string `form:"pob" validate:"required_if=UserAccountID 0,omitempty"`
-	Phone                   string `form:"phone" validate:"omitempty,alphanum,len=10"`
+	Phone                   string `form:"phone" validate:"omitempty,number,len=10"`
 	Email                   string `form:"email" validate:"omitempty,email"`
 	Gender                  int    `form:"gender" validate:"required_if=UserAccountID 0,omitempty,min=1,max=3"`
 	RelationWithHouseholder int    `form:"relationWithHouseholder" validate:"required,min=1,max=4"`

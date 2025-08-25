@@ -6,11 +6,11 @@ type NewStaff struct {
 	FirstName        string `form:"firstName" validate:"required"`
 	LastName         string `form:"lastName" validate:"required"`
 	MiddleName       string `form:"middleName"`
-	SSN              string `form:"ssn" validate:"required,alphanum,len=12"`
-	OldSSN           string `form:"oldSSN" validate:"omitempty,alphanum,len=9"`
+	SSN              string `form:"ssn" validate:"required,number,len=12"`
+	OldSSN           string `form:"oldSSN" validate:"omitempty,number,len=9"`
 	Dob              string `form:"dob" validate:"required,datetime=2006-01-02,dob_18"`
 	Pob              string `form:"pob" validate:"required"`
-	Phone            string `form:"phone" validate:"required,alphanum,len=10"`
+	Phone            string `form:"phone" validate:"required,number,len=10"`
 	PermanentAddress string `form:"permanentAddress" validate:"required"`
 	TemporaryAddress string `form:"temporaryAddress" validate:"required"`
 	Email            string `form:"email" validate:"required,email"`
@@ -29,11 +29,11 @@ type NewCustomer struct {
 	FirstName        string                `form:"firstName" validate:"required"`
 	LastName         string                `form:"lastName" validate:"required"`
 	MiddleName       string                `form:"middleName"`
-	SSN              string                `form:"ssn" validate:"required,alphanum,len=12"`
-	OldSSN           string                `form:"oldSSN" validate:"omitempty,alphanum,len=9"`
+	SSN              string                `form:"ssn" validate:"required,number,len=12"`
+	OldSSN           string                `form:"oldSSN" validate:"omitempty,number,len=9"`
 	Dob              string                `form:"dob" validate:"required,datetime=2006-01-02,dob_18"`
 	Pob              string                `form:"pob" validate:"required"`
-	Phone            string                `form:"phone" validate:"required,alphanum,len=10"`
+	Phone            string                `form:"phone" validate:"required,number,len=10"`
 	PermanentAddress string                `form:"permanentAddress" validate:"required"`
 	TemporaryAddress string                `form:"temporaryAddress" validate:"required"`
 	Email            string                `form:"email" validate:"required,email"`
@@ -63,11 +63,11 @@ type UpdateProfile struct {
 	FirstName        string `form:"firstName" validate:"required"`
 	LastName         string `form:"lastName" validate:"required"`
 	MiddleName       string `form:"middleName"`
-	SSN              string `form:"ssn" validate:"required,alphanum,len=12"`
-	OldSSN           string `form:"oldSSN" validate:"omitempty,alphanum,len=9"`
+	SSN              string `form:"ssn" validate:"required,number,len=12"`
+	OldSSN           string `form:"oldSSN" validate:"omitempty,number,len=9"`
 	Dob              string `form:"dob" validate:"required,datetime=2006-01-02,dob_18"`
 	Pob              string `form:"pob" validate:"required"`
-	Phone            string `form:"phone" validate:"required,alphanum,len=10"`
+	Phone            string `form:"phone" validate:"required,number,len=10"`
 	PermanentAddress string `form:"permanentAddress" validate:"required"`
 	TemporaryAddress string `form:"temporaryAddress" validate:"required"`
 	Gender           int    `form:"gender" validate:"required,min=1,max=3"`
@@ -91,11 +91,11 @@ type NewUploadCustomer struct {
 	FirstName        string `validate:"required"`
 	LastName         string `validate:"required"`
 	MiddleName       string
-	SSN              string `validate:"required,alphanum,len=12"`
-	OldSSN           string `validate:"omitempty,alphanum,len=9"`
+	SSN              string `validate:"required,number,len=12"`
+	OldSSN           string `validate:"omitempty,number,len=9"`
 	Dob              string `validate:"required,datetime=2006-01-02,dob_18"`
 	Pob              string `validate:"required"`
-	Phone            string `validate:"required,alphanum,len=10"`
+	Phone            string `validate:"required,number,len=10"`
 	PermanentAddress string `validate:"required"`
 	TemporaryAddress string `validate:"required"`
 	Email            string `validate:"required,email"`
