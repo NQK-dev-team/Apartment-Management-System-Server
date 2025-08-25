@@ -147,7 +147,7 @@ func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID 
 	}
 
 	if oldBill.Status == constants.Common.BillStatus.PAID || oldBill.Status == constants.Common.BillStatus.PROCESSING {
-		return true, false, nil
+		return false, true, nil
 	}
 
 	if oldBill.Status != bill.Status && bill.Status != constants.Common.BillStatus.CANCELLED && bill.Status != constants.Common.BillStatus.PAID {
@@ -175,6 +175,33 @@ func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID 
 	}
 
 	if len(bill.NewPayments) == 0 && len(bill.Payments) == 0 {
+		return true, false, nil
+	}
+
+	if bill.PayerID != 0 && bill.PaymentTime != "" {
+		residentList := &[]models.RoomResidentModel{}
+
+		if err := s.contractRepository.GetContractResidents(ctx, oldBill.ContractID, residentList); err != nil {
+			return true, true, err
+		}
+
+		isPayerBelongToContract := false
+
+		if oldBill.Contract.HouseholderID == bill.PayerID {
+			isPayerBelongToContract = true
+		}
+
+		for _, resident := range *residentList {
+			if resident.UserAccount.ID == bill.PayerID {
+				isPayerBelongToContract = true
+				break
+			}
+		}
+
+		if !isPayerBelongToContract {
+			return true, false, nil
+		}
+	} else if (bill.PayerID != 0 && bill.PaymentTime == "") || (bill.PayerID == 0 && bill.PaymentTime != "") {
 		return true, false, nil
 	}
 
@@ -320,6 +347,31 @@ func (s *BillService) AddBill(ctx *gin.Context, bill *structs.AddBill, newBillID
 		if bill.Status != constants.Common.BillStatus.PAID && bill.Status != constants.Common.BillStatus.CANCELLED {
 			return true, false, nil
 		}
+
+		residentList := &[]models.RoomResidentModel{}
+
+		if err := s.contractRepository.GetContractResidents(ctx, contract.ID, residentList); err != nil {
+			return true, true, err
+		}
+
+		isPayerBelongToContract := false
+
+		if contract.HouseholderID == bill.PayerID {
+			isPayerBelongToContract = true
+		}
+
+		for _, resident := range *residentList {
+			if resident.UserAccount.ID == bill.PayerID {
+				isPayerBelongToContract = true
+				break
+			}
+		}
+
+		if !isPayerBelongToContract {
+			return true, false, nil
+		}
+	} else if (bill.PayerID != 0 && bill.PaymentTime == "") || (bill.PayerID == 0 && bill.PaymentTime != "") {
+		return true, false, nil
 	}
 
 	if len(bill.BillPayments) == 0 {

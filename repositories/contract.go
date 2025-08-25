@@ -481,3 +481,13 @@ func (r *ContractRepository) CreateContract(ctx *gin.Context, tx *gorm.DB, contr
 
 	return nil
 }
+
+func (r *ContractRepository) GetContractResidents(ctx *gin.Context, contractID int64, residents *[]models.RoomResidentModel) error {
+	if err := config.DB.Model(&models.RoomResidentModel{}).Distinct().
+		Joins("JOIN room_resident_list ON room_resident_list.resident_id = room_resident.ID").
+		Where("room_resident_list.contract_id = ? AND room_resident.deleted_at IS NULL", contractID).
+		Find(residents).Error; err != nil {
+		return err
+	}
+	return nil
+}
