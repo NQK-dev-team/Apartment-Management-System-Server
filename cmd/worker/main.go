@@ -61,8 +61,8 @@ func main() {
 	// 	time.Sleep(5 * time.Second)
 	// }
 
-	// Create a ticker that ticks every 5 seconds
-	ticker := time.NewTicker(5 * time.Second)
+	// Create a ticker that ticks every 10 seconds
+	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop() // Ensure the ticker is stopped when main exits
 
 	// Use a WaitGroup to keep track of active goroutines
