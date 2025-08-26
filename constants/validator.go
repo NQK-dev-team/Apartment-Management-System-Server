@@ -166,7 +166,11 @@ func CheckDateEqualOrAfter(fl validator.FieldLevel) bool {
 	startDate, err1 := time.Parse("2006-01-02", startStr)
 	endDate, err2 := time.Parse("2006-01-02", endStr)
 
-	if err1 != nil || err2 != nil {
+	if err1 != nil {
+		return true // Other validation rules will catch invalid date formats, not this one
+	}
+
+	if err2 != nil {
 		return false
 	}
 
@@ -182,7 +186,11 @@ func CheckDateEqualOrBefore(fl validator.FieldLevel) bool {
 	startDate, err1 := time.Parse("2006-01-02", startStr)
 	endDate, err2 := time.Parse("2006-01-02", endStr)
 
-	if err1 != nil || err2 != nil {
+	if err2 != nil {
+		return true // Other validation rules will catch invalid date formats, not this one
+	}
+
+	if err1 != nil {
 		return false
 	}
 
