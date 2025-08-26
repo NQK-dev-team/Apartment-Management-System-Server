@@ -86,8 +86,13 @@ func main() {
 		port = "8080"
 	}
 
+	host := config.GetEnv("HOST")
+	if host == "" {
+		host = "0.0.0.0"
+	}
+
 	app = &http.Server{
-		Addr:           ":" + port,
+		Addr:           host + ":" + port,
 		Handler:        router,
 		ReadTimeout:    1 * time.Minute,
 		WriteTimeout:   1 * time.Minute,
@@ -97,7 +102,7 @@ func main() {
 	fmt.Println("----------------------------------------")
 	fmt.Println("|                                      |")
 	fmt.Println("|                                      |")
-	fmt.Printf("|   Server is running on port: %s    |\n", port)
+	fmt.Printf("|   Server is running on: %s    |\n", host+":"+port)
 	if isHTTPS == "true" {
 		fmt.Println("|   TLS is enabled                     |")
 	}
