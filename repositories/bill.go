@@ -265,10 +265,37 @@ func (r *BillRepository) CreateBill(ctx *gin.Context, tx *gorm.DB, bill *models.
 	return nil
 }
 
-func (r *BillRepository) UpdateBillStatus(tx *gorm.DB) error {
-	if err := tx.Exec("UPDATE bill SET status = ? WHERE payer_id IS NULL AND payment_time IS NULL AND deleted_at IS NULL AND (date_trunc('month', period) + INTERVAL '1 month - 1 day')::date < NOW() AND status = ? AND contract_id IN (SELECT contract.id FROM contract where contract.deleted_at IS NULL AND contract.status = ?)", constants.Common.BillStatus.OVERDUE, constants.Common.BillStatus.UN_PAID, constants.Common.ContractStatus.ACTIVE).Error; err != nil {
+func (r *BillRepository) UpdateBillOfCancelContract(ctx *gin.Context, tx *gorm.DB, contractID int64) error {
+	cancelTime := time.Now().Format("2006-01-02")
+
+	if err := tx.Exec("UPDATE bill SET status = ? WHERE payer_id IS NULL AND payment_time IS NULL AND deleted_at IS NULL AND status = ? AND contract_id = ? AND period <= ?", constants.Common.BillStatus.OVERDUE, constants.Common.BillStatus.UN_PAID, contractID, cancelTime).Error; err != nil {
 		return err
 	}
+
+	if err := tx.Exec("UPDATE bill SET status = ? WHERE payer_id IS NULL AND payment_time IS NULL AND deleted_at IS NULL AND status = ? AND contract_id = ? AND period > ?", constants.Common.BillStatus.CANCELLED, constants.Common.BillStatus.UN_PAID, contractID, cancelTime).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BillRepository) UpdateBillStatus(tx *gorm.DB) error {
+	if err := tx.Exec("UPDATE bill SET status = ? WHERE payer_id IS NULL AND payment_time IS NULL AND deleted_at IS NULL AND date_trunc('month', period) < date_trunc('month', NOW()) AND status = ? AND contract_id IN (SELECT contract.id FROM contract where contract.deleted_at IS NULL AND contract.status = ?)", constants.Common.BillStatus.OVERDUE, constants.Common.BillStatus.UN_PAID, constants.Common.ContractStatus.ACTIVE).Error; err != nil {
+		return err
+	}
+
+	if err := tx.Exec(`
+	UPDATE bill SET status =
+		CASE
+			WHEN bill.period <= contract.end_date THEN ?
+			WHEN bill.period > contract.end_date THEN ?
+			ELSE bill.status
+		END
+	FROM contract
+	WHERE bill.contract_id = contract.id AND bill.payer_id IS NULL AND bill.payment_time IS NULL AND bill.deleted_at IS NULL AND contract.deleted_at IS NULL AND bill.status = ? AND contract.status IN ?
+		`, constants.Common.BillStatus.OVERDUE, constants.Common.BillStatus.CANCELLED, constants.Common.ContractStatus.ACTIVE, []int{constants.Common.ContractStatus.EXPIRED, constants.Common.ContractStatus.CANCELLED}).Error; err != nil {
+		return err
+	}
+
 	return nil
 }
 

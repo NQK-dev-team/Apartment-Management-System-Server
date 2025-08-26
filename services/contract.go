@@ -446,6 +446,12 @@ func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.Edi
 			return err
 		}
 
+		if updatedContractData.Status == constants.Common.ContractStatus.CANCELLED {
+			if err := s.billRepository.UpdateBillOfCancelContract(ctx, tx, updatedContractData.ID); err != nil {
+				return err
+			}
+		}
+
 		return nil
 	})
 
