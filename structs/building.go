@@ -14,7 +14,7 @@ type NewRoom struct {
 	Floor       int                     `form:"floor" validate:"required,min=1"`
 	Status      int                     `form:"status" validate:"required,min=1,max=5"`
 	Area        float64                 `form:"area" validate:"required,gt=0"`
-	Description string                  `form:"description" validate:"required"`
+	Description string                  `form:"description" validate:"required,max=255"`
 	Images      []*multipart.FileHeader `validate:"required,min=1"`
 }
 
@@ -25,13 +25,13 @@ type NewSchedule struct {
 }
 
 type NewService struct {
-	Name  string  `form:"name" validate:"required"`
+	Name  string  `form:"name" validate:"required,max=255"`
 	Price float64 `form:"price" validate:"required,gt=0"`
 }
 
 type NewBuilding struct {
-	Name       string                  `form:"name" validate:"required"`
-	Address    string                  `form:"address" validate:"required"`
+	Name       string                  `form:"name" validate:"required,max=255"`
+	Address    string                  `form:"address" validate:"required,max=255"`
 	TotalRoom  int                     `form:"totalRoom"`
 	TotalFloor int                     `form:"totalFloor"`
 	Services   []NewService            `form:"services[]"`
@@ -42,7 +42,7 @@ type NewBuilding struct {
 
 type EditService struct {
 	ID    int64   `form:"id" validate:"required"`
-	Name  string  `form:"name" validate:"required"`
+	Name  string  `form:"name" validate:"required,max=255"`
 	Price float64 `form:"price" validate:"required,gt=0"`
 }
 
@@ -59,7 +59,7 @@ type EditRoom struct {
 	Floor       int     `form:"floor" validate:"required,min=1"`
 	Status      int     `form:"status" validate:"required,min=1,max=5"`
 	Area        float64 `form:"area" validate:"required,gt=0"`
-	Description string  `form:"description" validate:"required"`
+	Description string  `form:"description" validate:"required,max=255"`
 	NewImages   []*multipart.FileHeader
 	TotalImage  int `validate:"required,min=1"`
 }
@@ -67,7 +67,7 @@ type EditRoom struct {
 type EditRoom2 struct {
 	Status            int     `form:"status" validate:"required,min=1,max=5"`
 	Area              float64 `form:"area" validate:"required,gt=0"`
-	Description       string  `form:"description" validate:"required"`
+	Description       string  `form:"description" validate:"required,max=255"`
 	NewRoomImages     []*multipart.FileHeader
 	DeletedRoomImages []int64 `form:"deletedRoomImages[]"`
 	TotalImage        int     `validate:"required,min=1"`
@@ -75,8 +75,8 @@ type EditRoom2 struct {
 
 type EditBuilding struct {
 	ID                    int64   `form:"id" validate:"required"`
-	Name                  string  `form:"name" validate:"required"`
-	Address               string  `form:"address" validate:"required"`
+	Name                  string  `form:"name" validate:"required,max=255"`
+	Address               string  `form:"address" validate:"required,max=255"`
 	DeletedBuildingImages []int64 `form:"deletedBuildingImages[]"`
 	NewBuildingImages     []*multipart.FileHeader
 	DeletedServices       []int64        `form:"deletedServices[]"`

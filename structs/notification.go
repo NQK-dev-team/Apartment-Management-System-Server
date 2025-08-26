@@ -7,7 +7,7 @@ import (
 )
 
 type NewNotification struct {
-	Title       string  `form:"title" validate:"required"`
+	Title       string  `form:"title" validate:"required,max=255"`
 	Content     string  `form:"content" validate:"required"`
 	ReceiverStr string  `form:"receiverStr"`
 	Receivers   []int64 `form:"-" validate:"required"`

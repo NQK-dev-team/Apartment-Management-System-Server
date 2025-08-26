@@ -28,21 +28,21 @@ type Bill struct {
 type OldPayment struct {
 	ID     int64   `json:"ID" validate:"required"`
 	Amount float64 `json:"amount" validate:"required,min=0"`
-	Name   string  `json:"name" validate:"required"`
-	Note   string  `json:"note"`
+	Name   string  `json:"name" validate:"required,max=255"`
+	Note   string  `json:"note" validate:"omitempty,max=255"`
 }
 
 type NewPayment struct {
 	Amount float64 `json:"amount" validate:"required,min=0"`
-	Name   string  `json:"name" validate:"required"`
-	Note   string  `json:"note"`
+	Name   string  `json:"name" validate:"required,max=255"`
+	Note   string  `json:"note" validate:"omitempty,max=255"`
 }
 
 type UpdateBill struct {
-	Title           string       `json:"title" validate:"required"`
+	Title           string       `json:"title" validate:"required,max=255"`
 	Period          string       `json:"period" validate:"required,datetime=2006-01"`
 	Status          int          `json:"status" validate:"required,min=1,max=5"`
-	Note            string       `json:"note"`
+	Note            string       `json:"note" validate:"omitempty,max=255"`
 	Payments        []OldPayment `json:"payments" validate:"dive"`
 	NewPayments     []NewPayment `json:"newPayments" validate:"dive"`
 	DeletedPayments []int64      `json:"deletedPayments"`
@@ -51,10 +51,10 @@ type UpdateBill struct {
 }
 
 type AddBill struct {
-	Title        string       `json:"title" validate:"required"`
+	Title        string       `json:"title" validate:"required,max=255"`
 	Period       string       `json:"period" validate:"required,datetime=2006-01"`
 	Status       int          `json:"status" validate:"required,min=1,max=5"`
-	Note         string       `json:"note"`
+	Note         string       `json:"note" validate:"omitempty,max=255"`
 	ContractID   int64        `json:"contractID" validate:"required"`
 	PayerID      int64        `json:"payerID" validate:"required_if=Status 2"`
 	PaymentTime  string       `json:"paymentTime" validate:"required_unless=PayerID 0,omitempty,datetime=2006-01-02,validate_payment_time"`
@@ -62,10 +62,10 @@ type AddBill struct {
 }
 
 type UploadBill struct {
-	Title       string `json:"title" validate:"required"`
+	Title       string `json:"title" validate:"required,max=255"`
 	Period      string `json:"period" validate:"required,datetime=2006-01"`
 	Status      int    `json:"status" validate:"required,min=1,max=5"`
-	Note        string `json:"note"`
+	Note        string `json:"note" validate:"omitempty,max=255"`
 	ContractID  int64  `json:"contractID" validate:"required"`
 	PayerID     int64  `json:"payerID" validate:"required_if=Status 2"`
 	PaymentTime string `json:"paymentTime" validate:"required_unless=PayerID 0,omitempty,datetime=2006-01-02,validate_payment_time"`
