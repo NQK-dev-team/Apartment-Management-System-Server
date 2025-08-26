@@ -254,3 +254,35 @@ func (c *BillController) AddBill(ctx *gin.Context) {
 	response.Message = config.GetMessageCode("ADD_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }
+
+func (c *BillController) InitBillPayment(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		id = 0
+	}
+
+	isAllowed, isNotPaid, err := c.billService.InitBillPayment(ctx, id)
+
+	if err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if !isAllowed {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(http.StatusForbidden, response)
+		return
+	}
+
+	if !isNotPaid {
+		response.Message = config.GetMessageCode("BILL_ALREADY_PAID")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	response.Message = config.GetMessageCode("PAYMENT_INITIALIZED")
+	ctx.JSON(http.StatusOK, response)
+}

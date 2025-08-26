@@ -20,6 +20,8 @@ type BillModel struct {
 	ContractID   int64              `json:"contractID" gorm:"column:contract_id;not null;"`
 	BillPayments []BillPaymentModel `json:"billPayments" gorm:"foreignKey:bill_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Contract     ContractModel      `json:"contract" gorm:"foreignKey:contract_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	RequestID    sql.NullString     `json:"-" gorm:"column:request_id;type:varchar(255);"` // Momo request ID
+	OrderID      sql.NullString     `json:"-" gorm:"column:order_id;type:varchar(255);"`   // Momo order ID
 }
 
 func (u *BillModel) TableName() string {

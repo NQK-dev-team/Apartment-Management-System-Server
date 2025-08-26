@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sony/sonyflake"
 	"gorm.io/gorm"
 )
 
@@ -440,4 +441,41 @@ func (s *BillService) UpdateBillStatus() error {
 		}
 		return nil
 	})
+}
+
+func (s *BillService) InitBillPayment(ctx *gin.Context, billID int64) (bool, bool, error) {
+	if !s.CheckCustomerPermission(ctx, billID) {
+		return false, true, nil
+	}
+
+	bill := &models.BillModel{}
+
+	if err := s.billRepository.GetById2(ctx, bill, billID); err != nil {
+		return true, true, err
+	}
+
+	if bill.Status != constants.Common.BillStatus.UN_PAID && bill.Status != constants.Common.BillStatus.OVERDUE {
+		return true, false, nil
+	}
+
+	flake := sonyflake.NewSonyflake(sonyflake.Settings{})
+	requestID, _ := flake.NextID()
+	orderID := flake.NextID()
+
+	return true, true, config.DB.Transaction(func(tx *gorm.DB) error {
+
+		return nil
+	})
+}
+
+func (s *BillService) GetMomoResult() error {
+	bills := []models.BillModel{}
+	if err := s.billRepository.GetMomoBills(&bills); err != nil {
+		return err
+	}
+
+	for _, bill := range bills {
+	}
+
+	return nil
 }

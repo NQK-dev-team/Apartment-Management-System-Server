@@ -30,8 +30,13 @@ func roomWorker(wg *sync.WaitGroup) {
 	roomService.UpdateRoomStatus()
 }
 
-func billWorker(wg *sync.WaitGroup) {
+func billWorker(wg *sync.WaitGroup, momoCounter *int) {
 	defer wg.Done() // Decrement the counter when this goroutine finishes
+	*momoCounter++
+	if (*momoCounter)%3 == 0 {
+		billService.GetMomoResult()
+		*momoCounter = 0
+	}
 	billService.UpdateBillStatus()
 }
 
@@ -61,6 +66,9 @@ func main() {
 	// 	time.Sleep(5 * time.Second)
 	// }
 
+	// Counter to keep track of how many times the loop has run, when the momoCounter reaches 3, execute getMomoResult inside billWorker
+	momoCounter := 0
+
 	// Create a ticker that ticks every 10 seconds
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop() // Ensure the ticker is stopped when main exits
@@ -73,8 +81,8 @@ func main() {
 		go emailWorker(&wg)
 		go contractWorker(&wg)
 		go roomWorker(&wg)
-		go billWorker(&wg)
-		// wg.Wait() // Wait for all workers to finish before continuing to the next tick
+		go billWorker(&wg, &momoCounter)
+		wg.Wait() // Wait for all workers to finish before continuing to the next tick
 	}
 
 	// Important: In a real long-running service, you would typically listen for OS signals (like Ctrl+C)

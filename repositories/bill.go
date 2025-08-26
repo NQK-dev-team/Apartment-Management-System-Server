@@ -266,7 +266,7 @@ func (r *BillRepository) CreateBill(ctx *gin.Context, tx *gorm.DB, bill *models.
 }
 
 func (r *BillRepository) UpdateBillStatus(tx *gorm.DB) error {
-	if err := tx.Exec("UPDATE bill SET status = ? WHERE payer_id IS NULL AND payment_time IS NULL AND deleted_at IS NULL AND (date_trunc('month', period) + INTERVAL '1 month - 1 day')::date < NOW()", constants.Common.BillStatus.OVERDUE).Error; err != nil {
+	if err := tx.Exec("UPDATE bill SET status = ? WHERE payer_id IS NULL AND payment_time IS NULL AND deleted_at IS NULL AND (date_trunc('month', period) + INTERVAL '1 month - 1 day')::date < NOW() AND status = ? AND contract_id IN (SELECT contract.id FROM contract where contract.deleted_at IS NULL AND contract.status = ?)", constants.Common.BillStatus.OVERDUE, constants.Common.BillStatus.UN_PAID, constants.Common.ContractStatus.ACTIVE).Error; err != nil {
 		return err
 	}
 	return nil
@@ -275,6 +275,13 @@ func (r *BillRepository) UpdateBillStatus(tx *gorm.DB) error {
 func (r *BillRepository) AddNewPayment2(ctx *gin.Context, tx *gorm.DB, payment *models.BillPaymentModel) error {
 	userID := ctx.GetInt64("userID")
 	if err := tx.Set("userID", userID).Model(&models.BillPaymentModel{}).Omit("ID").Save(payment).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BillRepository) GetMomoBills(bills *[]models.BillModel) error {
+	if err := config.DB.Model(&models.BillModel{}).Where("status = ?", constants.Common.BillStatus.PROCESSING).Find(bills).Error; err != nil {
 		return err
 	}
 	return nil

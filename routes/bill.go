@@ -9,6 +9,7 @@ import (
 
 func InitBillRoutes(router *gin.RouterGroup) {
 	billRoutes := router.Group("/bill")
+	customerOnlyRoutes := router.Group("/bill")
 	billController := controllers.NewBillController()
 	authorizationMiddle := middlewares.NewAuthorizationMiddleware()
 
@@ -20,5 +21,10 @@ func InitBillRoutes(router *gin.RouterGroup) {
 		billRoutes.POST("/delete-many", billController.DeleteManyBills)
 		billRoutes.POST("/:id/update", billController.UpdateBill)
 		billRoutes.POST("/add", billController.AddBill)
+	}
+
+	customerOnlyRoutes.Use(authorizationMiddle.AuthCustomerMiddleware)
+	{
+		customerOnlyRoutes.GET("/:id/init-payment", billController.InitBillPayment)
 	}
 }
