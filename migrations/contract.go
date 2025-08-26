@@ -28,7 +28,7 @@ func (m *ContractMigration) Up() {
 	config.MigrationDB.AutoMigrate(&models.RoomResidentModel{})
 	config.DB.Exec("ALTER TABLE room_resident ADD CONSTRAINT room_resident_relationship CHECK (relation_with_householder >= 1 AND relation_with_householder <= 4);")
 	config.MigrationDB.AutoMigrate(&models.RoomResidentListModel{})
-	// config.DB.Exec("ALTER TABLE room_resident_list ADD CONSTRAINT room_resident_list_composite_key UNIQUE (contract_id, resident_id);")
+	config.DB.Exec("ALTER TABLE room_resident_list ADD CONSTRAINT room_resident_list_composite_key UNIQUE (contract_id, resident_id);")
 }
 
 func (m *ContractMigration) Down() {
