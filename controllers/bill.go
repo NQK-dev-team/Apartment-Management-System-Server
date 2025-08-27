@@ -298,14 +298,14 @@ func (c *BillController) ConfirmMoMoPayment(ctx *gin.Context) {
 		id = 0
 	}
 
-	payload := &structs.MoMoIPNPayLoad{}
+	payload := &structs.MoMoIPNPayload{}
 	if err := ctx.ShouldBindJSON(payload); err != nil {
 		response.Message = config.GetMessageCode("INVALID_PARAMETER")
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
-	isValid, err := c.billService.ProcessMoMoIPN(ctx, payload, id)
+	isValid, isSuccess, err := c.billService.ProcessMoMoIPN(ctx, payload, id)
 
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
@@ -319,6 +319,12 @@ func (c *BillController) ConfirmMoMoPayment(ctx *gin.Context) {
 		return
 	}
 
+	if !isSuccess {
+		response.Message = config.GetMessageCode("PAYMENT_FAILED")
+		ctx.JSON(http.StatusOK, response)
+		return
+	}
+
 	response.Message = config.GetMessageCode("PAYMENT_COMPLETED")
-	ctx.JSON(http.StatusNoContent, nil)
+	ctx.JSON(http.StatusOK, nil)
 }

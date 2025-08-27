@@ -257,6 +257,30 @@ func (r *BillRepository) UpdateBill(ctx *gin.Context, tx *gorm.DB, bill *models.
 	return nil
 }
 
+func (r *BillRepository) UpdateBill2(tx *gorm.DB, bill *models.BillModel, id int64) error {
+	if bill.PayerID.Int64 == 0 || !bill.PayerID.Valid {
+		if err := tx.Model(&models.BillModel{}).Omit("PayerID").Where("id = ?", id).Save(bill).Error; err != nil {
+			return err
+		}
+	} else {
+		if err := tx.Model(&models.BillModel{}).Where("id = ?", id).Save(bill).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *BillRepository) CancelBillPayment(tx *gorm.DB, billID int64) error {
+	if err := tx.Model(&models.BillModel{}).Select("payer_id", "payment_time", "status").Where("id = ?", billID).Updates(map[string]interface{}{
+		"payer_id":     nil,
+		"payment_time": nil,
+		"status":       constants.Common.BillStatus.UN_PAID,
+	}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *BillRepository) CreateBill(ctx *gin.Context, tx *gorm.DB, bill *models.BillModel) error {
 	userID := ctx.GetInt64("userID")
 	if err := tx.Set("userID", userID).Model(&models.BillModel{}).Omit("ID").Create(bill).Error; err != nil {

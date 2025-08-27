@@ -140,5 +140,103 @@ func CreateMoMoPayment(bill *models.BillModel, requestID, orderID uint64, momoRe
 }
 
 func GetMoMoPaymentStatus(bill *models.BillModel) (int, error) {
-	return 0, nil
+	if momoBaseURL == "" {
+		return -1, errors.New("MOMO_BASE_URL is not set")
+	}
+
+	if momoPartnerCode == "" {
+		return -1, errors.New("MOMO_PARTNER_CODE is not set")
+	}
+
+	if momoAccessKey == "" {
+		return -1, errors.New("MOMO_ACCESS_KEY is not set")
+	}
+
+	if momoSecretKey == "" {
+		return -1, errors.New("MOMO_SECRET_KEY is not set")
+	}
+
+	if momoEnv == "" {
+		momoEnv = "UAT"
+	}
+
+	var (
+		lang     = "en"
+		endpoint = momoBaseURL + constants.Momo.QueryPaymentEndPoint
+	)
+
+	// Build raw signature
+	var rawSignature bytes.Buffer
+	rawSignature.WriteString("accessKey=")
+	rawSignature.WriteString(momoAccessKey)
+	rawSignature.WriteString("&orderId=")
+	rawSignature.WriteString(bill.OrderID.String)
+	rawSignature.WriteString("&partnerCode=")
+	rawSignature.WriteString(momoPartnerCode)
+	rawSignature.WriteString("&requestId=")
+	rawSignature.WriteString(bill.RequestID.String)
+
+	// Create a new HMAC by defining the hash type and the key (as byte array)
+	hmac := hmac.New(sha256.New, []byte(momoSecretKey))
+
+	// Write data to it
+	hmac.Write(rawSignature.Bytes())
+	signature := hex.EncodeToString(hmac.Sum(nil))
+
+	payload := structs.MoMoQueryPaymentPayload{
+		PartnerCode: momoPartnerCode,
+		RequestID:   bill.RequestID.String,
+		OrderID:     bill.OrderID.String,
+		Lang:        lang,
+		Signature:   signature,
+	}
+
+	var jsonPayload []byte
+	var err error
+	jsonPayload, err = json.Marshal(payload)
+	if err != nil {
+		return -1, err
+	}
+
+	//send HTTP to momo endpoint
+	response, err := http.Post(endpoint, "application/json", bytes.NewBuffer(jsonPayload))
+	if err != nil {
+		return -1, err
+	}
+
+	momoResponse := &structs.MoMoQueryPaymentResponse{}
+
+	json.NewDecoder(response.Body).Decode(momoResponse)
+
+	return momoResponse.ResultCode, nil
+}
+
+func CheckIPNPayload(bill *models.BillModel, payload *structs.MoMoIPNPayload) bool {
+	if bill.RequestID.String != payload.RequestID {
+		return false
+	}
+
+	if bill.OrderID.String != payload.OrderID {
+		return false
+	}
+
+	if momoEnv == "production" {
+		if payload.Amount != bill.Amount {
+			return false
+		}
+	} else {
+		if payload.Amount != 10000 {
+			return false
+		}
+	}
+
+	if bill.PaymentSignature.String != payload.Signature {
+		return false
+	}
+
+	if payload.PartnerCode != momoPartnerCode {
+		return false
+	}
+
+	return true
 }

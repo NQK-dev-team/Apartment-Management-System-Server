@@ -496,9 +496,53 @@ func (s *BillService) InitBillPayment(ctx *gin.Context, billID int64, momoRespon
 	})
 }
 
-func (s *BillService) ProcessMoMoIPN(ctx *gin.Context, payload *structs.MoMoIPNPayLoad, billID int64) (bool, error) {
+func (s *BillService) ProcessMoMoIPN(ctx *gin.Context, payload *structs.MoMoIPNPayload, billID int64) (bool, bool, error) {
+	bill := &models.BillModel{}
 
-	return true, nil
+	if err := s.billRepository.GetById2(ctx, bill, billID); err != nil {
+		return true, true, err
+	}
+
+	if bill.ID != billID {
+		return false, true, nil
+	}
+
+	if !utils.CheckIPNPayload(bill, payload) {
+		return false, true, nil
+	}
+
+	var err error
+	var isSuccess bool
+
+	if payload.ResultCode == constants.Momo.ResultCode.Success || payload.ResultCode == constants.Momo.ResultCode.PaymentAuthorized {
+		isSuccess = true
+
+		err = config.DB.Transaction(func(tx *gorm.DB) error {
+			bill.Status = constants.Common.BillStatus.PAID
+			bill.PaymentTime = sql.NullTime{
+				Time:  time.Now(),
+				Valid: true,
+			}
+
+			if err := s.billRepository.UpdateBill2(tx, bill, bill.ID); err != nil {
+				return err
+			}
+
+			return nil
+		})
+	} else {
+		isSuccess = false
+
+		err = config.DB.Transaction(func(tx *gorm.DB) error {
+			if err := s.billRepository.CancelBillPayment(tx, bill.ID); err != nil {
+				return err
+			}
+
+			return nil
+		})
+	}
+
+	return true, isSuccess, err
 }
 
 func (s *BillService) GetMomoResult() error {
@@ -521,8 +565,24 @@ func (s *BillService) GetMomoResult() error {
 			continue
 		}
 
-		if resultCode == 0 {
+		if resultCode == constants.Momo.ResultCode.Success || resultCode == constants.Momo.ResultCode.PaymentAuthorized {
+			bill.Status = constants.Common.BillStatus.PAID
+			bill.PaymentTime = sql.NullTime{
+				Time:  time.Now(),
+				Valid: true,
+			}
 
+			if err := s.billRepository.UpdateBill2(tx, &bill, bill.ID); err != nil {
+				tx.RollbackTo(fmt.Sprintf("sp_%d", index))
+				continue
+			}
+		} else if resultCode == constants.Momo.ResultCode.Pending || resultCode == constants.Momo.ResultCode.PaymentProcessorPending {
+			continue
+		} else {
+			if err := s.billRepository.CancelBillPayment(tx, bill.ID); err != nil {
+				tx.RollbackTo(fmt.Sprintf("sp_%d", index))
+				continue
+			}
 		}
 	}
 

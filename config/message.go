@@ -75,6 +75,7 @@ var messageList = map[string]string{
 	"PASSWORD_RESET":      "MSG_I0009",
 	"PAYMENT_INITIALIZED": "MSG_I0010",
 	"PAYMENT_COMPLETED":   "MSG_I0011",
+	"PAYMENT_FAILED":      "MSG_I0012",
 }
 
 func GetMessageCode(key string) string {

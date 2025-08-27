@@ -30,7 +30,7 @@ type MoMoCreatePaymentResponse struct {
 	PayUrl       string `json:"payUrl"`
 }
 
-type MoMoIPNPayLoad struct {
+type MoMoIPNPayload struct {
 	OrderType    string  `json:"orderType"`
 	Amount       float64 `json:"amount"`
 	PartnerCode  string  `json:"partnerCode"`
@@ -44,4 +44,28 @@ type MoMoIPNPayLoad struct {
 	PayType      string  `json:"payType"`
 	RequestID    string  `json:"requestId"`
 	OrderInfo    string  `json:"orderInfo"`
+}
+
+type MoMoQueryPaymentPayload struct {
+	PartnerCode string `json:"partnerCode"`
+	RequestID   string `json:"requestId"`
+	OrderID     string `json:"orderId"`
+	Lang        string `json:"lang"`
+	Signature   string `json:"signature"`
+}
+
+type MoMoQueryPaymentResponse struct {
+	PartnerCode   string      `json:"partnerCode"`
+	RequestID     string      `json:"requestId"`
+	OrderID       string      `json:"orderId"`
+	ExtraData     string      `json:"extraData"`
+	Amount        string      `json:"amount"`
+	TransID       string      `son:"transId"`
+	PayType       string      `json:"payType"`
+	ResultCode    int         `json:"resultCode"`
+	RefundTrans   interface{} `json:"refundTrans"`
+	Message       string      `json:"message"`
+	ResponseTime  string      `json:"responseTime"`
+	PaymentOption string      `json:"paymentOption"`
+	PromotionInfo interface{} `json:"promotionInfo"`
 }
