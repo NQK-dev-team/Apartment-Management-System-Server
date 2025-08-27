@@ -28,3 +28,10 @@ func InitBillRoutes(router *gin.RouterGroup) {
 		customerOnlyRoutes.GET("/:id/init-payment", billController.InitBillPayment)
 	}
 }
+
+func InitMoMoBillRoutes(router *gin.RouterGroup) {
+	billRoutes := router.Group("/bill")
+	billController := controllers.NewBillController()
+
+	billRoutes.POST("/:id/momo-confirm", billController.ConfirmMoMoPayment)
+}

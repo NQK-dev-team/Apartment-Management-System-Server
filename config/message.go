@@ -57,6 +57,7 @@ var messageList = map[string]string{
 	"PASSWORD_INCORRECT":     "MSG_E0018",
 	"FILE_NOT_FOUND":         "MSG_E0019",
 	"BILL_ALREADY_PAID":      "MSG_E0020",
+	"IPN_PAYLOAD_INVALID":    "MSG_E0021",
 
 	// Parameter error messages
 	"INVALID_PARAMETER":    "MSG_V0001",
@@ -73,6 +74,7 @@ var messageList = map[string]string{
 	"EMAIL_SENT":          "MSG_I0008",
 	"PASSWORD_RESET":      "MSG_I0009",
 	"PAYMENT_INITIALIZED": "MSG_I0010",
+	"PAYMENT_COMPLETED":   "MSG_I0011",
 }
 
 func GetMessageCode(key string) string {

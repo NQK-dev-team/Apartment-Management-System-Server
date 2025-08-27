@@ -13,8 +13,8 @@ func InitRoutes(router *gin.RouterGroup) {
 	// Init authentication sub-routes
 	InitAuthRoutes(r)
 
-	// Init file sub-routes
-	// InitFileRoutes(r)
+	// Init routes for MoMo payment confirmation without authentication
+	InitMoMoBillRoutes(r)
 
 	// Apply the jwtMiddleware to other sub-routes
 	authMiddleware := middlewares.NewAuthenticationMiddleware()
@@ -22,7 +22,6 @@ func InitRoutes(router *gin.RouterGroup) {
 	{
 		// Init other sub-routes
 		InitFileRoutes(r)
-
 		InitBuildingRoutes(r)
 		InitUserRoutes(r)
 		InitSupportTicketRoutes(r)

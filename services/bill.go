@@ -9,6 +9,7 @@ import (
 	"api/utils"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -443,7 +444,7 @@ func (s *BillService) UpdateBillStatus() error {
 	})
 }
 
-func (s *BillService) InitBillPayment(ctx *gin.Context, billID int64) (bool, bool, error) {
+func (s *BillService) InitBillPayment(ctx *gin.Context, billID int64, momoResponse *structs.MoMoCreatePaymentResponse) (bool, bool, error) {
 	if !s.CheckCustomerPermission(ctx, billID) {
 		return false, true, nil
 	}
@@ -460,12 +461,44 @@ func (s *BillService) InitBillPayment(ctx *gin.Context, billID int64) (bool, boo
 
 	flake := sonyflake.NewSonyflake(sonyflake.Settings{})
 	requestID, _ := flake.NextID()
-	orderID := flake.NextID()
+	orderID, _ := flake.NextID()
 
 	return true, true, config.DB.Transaction(func(tx *gorm.DB) error {
+		signature := ""
+
+		if err := utils.CreateMoMoPayment(bill, requestID, orderID, momoResponse, &signature); err != nil {
+			return err
+		}
+
+		bill.RequestID = sql.NullString{
+			String: fmt.Sprintf("%d", requestID),
+			Valid:  true,
+		}
+		bill.OrderID = sql.NullString{
+			String: fmt.Sprintf("%d", orderID),
+			Valid:  true,
+		}
+		bill.Status = constants.Common.BillStatus.PROCESSING
+		bill.PayerID = sql.NullInt64{
+			Int64: ctx.GetInt64("userID"),
+			Valid: true,
+		}
+		bill.PaymentSignature = sql.NullString{
+			String: signature,
+			Valid:  true,
+		}
+
+		if err := s.billRepository.UpdateBill(ctx, tx, bill, bill.ID); err != nil {
+			return err
+		}
 
 		return nil
 	})
+}
+
+func (s *BillService) ProcessMoMoIPN(ctx *gin.Context, payload *structs.MoMoIPNPayLoad, billID int64) (bool, error) {
+
+	return true, nil
 }
 
 func (s *BillService) GetMomoResult() error {
@@ -474,8 +507,26 @@ func (s *BillService) GetMomoResult() error {
 		return err
 	}
 
-	for _, bill := range bills {
+	tx := config.DB.Begin()
+	if tx.Error != nil {
+		return tx.Error
 	}
+
+	for index, bill := range bills {
+		tx.SavePoint(fmt.Sprintf("sp_%d", index))
+
+		resultCode, err := utils.GetMoMoPaymentStatus(&bill)
+		if err != nil {
+			tx.RollbackTo(fmt.Sprintf("sp_%d", index))
+			continue
+		}
+
+		if resultCode == 0 {
+
+		}
+	}
+
+	tx.Commit()
 
 	return nil
 }
