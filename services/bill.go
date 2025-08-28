@@ -469,6 +469,7 @@ func (s *BillService) InitBillPayment(ctx *gin.Context, billID int64, momoRespon
 
 	flake, err := sonyflake.New(sonyflake.Settings{})
 	if err != nil {
+		fmt.Println(err)
 		return true, errors.New("failed to create sonyflake")
 	}
 
