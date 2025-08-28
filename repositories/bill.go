@@ -271,7 +271,7 @@ func (r *BillRepository) UpdateBill2(tx *gorm.DB, bill *models.BillModel, id int
 }
 
 func (r *BillRepository) CancelBillPayment(tx *gorm.DB, billID int64) error {
-	if err := tx.Model(&models.BillModel{}).Select("payer_id", "payment_time", "status").Where("id = ?", billID).Updates(map[string]interface{}{
+	if err := tx.Model(&models.BillModel{}).Select("payer_id", "payment_time", "status", "order_id", "request_id").Where("id = ?", billID).Updates(map[string]interface{}{
 		"payer_id":     nil,
 		"payment_time": nil,
 		"status":       constants.Common.BillStatus.UN_PAID,
@@ -317,8 +317,8 @@ func (r *BillRepository) UpdateBillStatus(tx *gorm.DB) error {
 			ELSE bill.status
 		END
 	FROM contract
-	WHERE bill.contract_id = contract.id AND bill.payer_id IS NULL AND bill.payment_time IS NULL AND bill.deleted_at IS NULL AND contract.deleted_at IS NULL AND bill.status = ? AND contract.status IN ?
-		`, constants.Common.BillStatus.OVERDUE, constants.Common.BillStatus.CANCELLED, constants.Common.ContractStatus.ACTIVE, []int{constants.Common.ContractStatus.EXPIRED, constants.Common.ContractStatus.CANCELLED}).Error; err != nil {
+	WHERE bill.contract_id = contract.id AND bill.payer_id IS NULL AND bill.payment_time IS NULL AND bill.deleted_at IS NULL AND contract.deleted_at IS NULL AND bill.status = ? AND contract.status = ?
+		`, constants.Common.BillStatus.OVERDUE, constants.Common.BillStatus.CANCELLED, constants.Common.ContractStatus.ACTIVE, constants.Common.ContractStatus.EXPIRED).Error; err != nil {
 		return err
 	}
 
