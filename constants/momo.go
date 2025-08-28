@@ -2,7 +2,8 @@ package constants
 
 type momoResultCode struct {
 	Success                 int
-	Pending                 int
+	UserPending             int
+	PaymentPending          int
 	PaymentProcessorPending int
 	PaymentAuthorized       int
 }
@@ -18,7 +19,8 @@ var Momo = momo{
 	QueryPaymentEndPoint:  "/v2/gateway/api/query",
 	ResultCode: momoResultCode{
 		Success:                 0,
-		Pending:                 7000,
+		UserPending:             1000,
+		PaymentPending:          7000,
 		PaymentProcessorPending: 7002,
 		PaymentAuthorized:       9000,
 	},

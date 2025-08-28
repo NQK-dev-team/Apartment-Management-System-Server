@@ -12,17 +12,27 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 )
 
 var (
-	momoBaseURL      = config.GetEnv("MOMO_BASE_URL")
-	momoPartnerCode  = config.GetEnv("MOMO_PARTNER_CODE")
-	momoAccessKey    = config.GetEnv("MOMO_ACCESS_KEY")
-	momoSecretKey    = config.GetEnv("MOMO_SECRET_KEY")
-	momoEnv          = config.GetEnv("MOMO_ENV")
-	apmClientBaseURL = config.GetEnv("APM_CLIENT_BASE_URL")
+	momoBaseURL      = ""
+	momoPartnerCode  = ""
+	momoAccessKey    = ""
+	momoSecretKey    = ""
+	momoEnv          = ""
+	apmClientBaseURL = ""
 )
+
+func InitMoMoConfig() {
+	momoBaseURL = config.GetEnv("MOMO_BASE_URL")
+	momoPartnerCode = config.GetEnv("MOMO_PARTNER_CODE")
+	momoAccessKey = config.GetEnv("MOMO_ACCESS_KEY")
+	momoSecretKey = config.GetEnv("MOMO_SECRET_KEY")
+	momoEnv = config.GetEnv("MOMO_ENV")
+	apmClientBaseURL = config.GetEnv("APM_CLIENT_BASE_URL")
+}
 
 func CreateMoMoPayment(bill *models.BillModel, requestID, orderID uint64, momoResponse *structs.MoMoCreatePaymentResponse, signature *string) error {
 	if momoBaseURL == "" {
@@ -50,16 +60,18 @@ func CreateMoMoPayment(bill *models.BillModel, requestID, orderID uint64, momoRe
 	}
 
 	var (
-		partnerName = ""
-		storeId     = ""
-		lang        = "en"
-		extraData   = ""
-		orderInfo   = fmt.Sprintf("Payment for bill ID: %d", bill.ID)
-		amount      = 0.0
-		requestType = "payWithMethod"
-		redirectUrl = fmt.Sprintf("%s/bill/%d", apmClientBaseURL, bill.ID)
-		ipnUrl      = fmt.Sprintf("%s/api/bill/%d/momo-confirm", apmClientBaseURL, bill.ID)
-		endpoint    = momoBaseURL + constants.Momo.CreatePaymentEndpoint
+		partnerName  = ""
+		storeId      = ""
+		lang         = "en"
+		extraData    = ""
+		orderInfo    = fmt.Sprintf("Payment for billing ID: %d", bill.ID)
+		amount       = 0.0
+		requestType  = "payWithMethod"
+		redirectUrl  = fmt.Sprintf("%s/bill/%d", apmClientBaseURL, bill.ID)
+		ipnUrl       = fmt.Sprintf("%s/api/bill/%d/momo-confirm", apmClientBaseURL, bill.ID)
+		endpoint     = momoBaseURL + constants.Momo.CreatePaymentEndpoint
+		orderGroupId = ""
+		autoCapture  = true
 	)
 
 	if momoEnv == "production" {
@@ -68,12 +80,14 @@ func CreateMoMoPayment(bill *models.BillModel, requestID, orderID uint64, momoRe
 		amount = 10000 // 10k VND for testing in non-production environment
 	}
 
+	roundedAmount := int64(math.Round(amount))
+
 	// Build raw signature
 	var rawSignature bytes.Buffer
 	rawSignature.WriteString("accessKey=")
 	rawSignature.WriteString(momoAccessKey)
 	rawSignature.WriteString("&amount=")
-	rawSignature.WriteString(fmt.Sprintf("%f", amount))
+	rawSignature.WriteString(fmt.Sprintf("%d", roundedAmount))
 	rawSignature.WriteString("&extraData=")
 	rawSignature.WriteString(extraData)
 	rawSignature.WriteString("&ipnUrl=")
@@ -99,22 +113,22 @@ func CreateMoMoPayment(bill *models.BillModel, requestID, orderID uint64, momoRe
 	*signature = hex.EncodeToString(hmac.Sum(nil))
 
 	payload := structs.MoMoCreatePaymentPayload{
-		PartnerCode: momoPartnerCode,
-		AccessKey:   momoAccessKey,
-		RequestID:   fmt.Sprintf("%d", requestID),
-		Amount:      fmt.Sprintf("%f", amount),
-		OrderID:     fmt.Sprintf("%d", orderID),
-		OrderInfo:   orderInfo,
-		PartnerName: partnerName,
-		StoreId:     storeId,
-		// OrderGroupId: "",
-		Lang: lang,
-		// AutoCapture:  true,
-		RedirectUrl: redirectUrl,
-		IpnUrl:      ipnUrl,
-		ExtraData:   extraData,
-		RequestType: requestType,
-		Signature:   *signature,
+		PartnerCode:  momoPartnerCode,
+		AccessKey:    momoAccessKey,
+		RequestID:    fmt.Sprintf("%d", requestID),
+		Amount:       fmt.Sprintf("%d", roundedAmount),
+		OrderID:      fmt.Sprintf("%d", orderID),
+		OrderInfo:    orderInfo,
+		PartnerName:  partnerName,
+		StoreId:      storeId,
+		OrderGroupId: orderGroupId,
+		Lang:         lang,
+		AutoCapture:  autoCapture,
+		RedirectUrl:  redirectUrl,
+		IpnUrl:       ipnUrl,
+		ExtraData:    extraData,
+		RequestType:  requestType,
+		Signature:    *signature,
 	}
 
 	var jsonPayload []byte

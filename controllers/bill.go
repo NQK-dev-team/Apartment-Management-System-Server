@@ -264,8 +264,9 @@ func (c *BillController) InitBillPayment(ctx *gin.Context) {
 	}
 
 	momoResponse := &structs.MoMoCreatePaymentResponse{}
+	paymentResult := 0
 
-	isAllowed, isNotPaid, err := c.billService.InitBillPayment(ctx, id, momoResponse)
+	isAllowed, err := c.billService.InitBillPayment(ctx, id, momoResponse, &paymentResult)
 
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
@@ -279,8 +280,14 @@ func (c *BillController) InitBillPayment(ctx *gin.Context) {
 		return
 	}
 
-	if !isNotPaid {
+	if paymentResult == 1 {
 		response.Message = config.GetMessageCode("BILL_ALREADY_PAID")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	if paymentResult == 2 {
+		response.Message = config.GetMessageCode("BILL_PROCESSING")
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}

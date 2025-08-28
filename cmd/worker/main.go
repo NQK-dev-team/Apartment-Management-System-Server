@@ -3,6 +3,7 @@ package main
 import (
 	"api/config"
 	"api/services"
+	"api/utils"
 	"sync"
 	"time"
 
@@ -47,12 +48,17 @@ func main() {
 		panic(err)
 	}
 
+	// Init mailer
 	err = config.InitMailer()
 	if err != nil {
 		panic(err)
 	}
 
+	// Init DB
 	config.InitDB()
+
+	// Init MoMo config
+	utils.InitMoMoConfig()
 
 	emailService = services.NewEmailQueueService()
 	contractService = services.NewContractService()

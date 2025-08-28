@@ -58,6 +58,7 @@ var messageList = map[string]string{
 	"FILE_NOT_FOUND":         "MSG_E0019",
 	"BILL_ALREADY_PAID":      "MSG_E0020",
 	"IPN_PAYLOAD_INVALID":    "MSG_E0021",
+	"BILL_PROCESSING":        "MSG_E0022",
 
 	// Parameter error messages
 	"INVALID_PARAMETER":    "MSG_V0001",

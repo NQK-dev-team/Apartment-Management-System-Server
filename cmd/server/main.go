@@ -59,6 +59,9 @@ func main() {
 	// Init storage services
 	utils.InitStorageServices()
 
+	// Init MoMo config
+	utils.InitMoMoConfig()
+
 	// Router settings
 	// Limit form size to 500 MB
 	router.MaxMultipartMemory = (50 << 20) * 10 // 500 MB

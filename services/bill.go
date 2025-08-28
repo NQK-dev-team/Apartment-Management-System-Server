@@ -444,26 +444,34 @@ func (s *BillService) UpdateBillStatus() error {
 	})
 }
 
-func (s *BillService) InitBillPayment(ctx *gin.Context, billID int64, momoResponse *structs.MoMoCreatePaymentResponse) (bool, bool, error) {
+func (s *BillService) InitBillPayment(ctx *gin.Context, billID int64, momoResponse *structs.MoMoCreatePaymentResponse, paymentResult *int) (bool, error) {
 	if !s.CheckCustomerPermission(ctx, billID) {
-		return false, true, nil
+		return false, nil
 	}
 
 	bill := &models.BillModel{}
 
 	if err := s.billRepository.GetById2(ctx, bill, billID); err != nil {
-		return true, true, err
+		return true, err
 	}
 
 	if bill.Status != constants.Common.BillStatus.UN_PAID && bill.Status != constants.Common.BillStatus.OVERDUE {
-		return true, false, nil
+		switch bill.Status {
+		case constants.Common.BillStatus.PAID:
+			*paymentResult = 1
+		case constants.Common.BillStatus.PROCESSING:
+			*paymentResult = 2
+		case constants.Common.BillStatus.CANCELLED:
+			return false, nil
+		}
+		return true, nil
 	}
 
 	flake := sonyflake.NewSonyflake(sonyflake.Settings{})
 	requestID, _ := flake.NextID()
 	orderID, _ := flake.NextID()
 
-	return true, true, config.DB.Transaction(func(tx *gorm.DB) error {
+	return true, config.DB.Transaction(func(tx *gorm.DB) error {
 		signature := ""
 
 		if err := utils.CreateMoMoPayment(bill, requestID, orderID, momoResponse, &signature); err != nil {
@@ -576,7 +584,7 @@ func (s *BillService) GetMomoResult() error {
 				tx.RollbackTo(fmt.Sprintf("sp_%d", index))
 				continue
 			}
-		} else if resultCode == constants.Momo.ResultCode.Pending || resultCode == constants.Momo.ResultCode.PaymentProcessorPending {
+		} else if resultCode == constants.Momo.ResultCode.PaymentPending || resultCode == constants.Momo.ResultCode.PaymentProcessorPending || resultCode == constants.Momo.ResultCode.UserPending {
 			continue
 		} else {
 			if err := s.billRepository.CancelBillPayment(tx, bill.ID); err != nil {
