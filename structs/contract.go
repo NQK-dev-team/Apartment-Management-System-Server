@@ -1,0 +1,92 @@
+package structs
+
+import (
+	"api/models"
+	"database/sql"
+	"mime/multipart"
+	"time"
+)
+
+type Contract struct {
+	models.DefaultModel
+	Status        int                        `json:"status" gorm:"column:status;type:int;not null;"` // 1: Active, 2: Expired, 3: Cancelled, 4: Waiting for signatures, 5: Not in effect yet
+	Value         float64                    `json:"value" gorm:"column:value;type:float;not null;"`
+	Type          int                        `json:"type" gorm:"column:type;type:int;not null;"` // 1: Rent, 2: Buy
+	StartDate     time.Time                  `json:"startDate" gorm:"column:start_date;type:date;not null;default:now();"`
+	EndDate       sql.NullTime               `json:"endDate" gorm:"column:end_date;type:date;"`
+	SignDate      sql.NullTime               `json:"signDate" gorm:"column:sign_date;type:date;default:now();"`
+	CreatorID     int64                      `json:"creatorID" gorm:"column:creator_id;not null;"`
+	Creator       models.UserModel           `json:"creator" gorm:"foreignKey:creator_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	HouseholderID int64                      `json:"householderID" gorm:"column:householder_id;not null;"`
+	Householder   models.UserModel           `json:"householder" gorm:"foreignKey:householder_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	RoomID        int64                      `json:"roomID" gorm:"column:room_id;not null;"`
+	Bills         []models.BillModel         `json:"bills" gorm:"foreignKey:contract_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	Files         []models.ContractFileModel `json:"files" gorm:"foreignKey:contract_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Residents     []models.RoomResidentModel `json:"residents" gorm:"-"`
+	// SupportTickets []SupportTicketModel `json:"supportTickets" gorm:"foreignKey:contract_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	// BuildingID    int64     `json:"buildingID" gorm:"column:building_id;not null;"`
+	// Room          RoomModel           `json:"room" gorm:"foreignKey:room_id,building_id;references:id,building_id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	BuildingName    string `json:"buildingName" gorm:"building_name"`
+	BuildingAddress string `json:"buildingAddress" gorm:"building_address"`
+	RoomNo          int    `json:"roomNo" gorm:"room_no"`
+	RoomFloor       int    `json:"roomFloor" gorm:"room_floor"`
+	BuildingID      int64  `json:"buildingID" gorm:"column:building_id;"`
+}
+
+type ContractFile struct {
+	File  *multipart.FileHeader `form:"file" validate:"required"`
+	Title string                `form:"title" validate:"required,max=255"`
+}
+
+type EditContract struct {
+	Status           int                 `form:"status" validate:"required,min=1,max=5"`
+	NewSignDate      string              `form:"newSignDate" validate:"omitempty,datetime=2006-01-02"`
+	TotalNewfiles    int                 `form:"totalNewFiles" validate:"min=0"`
+	NewFiles         []ContractFile      `form:"newFiles[]" validate:"omitempty,dive"`
+	RemovedResidents []int64             `form:"removedResidents[]" validate:"omitempty"`
+	Residents        []ContractResidents `form:"residents[]" validate:"dive"`
+}
+
+type ContractResidents struct {
+	UserAccountID           int64  `form:"userAccountID" validate:"omitempty"`
+	FirstName               string `form:"firstName" validate:"required_if=UserAccountID 0,omitempty,max=255"`
+	LastName                string `form:"lastName" validate:"required_if=UserAccountID 0,omitempty,max=255"`
+	MiddleName              string `form:"middleName" validate:"omitempty,max=255"`
+	SSN                     string `form:"ssn" validate:"omitempty,number,len=12"`
+	OldSSN                  string `form:"oldSSN" validate:"omitempty,number,len=9"`
+	DOB                     string `form:"dob" validate:"required_if=UserAccountID 0,omitempty,datetime=2006-01-02,not_after_current_date"`
+	POB                     string `form:"pob" validate:"required_if=UserAccountID 0,omitempty,max=255"`
+	Phone                   string `form:"phone" validate:"omitempty,number,len=10"`
+	Email                   string `form:"email" validate:"omitempty,max=255,email"`
+	Gender                  int    `form:"gender" validate:"required_if=UserAccountID 0,omitempty,min=1,max=3"`
+	RelationWithHouseholder int    `form:"relationWithHouseholder" validate:"required,min=1,max=4"`
+	ID                      int64  `form:"id" validate:"omitempty"` // For existing residents, this is the ID of the resident record. For new residents, this is 0.
+}
+
+type NewContract struct {
+	BuildingID    int64               `form:"buildingID" validate:"required"`
+	RoomID        int64               `form:"roomID" validate:"required"`
+	HouseholderID int64               `form:"householderID" validate:"required"`
+	ContractType  int                 `form:"contractType" validate:"required,min=1,max=2"` // 1: Rent, 2: Buy
+	ContractValue float64             `form:"contractValue" validate:"required,min=0"`
+	CreatedAt     string              `form:"createdAt" validate:"required,datetime=2006-01-02,check_date_equal_or_before=StartDate"`
+	StartDate     string              `form:"startDate" validate:"required,datetime=2006-01-02,check_date_equal_or_after=CreatedAt"`
+	EndDate       string              `form:"endDate" validate:"contract_type_and_end_date=ContractType,omitempty,datetime=2006-01-02,check_date_equal_or_after=StartDate"`
+	SignDate      string              `form:"signDate" validate:"omitempty,datetime=2006-01-02,check_date_equal_or_before=StartDate,check_date_equal_or_after=CreatedAt"`
+	TotalNewfiles int                 `form:"totalNewFiles" validate:"min=0"`
+	NewFiles      []ContractFile      `form:"newFiles[]" validate:"omitempty,dive"`
+	Residents     []ContractResidents `form:"residents[]" validate:"dive"`
+}
+
+type NewUploadContract struct {
+	RoomID        int64               `validate:"required"`
+	CreatorID     int64               `validate:"required"`
+	HouseholderID int64               `validate:"required"`
+	ContractType  int                 `validate:"required,min=1,max=2"` // 1: Rent, 2: Buy
+	ContractValue float64             `validate:"required,min=0"`
+	CreatedAt     string              `validate:"required,datetime=2006-01-02,check_date_equal_or_before=StartDate"`
+	StartDate     string              `validate:"required,datetime=2006-01-02,check_date_equal_or_after=CreatedAt"`
+	EndDate       string              `validate:"contract_type_and_end_date=ContractType,omitempty,datetime=2006-01-02,check_date_equal_or_after=StartDate"`
+	SignDate      string              `validate:"omitempty,datetime=2006-01-02,check_date_equal_or_before=StartDate,check_date_equal_or_after=CreatedAt"`
+	Residents     []ContractResidents `validate:"dive"`
+}

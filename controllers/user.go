@@ -1,7 +1,16 @@
 package controllers
 
 import (
+	"api/config"
+	"api/constants"
+	"api/models"
 	"api/services"
+	"api/structs"
+	"api/utils"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,11 +20,713 @@ type UserController struct {
 }
 
 func NewUserController() *UserController {
-	return &UserController{userService: services.NewUserService()}
+	return &UserController{
+		userService: services.NewUserService(),
+	}
 }
 
-func (c *UserController) Get(ctx *gin.Context) {
-	ctx.JSON(200, gin.H{
-		"message": "Get",
-	})
+func (c *UserController) GetStaffList(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	users := &[]models.UserModel{}
+
+	if err := c.userService.GetStaffList(ctx, users); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = users
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) GetStaffDetail(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	user := &models.UserModel{}
+
+	if err := c.userService.GetStaffDetail(ctx, user, id); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = user
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) GetStaffSchedule(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	schedules := []models.ManagerScheduleModel{}
+
+	if err := c.userService.GetStaffSchedule(ctx, &schedules, id); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = schedules
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) GetStaffRelatedContract(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	contracts := []models.ContractModel{}
+
+	if err := c.userService.GetStaffRelatedContract(ctx, &contracts, id); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = contracts
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) GetStaffRelatedTicket(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	limitStr := ctx.DefaultQuery("limit", "500")
+	offsetStr := ctx.DefaultQuery("offset", "0")
+	startDate := ctx.Query("startDate")
+	endDate := ctx.Query("endDate")
+
+	limit, err := strconv.ParseInt(limitStr, 10, 64)
+
+	if err != nil {
+		limit = 500
+	}
+
+	offset, err := strconv.ParseInt(offsetStr, 10, 64)
+
+	if err != nil {
+		offset = 0
+	}
+
+	if startDate == "" {
+		startDate = utils.GetFirstDayOfMonth("")
+	} else {
+		if _, err := time.Parse("2006-01-02", startDate); err != nil {
+			startDate = utils.GetFirstDayOfMonth("")
+		}
+	}
+
+	if endDate == "" {
+		endDate = utils.GetCurrentDate()
+	} else {
+		if _, err := time.Parse("2006-01-02", endDate); err != nil {
+			endDate = utils.GetCurrentDate()
+		}
+	}
+
+	tickets := []structs.SupportTicket{}
+
+	if err := c.userService.GetStaffRelatedTicket(ctx, &tickets, id, limit, offset, startDate, endDate); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = tickets
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) DeleteStaffs(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	type deleteIDs struct {
+		IDs []int64 `json:"IDs" validate:"required"`
+	}
+
+	input := &deleteIDs{}
+
+	if err := ctx.ShouldBindJSON(input); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	if err := constants.Validate.Struct(input); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	if err := c.userService.DeleteUsers(ctx, input.IDs); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Message = config.GetMessageCode("DELETE_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) AddStaff(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	newStaff := &structs.NewStaff{}
+
+	if err := ctx.ShouldBind(newStaff); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	var err error
+	newStaff.ProfileImage, err = ctx.FormFile("profileImage")
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	newStaff.FrontSSNImage, err = ctx.FormFile("frontSSNImage")
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	newStaff.BackSSNImage, err = ctx.FormFile("backSSNImage")
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	newStaff.FirstName = strings.TrimSpace(newStaff.FirstName)
+	newStaff.LastName = strings.TrimSpace(newStaff.LastName)
+	newStaff.MiddleName = strings.TrimSpace(newStaff.MiddleName)
+	newStaff.SSN = strings.TrimSpace(newStaff.SSN)
+	newStaff.OldSSN = strings.TrimSpace(newStaff.OldSSN)
+	newStaff.Pob = strings.TrimSpace(newStaff.Pob)
+	newStaff.Email = strings.TrimSpace(newStaff.Email)
+	newStaff.Phone = strings.TrimSpace(newStaff.Phone)
+	newStaff.PermanentAddress = strings.TrimSpace(newStaff.PermanentAddress)
+	newStaff.TemporaryAddress = strings.TrimSpace(newStaff.TemporaryAddress)
+
+	if err := constants.Validate.Struct(newStaff); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	validateStaffFile := &structs.ValidateUserFile{
+		ProfileImage:  structs.ImageValidation{Type: newStaff.ProfileImage.Header.Get("Content-Type"), Size: newStaff.ProfileImage.Size},
+		FrontSSNImage: structs.ImageValidation{Type: newStaff.FrontSSNImage.Header.Get("Content-Type"), Size: newStaff.FrontSSNImage.Size},
+		BackSSNImage:  structs.ImageValidation{Type: newStaff.BackSSNImage.Header.Get("Content-Type"), Size: newStaff.BackSSNImage.Size},
+	}
+
+	if err := constants.Validate.Struct(validateStaffFile); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	if messageCode, err := c.userService.CheckDuplicateData(ctx, newStaff.Email, newStaff.SSN, newStaff.Phone, newStaff.OldSSN); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	} else if messageCode != "" {
+		response.Message = messageCode
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	var newStaffID int64
+
+	if err := c.userService.CreateStaff(ctx, newStaff, &newStaffID); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = newStaffID
+	response.Message = config.GetMessageCode("CREATE_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) UpdateStaff(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	editStaff := &structs.EditStaff{}
+
+	staffID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	if err := ctx.ShouldBind(editStaff); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	editStaff.ID = staffID
+
+	if err := constants.Validate.Struct(editStaff); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	checkUser := &models.UserModel{}
+
+	if err := c.userService.GetStaffDetail(ctx, checkUser, staffID); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if checkUser.ID == 0 {
+		response.Message = config.GetMessageCode("USER_NOT_FOUND")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	if err := c.userService.UpdateStaff(ctx, editStaff); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) GetCustomerList(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	users := []models.UserModel{}
+
+	limitStr := ctx.DefaultQuery("limit", "500")
+	offsetStr := ctx.DefaultQuery("offset", "0")
+
+	limit, err := strconv.ParseInt(limitStr, 10, 64)
+
+	if err != nil {
+		limit = 500
+	}
+
+	offset, err := strconv.ParseInt(offsetStr, 10, 64)
+
+	if err != nil {
+		offset = 0
+	}
+
+	if err := c.userService.GetCustomerList(ctx, &users, limit, offset); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = users
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) DeleteCustomers(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	type deleteIDs struct {
+		IDs []int64 `json:"IDs" validate:"required"`
+	}
+
+	input := &deleteIDs{}
+
+	if err := ctx.ShouldBindJSON(input); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	if err := constants.Validate.Struct(input); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	if err := c.userService.DeleteUsers(ctx, input.IDs); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Message = config.GetMessageCode("DELETE_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) GetCustomerDetail(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	user := &models.UserModel{}
+
+	if err := c.userService.GetCustomerDetail(ctx, user, id); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = user
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) GetCustomerContract(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	contracts := []structs.Contract{}
+	if err := c.userService.GetCustomerContract(ctx, &contracts, id); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = contracts
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) GetCustomerTicket(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	tickets := []structs.SupportTicket{}
+	if err := c.userService.GetCustomerTicket(ctx, &tickets, id); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = tickets
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) AddCustomer(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	newCustomer := &structs.NewCustomer{}
+
+	if err := ctx.ShouldBind(newCustomer); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	var err error
+	newCustomer.ProfileImage, err = ctx.FormFile("profileImage")
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	newCustomer.FrontSSNImage, err = ctx.FormFile("frontSSNImage")
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	newCustomer.BackSSNImage, err = ctx.FormFile("backSSNImage")
+	if err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	newCustomer.FirstName = strings.TrimSpace(newCustomer.FirstName)
+	newCustomer.LastName = strings.TrimSpace(newCustomer.LastName)
+	newCustomer.MiddleName = strings.TrimSpace(newCustomer.MiddleName)
+	newCustomer.SSN = strings.TrimSpace(newCustomer.SSN)
+	newCustomer.OldSSN = strings.TrimSpace(newCustomer.OldSSN)
+	newCustomer.Pob = strings.TrimSpace(newCustomer.Pob)
+	newCustomer.Email = strings.TrimSpace(newCustomer.Email)
+	newCustomer.Phone = strings.TrimSpace(newCustomer.Phone)
+	newCustomer.PermanentAddress = strings.TrimSpace(newCustomer.PermanentAddress)
+	newCustomer.TemporaryAddress = strings.TrimSpace(newCustomer.TemporaryAddress)
+
+	if err := constants.Validate.Struct(newCustomer); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	validateCustomerFile := &structs.ValidateUserFile{
+		ProfileImage:  structs.ImageValidation{Type: newCustomer.ProfileImage.Header.Get("Content-Type"), Size: newCustomer.ProfileImage.Size},
+		FrontSSNImage: structs.ImageValidation{Type: newCustomer.FrontSSNImage.Header.Get("Content-Type"), Size: newCustomer.FrontSSNImage.Size},
+		BackSSNImage:  structs.ImageValidation{Type: newCustomer.BackSSNImage.Header.Get("Content-Type"), Size: newCustomer.BackSSNImage.Size},
+	}
+
+	if err := constants.Validate.Struct(validateCustomerFile); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	if messageCode, err := c.userService.CheckDuplicateData(ctx, newCustomer.Email, newCustomer.SSN, newCustomer.Phone, newCustomer.OldSSN); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	} else if messageCode != "" {
+		response.Message = messageCode
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	var newCustomerID int64
+
+	if err := c.userService.CreateCustomer(ctx, newCustomer, &newCustomerID); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = newCustomerID
+	response.Message = config.GetMessageCode("CREATE_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) GetUserInfo(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	user := &models.UserModel{}
+
+	if err := c.userService.GetUserInfo(ctx, user); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = user
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) UpdateUserInfo(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	profile := &structs.UpdateProfile{}
+
+	if err := ctx.ShouldBind(profile); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	profile.NewProfileImage, _ = ctx.FormFile("newProfile")
+	profile.NewFrontSSNImage, _ = ctx.FormFile("newFrontSSN")
+	profile.NewBackSSNImage, _ = ctx.FormFile("newBackSSN")
+
+	profile.FirstName = strings.TrimSpace(profile.FirstName)
+	profile.LastName = strings.TrimSpace(profile.LastName)
+	profile.MiddleName = strings.TrimSpace(profile.MiddleName)
+	profile.SSN = strings.TrimSpace(profile.SSN)
+	profile.OldSSN = strings.TrimSpace(profile.OldSSN)
+	profile.Pob = strings.TrimSpace(profile.Pob)
+	profile.Phone = strings.TrimSpace(profile.Phone)
+	profile.PermanentAddress = strings.TrimSpace(profile.PermanentAddress)
+	profile.TemporaryAddress = strings.TrimSpace(profile.TemporaryAddress)
+
+	if err := constants.Validate.Struct(profile); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	validateCustomerFile := &structs.ValidateUserFile2{}
+
+	if profile.NewProfileImage != nil {
+		validateCustomerFile.ProfileImage = &structs.ImageValidation{
+			Type: profile.NewProfileImage.Header.Get("Content-Type"),
+			Size: profile.NewProfileImage.Size,
+		}
+	}
+
+	if profile.NewFrontSSNImage != nil {
+		validateCustomerFile.FrontSSNImage = &structs.ImageValidation{
+			Type: profile.NewFrontSSNImage.Header.Get("Content-Type"),
+			Size: profile.NewFrontSSNImage.Size,
+		}
+	}
+
+	if profile.NewBackSSNImage != nil {
+		validateCustomerFile.BackSSNImage = &structs.ImageValidation{
+			Type: profile.NewBackSSNImage.Header.Get("Content-Type"),
+			Size: profile.NewBackSSNImage.Size,
+		}
+	}
+
+	if err := constants.Validate.Struct(validateCustomerFile); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	if messageCode, err := c.userService.CheckDuplicateData2(ctx, profile.SSN, profile.Phone, profile.OldSSN); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	} else if messageCode != "" {
+		response.Message = messageCode
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	if err := c.userService.UpdateProfile(ctx, profile); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) ChangePassword(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	changePassword := &structs.ChangePassword{}
+
+	if err := ctx.ShouldBindJSON(changePassword); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	changePassword.ConfirmNewPassword = strings.TrimSpace(changePassword.ConfirmNewPassword)
+	changePassword.NewPassword = strings.TrimSpace(changePassword.NewPassword)
+	changePassword.OldPassword = strings.TrimSpace(changePassword.OldPassword)
+
+	if err := constants.Validate.Struct(changePassword); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	isPasswordCorrect, err := c.userService.ChangePassword(ctx, changePassword)
+
+	if err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if !isPasswordCorrect {
+		response.Message = config.GetMessageCode("PASSWORD_INCORRECT")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *UserController) ChangeEmail(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	changeEmail := &structs.ChangeEmail{}
+
+	if err := ctx.ShouldBindJSON(changeEmail); err != nil {
+		response.Message = config.GetMessageCode("INVALID_PARAMETER")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	changeEmail.NewEmail = strings.TrimSpace(changeEmail.NewEmail)
+	changeEmail.Password = strings.TrimSpace(changeEmail.Password)
+
+	if err := constants.Validate.Struct(changeEmail); err != nil {
+		response.Message = config.GetMessageCode("PARAMETER_VALIDATION")
+		response.ValidateError = constants.GetValidateErrorMessage(err)
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	isPasswordCorrect, isEmailNotExist, err := c.userService.ChangeEmail(ctx, changeEmail)
+
+	if err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	if !isEmailNotExist {
+		response.Message = config.GetMessageCode("EMAIL_ALREADY_EXISTS")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	if !isPasswordCorrect {
+		response.Message = config.GetMessageCode("PASSWORD_INCORRECT")
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
 }

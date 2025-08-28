@@ -2,7 +2,9 @@ package main
 
 import (
 	"api/config"
+	"api/constants"
 	"api/routes"
+	"api/utils"
 	"fmt"
 	"net/http"
 	"strings"
@@ -10,15 +12,22 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
 	router := gin.New()
 
+	// Load .env file
+	err := godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
+
 	// Middleware
 	// CORS
-	corsOriginList, err := config.GetEnv("CORS_ORIGIN")
-	if err != nil {
+	corsOriginList := config.GetEnv("CORS_ORIGIN")
+	if corsOriginList == "" {
 		corsOriginList = "*"
 	}
 	corsOrigin := strings.Split(corsOriginList, ",")
@@ -27,9 +36,10 @@ func main() {
 	}
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     corsOrigin,
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Refresh-Token"},
+		AllowOrigins: corsOrigin,
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		// AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Refresh-Token"},
+		AllowHeaders:     []string{"*"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: false,
 		MaxAge:           12 * time.Hour,
@@ -46,34 +56,51 @@ func main() {
 		panic(err)
 	}
 
-	// Init routes
-	r := router.Group("api")
-	routes.InitRoutes(r)
+	// Init storage services
+	utils.InitStorageServices()
+
+	// Init MoMo config
+	utils.InitMoMoConfig()
+
+	// Router settings
+	// Limit form size to 500 MB
+	router.MaxMultipartMemory = (50 << 20) * 10 // 500 MB
+
+	// Init HTTP routes
+	httpRoutes := router.Group("api")
+	routes.InitRoutes(httpRoutes)
+
+	// Init websocket routes
+	wsRoutes := router.Group("ws")
+	routes.InitWebSocketRoutes(wsRoutes)
+
+	// Init custom validation rules
+	constants.InitCustomValidationRules()
 
 	// Start server
 	var app *http.Server
-	isHTTPS, err := config.GetEnv("HTTPS")
-	if err != nil {
+	isHTTPS := config.GetEnv("HTTPS")
+	if isHTTPS == "" {
 		isHTTPS = "false"
 	}
 
-	port, err := config.GetEnv("PORT")
-	if err != nil {
+	port := config.GetEnv("PORT")
+	if port == "" {
 		port = "8080"
 	}
 
 	app = &http.Server{
 		Addr:           ":" + port,
 		Handler:        router,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
+		ReadTimeout:    1 * time.Minute,
+		WriteTimeout:   1 * time.Minute,
 		MaxHeaderBytes: 1 << 20,
 	}
 
 	fmt.Println("----------------------------------------")
 	fmt.Println("|                                      |")
 	fmt.Println("|                                      |")
-	fmt.Printf("|   Server is running on port: %s    |\n", port)
+	fmt.Printf("|   Server is running on port %s    |\n", port)
 	if isHTTPS == "true" {
 		fmt.Println("|   TLS is enabled                     |")
 	}
@@ -81,14 +108,8 @@ func main() {
 	fmt.Println("|                                      |")
 	fmt.Println("----------------------------------------")
 
-	certPath, err := config.GetEnv("CERT_PATH")
-	if err != nil {
-		certPath = ""
-	}
-	keyPath, err := config.GetEnv("KEY_PATH")
-	if err != nil {
-		keyPath = ""
-	}
+	certPath := config.GetEnv("CERT_PATH")
+	keyPath := config.GetEnv("KEY_PATH")
 
 	if isHTTPS == "true" && certPath != "" && keyPath != "" {
 		app.ListenAndServeTLS(certPath, keyPath)

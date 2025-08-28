@@ -14,8 +14,16 @@ func NewRefreshTokenRepository() *RefreshTokenRepository {
 	return &RefreshTokenRepository{}
 }
 
-func (r *RefreshTokenRepository) Create(ctx *gin.Context, refreshToken *models.RefreshTokenModel) error {
-	if err := config.DB.Create(refreshToken).Error; err != nil {
+// func (r *RefreshTokenRepository) Create(ctx *gin.Context, tx *gorm.DB, refreshToken *models.RefreshTokenModel) error {
+// 	if err := tx.Create(refreshToken).Error; err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+// }
+
+func (r *RefreshTokenRepository) Create(refreshToken *models.RefreshTokenModel) error {
+	if err := config.WorkerDB.Create(refreshToken).Error; err != nil {
 		return err
 	}
 
@@ -23,15 +31,23 @@ func (r *RefreshTokenRepository) Create(ctx *gin.Context, refreshToken *models.R
 }
 
 func (r *RefreshTokenRepository) GetByUserID(ctx *gin.Context, refreshToken *models.RefreshTokenModel, userID int64) error {
-	if err := config.DB.Where("user_id = ?", userID).First(refreshToken).Error; err != nil {
+	if err := config.WorkerDB.Where("user_id = ?", userID).Order("created_at DESC").Find(refreshToken).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *RefreshTokenRepository) Delete(ctx *gin.Context, refreshToken *models.RefreshTokenModel) error {
-	if err := config.DB.Delete(refreshToken).Error; err != nil {
+// func (r *RefreshTokenRepository) Delete(ctx *gin.Context, tx *gorm.DB, userID int64) error {
+// 	if err := tx.Where("user_id = ?", userID).Delete(&models.RefreshTokenModel{}).Error; err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+// }
+
+func (r *RefreshTokenRepository) Delete(userID int64) error {
+	if err := config.WorkerDB.Where("user_id = ?", userID).Delete(&models.RefreshTokenModel{}).Error; err != nil {
 		return err
 	}
 

@@ -9,16 +9,18 @@ import (
 )
 
 var DB *gorm.DB
+var WorkerDB *gorm.DB
+var MigrationDB *gorm.DB
 
 func InitDB() error {
-	host, _ := GetEnv("DB_HOST")
-	port, _ := GetEnv("DB_PORT")
-	user, _ := GetEnv("DB_USER")
-	password, _ := GetEnv("DB_PASSWORD")
-	dbName, _ := GetEnv("DB_NAME")
-	ssh, _ := GetEnv("DB_SSH")
-	timeZone, _ := GetEnv("APP_TIME_ZONE")
-	appEnv, _ := GetEnv("APP_ENV")
+	host := GetEnv("DB_HOST")
+	port := GetEnv("DB_PORT")
+	user := GetEnv("DB_USER")
+	password := GetEnv("DB_PASSWORD")
+	dbName := GetEnv("DB_NAME")
+	ssh := GetEnv("DB_SSH")
+	timeZone := GetEnv("APP_TIME_ZONE")
+	appEnv := GetEnv("APP_ENV")
 
 	var logMode logger.LogLevel
 
@@ -33,7 +35,26 @@ func InitDB() error {
 	var err error
 
 	DB, err = gorm.Open(postgresDriver.Open(dsn), &gorm.Config{
+		Logger:      NewCustomDBLogger("assets/logs", logger.Info),
+		PrepareStmt: true,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	WorkerDB, err = gorm.Open(postgresDriver.Open(dsn), &gorm.Config{
 		Logger:      logger.Default.LogMode(logMode),
+		PrepareStmt: true,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	MigrationDB, err = gorm.Open(postgresDriver.Open(dsn), &gorm.Config{
+		// Logger:      logger.Default.LogMode(logMode),
+		Logger:      NewCustomMigrationLogger("assets/migration", logger.Info),
 		PrepareStmt: true,
 	})
 

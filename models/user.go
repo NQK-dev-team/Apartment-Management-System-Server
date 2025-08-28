@@ -1,9 +1,8 @@
 package models
 
 import (
-	"api/config"
 	"database/sql"
-	"errors"
+	"strconv"
 	"time"
 
 	"gorm.io/gorm"
@@ -11,23 +10,28 @@ import (
 
 type UserModel struct {
 	DefaultModel
-	FirstName        string       `json:"firstName" gorm:"column:first_name;type:varchar(255);not null"`
-	MiddleName       string       `json:"middleName" gorm:"column:middle_name;type:varchar(255)"`
-	LastName         string       `json:"lastName" gorm:"column:last_name;type:varchar(255);not null"`
-	SSN              string       `json:"ssn" gorm:"column:ssn;type:varchar(12);not null;uniqueIndex:idx_ssn"`
-	OldSSN           string       `json:"oldSSN" gorm:"column:old_ssn;type:varchar(9);unique"`
-	DOB              string       `json:"dob" gorm:"column:dob;type:date;not null"`
-	POB              string       `json:"pob" gorm:"column:pob;type:varchar(255)"`
-	Email            string       `json:"email" gorm:"column:email;type:varchar(255);not null;uniqueIndex:idx_email"`
-	Password         string       `json:"password" gorm:"column:password;type:varchar(255);not null"`
-	Phone            string       `json:"phone" gorm:"column:phone;type:varchar(10);not null"`
-	SSNFrontFilePath string       `json:"ssnFrontFilePath" gorm:"column:ssn_front_file_path;type:varchar(255);not null"`
-	SSNBackFilePath  string       `json:"ssnBackFilePath" gorm:"column:ssn_back_file_path;type:varchar(255);not null"`
-	ProfileFilePath  string       `json:"profileFilePath" gorm:"column:profile_file_path;type:varchar(255);not null"`
-	EmailVerifiedAt  sql.NullTime `json:"emailVerifiedAt" gorm:"column:email_verified_at;type:timestamp with time zone"`
-	IsOwner          bool         `json:"isOwner" gorm:"column:is_owner;type:bool;not null"`
-	IsManager        bool         `json:"isManager" gorm:"column:is_manager;type:bool;not null"`
-	IsCustomer       bool         `json:"isCustomer" gorm:"column:is_customer;type:bool;not null"`
+	No                   string         `json:"no" gorm:"column:no;type:varchar(8);not null;uniqueIndex:idx_no;"`
+	FirstName            string         `json:"firstName" gorm:"column:first_name;type:varchar(255);not null;"`
+	MiddleName           sql.NullString `json:"middleName" gorm:"column:middle_name;type:varchar(255);"`
+	LastName             string         `json:"lastName" gorm:"column:last_name;type:varchar(255);not null;"`
+	Gender               int            `json:"gender" gorm:"column:gender;type:int;not null;"` // 1: Male, 2: Female, 3: Other
+	SSN                  string         `json:"ssn" gorm:"column:ssn;type:varchar(12);not null;"`
+	OldSSN               sql.NullString `json:"oldSSN" gorm:"column:old_ssn;type:varchar(9);"`
+	DOB                  time.Time      `json:"dob" gorm:"column:dob;type:date;not null;"`
+	POB                  string         `json:"pob" gorm:"column:pob;type:varchar(255);not null;"`
+	Email                string         `json:"email" gorm:"column:email;type:varchar(255);not null;"`
+	Password             string         `json:"-" gorm:"column:password;type:varchar(255);not null;"`
+	Phone                string         `json:"phone" gorm:"column:phone;type:varchar(10);not null;"`
+	PermanentAddress     string         `json:"permanentAddress" gorm:"column:permanent_address;type:varchar(255);not null;"`
+	TemporaryAddress     string         `json:"temporaryAddress" gorm:"column:temporary_address;type:varchar(255);not null;"`
+	SSNFrontFilePath     string         `json:"ssnFrontFilePath" gorm:"column:ssn_front_file_path;type:varchar(255);not null;"`
+	SSNBackFilePath      string         `json:"ssnBackFilePath" gorm:"column:ssn_back_file_path;type:varchar(255);not null;"`
+	ProfileFilePath      string         `json:"profileFilePath" gorm:"column:profile_file_path;type:varchar(255);not null;"`
+	EmailVerifiedAt      sql.NullTime   `json:"emailVerifiedAt" gorm:"column:email_verified_at;type:timestamp with time zone;"`
+	IsOwner              bool           `json:"isOwner" gorm:"column:is_owner;type:bool;not null;"`
+	IsManager            bool           `json:"isManager" gorm:"column:is_manager;type:bool;not null;"`
+	IsCustomer           bool           `json:"isCustomer" gorm:"column:is_customer;type:bool;not null;"`
+	VerifiedAfterCreated bool           `json:"-" gorm:"column:verified_after_created;type:bool;not null;default:false;"`
 }
 
 func (u *UserModel) TableName() string {
@@ -35,30 +39,49 @@ func (u *UserModel) TableName() string {
 }
 
 func (u *UserModel) BeforeCreate(tx *gorm.DB) error {
-	username, _ := tx.Get("username")
-	if username == nil {
-		username = "SYSTEM"
+	lastUser := UserModel{}
+
+	// Get the last room of the building floor
+	tx.Raw("SELECT * FROM \"user\" ORDER BY no::integer DESC LIMIT 1").Scan(&lastUser)
+
+	if lastUser.No == "" {
+		u.No = "00000001"
+	} else {
+		lastUserNo := lastUser.No
+		lastUserNoInt, _ := strconv.Atoi(lastUserNo)
+		userNo := strconv.Itoa(lastUserNoInt + 1)
+		if len(userNo) < 8 {
+			// Pad the user number with leading zeros to ensure it is 8 characters long
+			userNo = "00000000"[:8-len(userNo)] + userNo
+		}
+		u.No = userNo
 	}
-	u.CreatedBy = username.(string)
-	u.UpdatedBy = username.(string)
-	u.CreatedAt = time.Now()
-	u.UpdatedAt = time.Now()
+
+	userID, exists := tx.Get("userID")
+	if exists && userID != nil {
+		u.CreatedBy = userID.(int64)
+		u.UpdatedBy = userID.(int64)
+	}
+	// u.CreatedAt = time.Now()
+	// u.UpdatedAt = time.Now()
 
 	return nil
 }
 
 func (u *UserModel) BeforeUpdate(tx *gorm.DB) error {
-	if tx.Statement.Changed("updated_at", "updated_by") {
-		return errors.New(config.GetMessageCode("CONCURRENCY_ERROR"))
+	// if tx.Statement.Changed("UpdatedAt", "UpdatedBy") {
+	// 	return errors.New(config.GetMessageCode("CONCURRENCY_ERROR"))
+	// }
+
+	isQuiet, _ := tx.Get("isQuiet")
+	if isQuiet != nil && isQuiet.(bool) {
+		return nil
 	}
 
-	username, _ := tx.Get("username")
-	if username == nil {
-		username = "SYSTEM"
+	userID, _ := tx.Get("userID")
+	if userID != nil {
+		tx.Statement.SetColumn("updated_by", userID.(int64))
 	}
-	tx.Statement.SetColumn("created_by", username.(string))
-	tx.Statement.SetColumn("updated_by", username.(string))
-	tx.Statement.SetColumn("created_at", time.Now())
 	tx.Statement.SetColumn("updated_at", time.Now())
 
 	return nil
