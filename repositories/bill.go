@@ -275,6 +275,8 @@ func (r *BillRepository) CancelBillPayment(tx *gorm.DB, billID int64) error {
 		"payer_id":     nil,
 		"payment_time": nil,
 		"status":       constants.Common.BillStatus.UN_PAID,
+		"order_id":     nil,
+		"request_id":   nil,
 	}).Error; err != nil {
 		return err
 	}

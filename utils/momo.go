@@ -34,7 +34,7 @@ func InitMoMoConfig() {
 	apmClientBaseURL = config.GetEnv("APM_CLIENT_BASE_URL")
 }
 
-func CreateMoMoPayment(bill *models.BillModel, requestID, orderID uint64, momoResponse *structs.MoMoCreatePaymentResponse, signature *string) error {
+func CreateMoMoPayment(bill *models.BillModel, requestID, orderID uint64, momoResponse *structs.MoMoCreatePaymentResponse) error {
 	if momoBaseURL == "" {
 		return errors.New("MOMO_BASE_URL is not set")
 	}
@@ -110,7 +110,7 @@ func CreateMoMoPayment(bill *models.BillModel, requestID, orderID uint64, momoRe
 
 	// Write data to it
 	hmac.Write(rawSignature.Bytes())
-	*signature = hex.EncodeToString(hmac.Sum(nil))
+	signature := hex.EncodeToString(hmac.Sum(nil))
 
 	payload := structs.MoMoCreatePaymentPayload{
 		PartnerCode:  momoPartnerCode,
@@ -128,7 +128,7 @@ func CreateMoMoPayment(bill *models.BillModel, requestID, orderID uint64, momoRe
 		IpnUrl:       ipnUrl,
 		ExtraData:    extraData,
 		RequestType:  requestType,
-		Signature:    *signature,
+		Signature:    signature,
 	}
 
 	var jsonPayload []byte
@@ -242,10 +242,6 @@ func CheckIPNPayload(bill *models.BillModel, payload *structs.MoMoIPNPayload) bo
 		if payload.Amount != 10000 {
 			return false
 		}
-	}
-
-	if bill.PaymentSignature.String != payload.Signature {
-		return false
 	}
 
 	if payload.PartnerCode != momoPartnerCode {

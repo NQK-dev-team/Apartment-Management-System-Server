@@ -472,9 +472,7 @@ func (s *BillService) InitBillPayment(ctx *gin.Context, billID int64, momoRespon
 	orderID, _ := flake.NextID()
 
 	return true, config.DB.Transaction(func(tx *gorm.DB) error {
-		signature := ""
-
-		if err := utils.CreateMoMoPayment(bill, requestID, orderID, momoResponse, &signature); err != nil {
+		if err := utils.CreateMoMoPayment(bill, requestID, orderID, momoResponse); err != nil {
 			return err
 		}
 
@@ -490,10 +488,6 @@ func (s *BillService) InitBillPayment(ctx *gin.Context, billID int64, momoRespon
 		bill.PayerID = sql.NullInt64{
 			Int64: ctx.GetInt64("userID"),
 			Valid: true,
-		}
-		bill.PaymentSignature = sql.NullString{
-			String: signature,
-			Valid:  true,
 		}
 
 		if err := s.billRepository.UpdateBill(ctx, tx, bill, bill.ID); err != nil {
