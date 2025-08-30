@@ -90,3 +90,18 @@ type NewUploadContract struct {
 	SignDate      string              `validate:"omitempty,datetime=2006-01-02,check_date_equal_or_before=StartDate,check_date_equal_or_after=CreatedAt"`
 	Residents     []ContractResidents `validate:"dive"`
 }
+
+type ContractStatistic struct {
+	TotalContract             int64 `json:"total_contract" gorm:"column:total_contract"`
+	TotalRent                 int64 `json:"total_rent" gorm:"column:total_rent_contract"`
+	TotalBuy                  int64 `json:"total_buy" gorm:"column:total_buy_contract"`
+	TotalActiveRent           int64 `json:"total_active_rent" gorm:"column:total_active_rent_contract"`
+	TotalActiveBuy            int64 `json:"total_active_buy" gorm:"column:total_active_buy_contract"`
+	TotalExpireRent           int64 `json:"total_expire_rent" gorm:"column:total_expire_rent_contract"`
+	TotalCancelRent           int64 `json:"total_cancel_rent" gorm:"column:total_cancel_rent_contract"`
+	TotalCancelBuy            int64 `json:"total_cancel_buy" gorm:"column:total_cancel_buy_contract"`
+	TotalWaitForSignatureRent int64 `json:"total_wait_for_signature_rent" gorm:"column:total_wait_for_signature_rent_contract"`
+	TotalWaitForSignatureBuy  int64 `json:"total_wait_for_signature_buy" gorm:"column:total_wait_for_signature_buy_contract"`
+	TotalNotInEffectRent      int64 `json:"total_not_in_effect_rent" gorm:"column:total_not_in_effect_rent_contract"`
+	TotalNotInEffectBuy       int64 `json:"total_not_in_effect_buy" gorm:"column:total_not_in_effect_buy_contract"`
+}

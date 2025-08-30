@@ -596,3 +596,7 @@ func (s *BillService) GetMomoResult() error {
 
 	return nil
 }
+
+func (s *BillService) GetBillStatistics(ctx *gin.Context, data *structs.BillStatistic, year int64) error {
+	return s.billRepository.GetBillStatistics(ctx, data, year)
+}

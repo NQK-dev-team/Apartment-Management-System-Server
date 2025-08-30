@@ -9,6 +9,7 @@ import (
 
 func InitBillRoutes(router *gin.RouterGroup) {
 	billRoutes := router.Group("/bill")
+	ownerOnlyRoutes := router.Group("/bill")
 	customerOnlyRoutes := router.Group("/bill")
 	billController := controllers.NewBillController()
 	authorizationMiddle := middlewares.NewAuthorizationMiddleware()
@@ -26,6 +27,11 @@ func InitBillRoutes(router *gin.RouterGroup) {
 	customerOnlyRoutes.Use(authorizationMiddle.AuthCustomerMiddleware)
 	{
 		customerOnlyRoutes.GET("/:id/init-payment", billController.InitBillPayment)
+	}
+
+	ownerOnlyRoutes.Use(authorizationMiddle.AuthOwnerMiddleware)
+	{
+		ownerOnlyRoutes.GET("/statistic", billController.GetBillStatistics)
 	}
 }
 

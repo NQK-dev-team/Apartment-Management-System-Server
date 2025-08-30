@@ -359,3 +359,18 @@ func (c *ContractController) AddContract(ctx *gin.Context) {
 	response.Message = config.GetMessageCode("CREATE_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }
+
+func (c *ContractController) GetContractStatistic(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	data := &structs.ContractStatistic{}
+
+	if err := c.contractService.GetContractStatistic(ctx, data); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = data
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}

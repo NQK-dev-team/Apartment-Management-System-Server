@@ -687,3 +687,7 @@ func (s *UserService) ChangeEmail(ctx *gin.Context, changeEmail *structs.ChangeE
 		return nil
 	})
 }
+
+func (s *UserService) GetTotalCustomer(ctx *gin.Context, total *int64) error {
+	return s.userRepository.GetTotalCustomer(ctx, total)
+}

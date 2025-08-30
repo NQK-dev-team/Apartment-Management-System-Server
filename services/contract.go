@@ -688,6 +688,10 @@ func (s *ContractService) UpdateContractStatus() error {
 	})
 }
 
+func (s *ContractService) GetContractStatistic(ctx *gin.Context, data *structs.ContractStatistic) error {
+	return s.contractRepository.GetContractStatistic(ctx, data)
+}
+
 // func (s *ContractService) DeleteWithoutTransaction(ctx *gin.Context, tx *gorm.DB, id []int64) error {
 // 	contracts := []models.ContractModel{}
 // 	if err := s.contractRepository.GetContractByIDs(ctx, &contracts, id); err != nil {
