@@ -336,17 +336,26 @@ func (r *ContractRepository) GetDeletableContracts2(ctx *gin.Context, contracts 
 			return err
 		}
 	} else {
-		query1 := config.DB.Model(&models.ContractModel{}).
-			Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
-			Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
-			Where("contract.id in ? and contract.status in ? and contract.creator_id = ? AND contract.deleted_at IS NULL", IDs, []int{constants.Common.ContractStatus.CANCELLED, constants.Common.ContractStatus.WAITING_FOR_SIGNATURE}, *managerID)
-		query2 := config.DB.Model(&models.ContractModel{}).
+		// query1 := config.DB.Model(&models.ContractModel{}).
+		// 	Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
+		// 	Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
+		// 	Where("contract.id in ? and contract.status in ? and contract.creator_id = ? AND contract.deleted_at IS NULL", IDs, []int{constants.Common.ContractStatus.CANCELLED, constants.Common.ContractStatus.WAITING_FOR_SIGNATURE}, *managerID)
+		// query2 := config.DB.Model(&models.ContractModel{}).
+		// 	Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
+		// 	Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
+		// 	Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id AND manager_schedule.deleted_at IS NULL").
+		// 	Where("contract.id in ? and contract.status in ? and contract.creator_id != ? AND contract.deleted_at IS NULL AND manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ?", IDs, []int{constants.Common.ContractStatus.CANCELLED, constants.Common.ContractStatus.WAITING_FOR_SIGNATURE}, *managerID, *managerID)
+
+		// if err := config.DB.Model(&models.ContractModel{}).Table("((?) UNION ALL (?)) as all_contracts", query1, query2).
+		// 	Find(contracts).Error; err != nil {
+		// 	return err
+		// }
+
+		if err := config.DB.Model(&models.ContractModel{}).
 			Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 			Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
 			Joins("JOIN manager_schedule ON manager_schedule.building_id = building.id AND manager_schedule.deleted_at IS NULL").
-			Where("contract.id in ? and contract.status in ? and contract.creator_id != ? AND contract.deleted_at IS NULL AND manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ?", IDs, []int{constants.Common.ContractStatus.CANCELLED, constants.Common.ContractStatus.WAITING_FOR_SIGNATURE}, *managerID, *managerID)
-
-		if err := config.DB.Model(&models.ContractModel{}).Table("((?) UNION ALL (?)) as all_contracts", query1, query2).
+			Where("contract.id in ? and contract.status in ? and contract.creator_id != ? AND contract.deleted_at IS NULL AND manager_schedule.start_date <= now() AND COALESCE(manager_schedule.end_date,now()) >= now() AND manager_schedule.manager_id = ?", IDs, []int{constants.Common.ContractStatus.CANCELLED, constants.Common.ContractStatus.WAITING_FOR_SIGNATURE}, *managerID, *managerID).
 			Find(contracts).Error; err != nil {
 			return err
 		}
