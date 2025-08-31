@@ -335,3 +335,24 @@ func (c *BillController) ConfirmMoMoPayment(ctx *gin.Context) {
 	response.Message = config.GetMessageCode("PAYMENT_COMPLETED")
 	ctx.JSON(http.StatusOK, nil)
 }
+
+func (c *BillController) GetBillStatistics(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	yearStr := ctx.Query("year")
+	year, err := strconv.ParseInt(yearStr, 10, 64)
+	if err != nil {
+		year = int64(time.Now().Year())
+	}
+
+	data := &structs.BillStatistic{}
+
+	if err := c.billService.GetBillStatistics(ctx, data, year); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = data
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}

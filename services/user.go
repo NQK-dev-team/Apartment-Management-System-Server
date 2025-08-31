@@ -87,6 +87,8 @@ func (s *UserService) CreateStaff(ctx *gin.Context, newStaff *structs.NewStaff, 
 	backSSNPath := ""
 
 	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		dob, _ := time.Parse("2006-01-02", newStaff.Dob)
 
 		newUser := &models.UserModel{
@@ -195,6 +197,8 @@ func (s *UserService) CreateStaff(ctx *gin.Context, newStaff *structs.NewStaff, 
 
 func (s *UserService) UpdateStaff(ctx *gin.Context, editStaff *structs.EditStaff) error {
 	return config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		if len(editStaff.DeletedSchedules) > 0 {
 			if err := s.managerScheduleRepository.Delete(ctx, tx, editStaff.DeletedSchedules); err != nil {
 				return err
@@ -253,6 +257,8 @@ func (s *UserService) UpdateStaff(ctx *gin.Context, editStaff *structs.EditStaff
 
 func (s *UserService) UpdateUser(ctx *gin.Context, user *models.UserModel) error {
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		oldData := models.UserModel{}
 		if err := s.userRepository.GetByID(ctx, &oldData, user.ID); err != nil {
 			return err
@@ -274,6 +280,8 @@ func (s *UserService) UpdateUser(ctx *gin.Context, user *models.UserModel) error
 
 func (s *UserService) DeleteUsers(ctx *gin.Context, IDs []int64) error {
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		if err := s.userRepository.DeleteByIDs(ctx, tx, IDs); err != nil {
 			return err
 		}
@@ -449,6 +457,8 @@ func (s *UserService) CreateCustomer(ctx *gin.Context, newCustomer *structs.NewC
 	backSSNPath := ""
 
 	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		dob, _ := time.Parse("2006-01-02", newCustomer.Dob)
 
 		newUser := &models.UserModel{
@@ -544,6 +554,8 @@ func (s *UserService) UpdateProfile(ctx *gin.Context, profile *structs.UpdatePro
 	deleteFileList := []string{}
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		user := &models.UserModel{}
 
 		if err := s.userRepository.GetByID(ctx, user, ctx.GetInt64("userID")); err != nil {
@@ -639,6 +651,8 @@ func (s *UserService) ChangePassword(ctx *gin.Context, changePassword *structs.C
 	user.Password = hashedPassword
 
 	return true, config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		if err := s.userRepository.Update(ctx, config.DB, user, false); err != nil {
 			return err
 		}
@@ -670,6 +684,8 @@ func (s *UserService) ChangeEmail(ctx *gin.Context, changeEmail *structs.ChangeE
 	}
 
 	return true, true, config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		user.Email = changeEmail.NewEmail
 		user.EmailVerifiedAt = sql.NullTime{
 			Valid: false,
@@ -686,4 +702,8 @@ func (s *UserService) ChangeEmail(ctx *gin.Context, changeEmail *structs.ChangeE
 
 		return nil
 	})
+}
+
+func (s *UserService) GetTotalCustomer(ctx *gin.Context, total *int64) error {
+	return s.userRepository.GetTotalCustomer(ctx, total)
 }

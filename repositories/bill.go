@@ -334,7 +334,40 @@ func (r *BillRepository) AddNewPayment2(ctx *gin.Context, tx *gorm.DB, payment *
 }
 
 func (r *BillRepository) GetMomoBills(bills *[]models.BillModel) error {
-	if err := config.DB.Model(&models.BillModel{}).Where("status = ?", constants.Common.BillStatus.PROCESSING).Find(bills).Error; err != nil {
+	if err := config.WorkerDB.Model(&models.BillModel{}).Where("status = ?", constants.Common.BillStatus.PROCESSING).Find(bills).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BillRepository) GetBillStatistics(ctx *gin.Context, data *structs.BillStatistic, year int64) error {
+	if err := config.DB.Raw(`SELECT
+	(SELECT COUNT(*) FROM bill JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE bill.deleted_at IS NULL AND date_trunc('month', bill.period) = date_trunc('month', NOW())) as total_bill,
+	(SELECT COUNT(*) FROM bill JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE bill.deleted_at IS NULL AND bill.status = ? AND date_trunc('month', bill.period) = date_trunc('month', NOW())) as total_paid,
+	(SELECT COUNT(*) FROM bill JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE bill.deleted_at IS NULL AND bill.status = ? AND date_trunc('month', bill.period) = date_trunc('month', NOW())) as total_unpaid,
+	(SELECT COUNT(*) FROM bill JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE bill.deleted_at IS NULL AND bill.status = ? AND date_trunc('month', bill.period) = date_trunc('month', NOW())) as total_overdue
+	`, constants.Common.BillStatus.PAID, constants.Common.BillStatus.UN_PAID, constants.Common.BillStatus.OVERDUE,
+	).Scan(data).Error; err != nil {
+		return err
+	}
+
+	data.RevenueStatistic = []structs.RevenueStatisticStruct{}
+
+	if err := config.DB.Raw(`
+    SELECT
+        b.period AS period,
+        SUM(b.amount) AS total_expected_revenue,
+        SUM(CASE WHEN b.status IN ? THEN b.amount ELSE 0 END) AS total_actual_revenue,
+        SUM(CASE WHEN b.status NOT IN ? THEN b.amount ELSE 0 END) AS total_remaining_revenue
+    FROM bill AS b JOIN contract ON contract.id = b.contract_id AND contract.deleted_at IS NULL JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL
+    WHERE b.deleted_at IS NULL AND EXTRACT(YEAR FROM b.period) = ?
+    GROUP BY period
+    ORDER BY period
+    `,
+		[]int{constants.Common.BillStatus.PAID},
+		[]int{constants.Common.BillStatus.PAID},
+		year,
+	).Scan(&data.RevenueStatistic).Error; err != nil {
 		return err
 	}
 	return nil

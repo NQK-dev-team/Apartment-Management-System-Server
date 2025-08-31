@@ -60,6 +60,7 @@ func (s *AuthenticationService) Login(ctx *gin.Context, email string, password s
 	jwtPayload.IsManager = user.IsManager
 	jwtPayload.IsOwner = user.IsOwner
 	jwtPayload.UserNo = user.No
+	jwtPayload.TicketByPass = user.TicketByPass
 
 	if user.MiddleName.Valid {
 		jwtPayload.FullName = user.LastName + " " + user.MiddleName.String + " " + user.FirstName
@@ -154,6 +155,7 @@ func (s *AuthenticationService) GetNewToken(ctx *gin.Context, refreshToken strin
 	jwtPayload.IsManager = user.IsManager
 	jwtPayload.IsOwner = user.IsOwner
 	jwtPayload.UserNo = user.No
+	jwtPayload.TicketByPass = user.TicketByPass
 
 	if user.MiddleName.Valid {
 		jwtPayload.FullName = user.LastName + " " + user.MiddleName.String + " " + user.FirstName
@@ -257,6 +259,8 @@ func (s *AuthenticationService) VerifyEmail(ctx *gin.Context, verifyEmailToken s
 	user.VerifiedAfterCreated = true
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		if err := s.userRepository.Update(ctx, tx, user, false); err != nil {
 			return err
 		}
@@ -294,6 +298,8 @@ func (s *AuthenticationService) DeleteRefreshToken(ctx *gin.Context, userID int6
 
 func (s *AuthenticationService) DeletePasswordResetToken(ctx *gin.Context, email string) error {
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		if err := s.passwordResetTokenRepository.Delete(ctx, tx, email); err != nil {
 			return err
 		}

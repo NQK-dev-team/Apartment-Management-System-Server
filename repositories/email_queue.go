@@ -21,7 +21,7 @@ func (r *EmailQueueRepository) Create(job *models.EmailQueueModel) error {
 }
 
 func (r *EmailQueueRepository) Get(jobs *[]models.EmailQueueModel) error {
-	if err := config.DB.Find(jobs).Error; err != nil {
+	if err := config.WorkerDB.Find(jobs).Error; err != nil {
 		return err
 	}
 
@@ -29,7 +29,7 @@ func (r *EmailQueueRepository) Get(jobs *[]models.EmailQueueModel) error {
 }
 
 func (r *EmailQueueRepository) Delete(ID int64) error {
-	if err := config.DB.Where("id = ?", ID).Delete(&models.EmailQueueModel{}).Error; err != nil {
+	if err := config.WorkerDB.Where("id = ?", ID).Delete(&models.EmailQueueModel{}).Error; err != nil {
 		return err
 	}
 

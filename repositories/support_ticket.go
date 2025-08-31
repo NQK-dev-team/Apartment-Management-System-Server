@@ -43,7 +43,35 @@ func (r *SupportTicketRepository) GetById(ctx *gin.Context, ticket *models.Suppo
 
 func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[]structs.SupportTicket, limit int64, offset int64, startDate string, endDate string, managerID *int64) error {
 	if managerID == nil {
-		if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager", func(db *gorm.DB) *gorm.DB {
+		// if err := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager", func(db *gorm.DB) *gorm.DB {
+		// 	role := ctx.GetString("role")
+
+		// 	if role == constants.Roles.Manager {
+		// 		return db.Unscoped().Select("id", "no", "first_name", "middle_name", "last_name", "is_owner", "is_manager", "is_customer")
+		// 	}
+
+		// 	return db.Unscoped()
+		// }).Preload("Customer", func(db *gorm.DB) *gorm.DB {
+		// 	return db.Unscoped()
+		// }).Preload("Owner", func(db *gorm.DB) *gorm.DB {
+		// 	role := ctx.GetString("role")
+
+		// 	if role == constants.Roles.Manager {
+		// 		return db.Unscoped().Select("id", "no", "first_name", "middle_name", "last_name", "is_owner", "is_manager", "is_customer")
+		// 	}
+
+		// 	return db.Unscoped()
+		// }).Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
+		// 	Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
+		// 	Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
+		// 	Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
+		// 	Where("support_ticket.created_at::timestamp::date >= ? AND support_ticket.created_at::timestamp::date <= ? AND support_ticket.manager_id IS NOT NULL AND support_ticket.deleted_at IS NULL", startDate, endDate).
+		// 	Limit(int(limit)).Offset(int(offset)).Order("support_ticket.created_at desc, support_ticket.owner_resolve_time desc, support_ticket.manager_resolve_time desc").
+		// 	Find(tickets).Error; err != nil {
+		// 	return err
+		// }
+
+		query := config.DB.Model(&models.SupportTicketModel{}).Preload("Files").Preload("Manager", func(db *gorm.DB) *gorm.DB {
 			role := ctx.GetString("role")
 
 			if role == constants.Roles.Manager {
@@ -64,10 +92,15 @@ func (r *SupportTicketRepository) GetSupportTickets(ctx *gin.Context, tickets *[
 		}).Distinct().Select("support_ticket.*, building.name AS building_name, room.no AS room_no, room.floor AS room_floor").
 			Joins("JOIN contract ON support_ticket.contract_id = contract.id AND contract.deleted_at IS NULL").
 			Joins("JOIN room ON contract.room_id = room.id AND room.deleted_at IS NULL").
-			Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL").
-			Where("support_ticket.created_at::timestamp::date >= ? AND support_ticket.created_at::timestamp::date <= ? AND support_ticket.manager_id IS NOT NULL AND support_ticket.deleted_at IS NULL", startDate, endDate).
-			Limit(int(limit)).Offset(int(offset)).Order("support_ticket.created_at desc, support_ticket.owner_resolve_time desc, support_ticket.manager_resolve_time desc").
-			Find(tickets).Error; err != nil {
+			Joins("JOIN building ON room.building_id = building.id AND building.deleted_at IS NULL")
+
+		if ctx.GetBool("ticketByPass") {
+			query = query.Where("support_ticket.created_at::timestamp::date >= ? AND support_ticket.created_at::timestamp::date <= ? AND support_ticket.deleted_at IS NULL", startDate, endDate)
+		} else {
+			query = query.Where("support_ticket.created_at::timestamp::date >= ? AND support_ticket.created_at::timestamp::date <= ? AND support_ticket.manager_id IS NOT NULL AND support_ticket.deleted_at IS NULL", startDate, endDate)
+		}
+
+		if err := query.Limit(int(limit)).Offset(int(offset)).Order("support_ticket.created_at desc, support_ticket.owner_resolve_time desc, support_ticket.manager_resolve_time desc").Find(tickets).Error; err != nil {
 			return err
 		}
 	} else {

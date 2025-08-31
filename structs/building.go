@@ -106,3 +106,39 @@ type BuildingRoom struct {
 	BuildingName    string                  `json:"buildingName" gorm:"column:building_name;type:varchar(255);"`
 	BuildingAddress string                  `json:"buildingAddress" gorm:"column:building_address;type:varchar(255);"`
 }
+
+type AllBuildingStatistic struct {
+	TotalBuildings         int64 `json:"totalBuildings" gorm:"column:total_buildings"`
+	TotalRooms             int64 `json:"totalRooms" gorm:"column:total_rooms"`
+	TotalRentedRooms       int64 `json:"totalRentedRooms" gorm:"column:total_rented_rooms"`
+	TotalBoughtRooms       int64 `json:"totalBoughtRooms" gorm:"column:total_bought_rooms"`
+	TotalAvailableRooms    int64 `json:"totalAvailableRooms" gorm:"column:total_available_rooms"`
+	TotalMaintenancedRooms int64 `json:"totalMaintenancedRooms" gorm:"column:total_maintenanced_rooms"`
+	TotalUnavailableRooms  int64 `json:"totalUnavailableRooms" gorm:"column:total_unavailable_rooms"`
+}
+
+type BuildingStatistic struct {
+	TotalRooms                int64                    `json:"totalRooms" gorm:"column:total_rooms"`
+	TotalRentedRooms          int64                    `json:"totalRentedRooms" gorm:"column:total_rented_rooms"`
+	TotalBoughtRooms          int64                    `json:"totalBoughtRooms" gorm:"column:total_bought_rooms"`
+	TotalAvailableRooms       int64                    `json:"totalAvailableRooms" gorm:"column:total_available_rooms"`
+	TotalMaintenancedRooms    int64                    `json:"totalMaintenancedRooms" gorm:"column:total_maintenanced_rooms"`
+	TotalUnavailableRooms     int64                    `json:"totalUnavailableRooms" gorm:"column:total_unavailable_rooms"`
+	TotalContract             int64                    `json:"total_contract" gorm:"column:total_contract"`
+	TotalRent                 int64                    `json:"total_rent" gorm:"column:total_rent_contract"`
+	TotalBuy                  int64                    `json:"total_buy" gorm:"column:total_buy_contract"`
+	TotalActiveRent           int64                    `json:"total_active_rent" gorm:"column:total_active_rent_contract"`
+	TotalActiveBuy            int64                    `json:"total_active_buy" gorm:"column:total_active_buy_contract"`
+	TotalExpireRent           int64                    `json:"total_expire_rent" gorm:"column:total_expire_rent_contract"`
+	TotalCancelRent           int64                    `json:"total_cancel_rent" gorm:"column:total_cancel_rent_contract"`
+	TotalCancelBuy            int64                    `json:"total_cancel_buy" gorm:"column:total_cancel_buy_contract"`
+	TotalWaitForSignatureRent int64                    `json:"total_wait_for_signature_rent" gorm:"column:total_wait_for_signature_rent_contract"`
+	TotalWaitForSignatureBuy  int64                    `json:"total_wait_for_signature_buy" gorm:"column:total_wait_for_signature_buy_contract"`
+	TotalNotInEffectRent      int64                    `json:"total_not_in_effect_rent" gorm:"column:total_not_in_effect_rent_contract"`
+	TotalNotInEffectBuy       int64                    `json:"total_not_in_effect_buy" gorm:"column:total_not_in_effect_buy_contract"`
+	TotalBill                 int                      `json:"totalBill" gorm:"column:total_bill"`
+	TotalPaid                 int                      `json:"totalPaid" gorm:"column:total_paid"`
+	TotalUnpaid               int                      `json:"totalUnpaid" gorm:"column:total_unpaid"`
+	TotalOverdue              int                      `json:"totalOverdue" gorm:"column:total_overdue"`
+	RevenueStatistic          []RevenueStatisticStruct `json:"revenueStatistic" gorm:"-"`
+}

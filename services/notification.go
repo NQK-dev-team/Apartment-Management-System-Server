@@ -49,6 +49,8 @@ func (s *NotificationService) UpdateNotificationReadStatus(ctx *gin.Context, id 
 	}
 
 	return true, config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		if err := s.notificationRepository.UpdateReceiverNotificationRelation(ctx, tx, relation); err != nil {
 			return err
 		}
@@ -81,6 +83,8 @@ func (s *NotificationService) UpdateNotificationImportantStatus(ctx *gin.Context
 	}
 
 	return true, config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		if err := s.notificationRepository.UpdateReceiverNotificationRelation(ctx, tx, relation); err != nil {
 			return err
 		}
@@ -109,6 +113,8 @@ func (s *NotificationService) MarkMultiNotiAsRead(ctx *gin.Context, ids *[]int64
 	}
 
 	return true, config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		for _, id := range *ids {
 			relation := &models.NotificationReceiverModel{}
 
@@ -184,6 +190,8 @@ func (s *NotificationService) AddNotification(ctx *gin.Context, newNotification 
 	deleteFileList := []string{}
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		notification := &models.NotificationModel{
 			Title:    newNotification.Title,
 			Content:  newNotification.Content,
