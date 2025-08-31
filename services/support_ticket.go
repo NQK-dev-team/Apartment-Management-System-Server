@@ -119,6 +119,8 @@ func (s *SupportTicketService) ApproveSupportTicket(ctx *gin.Context, ticketID i
 	}
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		if err := s.supportTicketRepository.Update(ctx, tx, ticket, ticketID); err != nil {
 			return err
 		}
@@ -179,6 +181,8 @@ func (s *SupportTicketService) DenySupportTicket(ctx *gin.Context, ticketID int6
 	ticket.Status = constants.Common.SupportTicketStatus.REJECTED
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		if err := s.supportTicketRepository.Update(ctx, tx, ticket, ticketID); err != nil {
 			return err
 		}
@@ -204,6 +208,8 @@ func (s *SupportTicketService) DeleteTickets(ctx *gin.Context, ids []int64) (boo
 	}
 
 	return true, config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		if err := s.supportTicketRepository.Delete(ctx, tx, ids); err != nil {
 			return err
 		}
@@ -228,6 +234,8 @@ func (s *SupportTicketService) UpdateSupportTicket(ctx *gin.Context, ticketID in
 	deleteFileList := []string{}
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		if len(ticket.DeletedFiles) > 0 {
 			if err := s.supportTicketRepository.DeleteTicketFiles(ctx, tx, ticketID, ticket.DeletedFiles); err != nil {
 				return err
@@ -323,6 +331,8 @@ func (s *SupportTicketService) AddSupportTicket(ctx *gin.Context, ticket *struct
 	deleteFileList := []string{}
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		if err := s.supportTicketRepository.Add(ctx, tx, newTicket); err != nil {
 			return err
 		}

@@ -93,6 +93,19 @@ func (l *CustomDBLogger) Error(ctx context.Context, msg string, data ...interfac
 	}
 }
 
+func (l *CustomDBLogger) getQueryType(sql string) string {
+	if l.selectRegex.MatchString(sql) {
+		return "SELECT"
+	} else if l.updateRegex.MatchString(sql) {
+		return "UPDATE"
+	} else if l.deleteRegex.MatchString(sql) {
+		return "DELETE"
+	} else if l.intoRegex.MatchString(sql) {
+		return "INSERT"
+	}
+	return "UNKNOWN"
+}
+
 // Trace is the core method for logging SQL queries
 func (l *CustomDBLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
 	if l.logLevel <= logger.Silent {
@@ -136,16 +149,42 @@ func (l *CustomDBLogger) Trace(ctx context.Context, begin time.Time, fc func() (
 		l.fileHandles[filename] = file
 	}
 
+	loggerPrefix := ""
+	loggerPrefix += "\n===================================================================="
+	loggerPrefix += "\n===================================================================="
+	loggerPrefix += "\n====================================================================\n"
+
 	// Create a dedicated logger for the file
-	fileLogger := log.New(file, "", log.LstdFlags)
+	fileLogger := log.New(file, loggerPrefix, log.LstdFlags)
+	logContent := "\n"
+
+	userID, ok := ctx.Value("userID").(int64)
+	if ok {
+		logContent += fmt.Sprintf("User ID: %d\n", userID)
+	}
+
+	// Log query type
+	logContent += fmt.Sprintf("Query Type: %s\n", l.getQueryType(sql))
+
+	// Log whole query
+	logContent += fmt.Sprintf("SQL Query: %s\n", sql)
 
 	// Format and write the log message
 	switch {
 	case err != nil && l.logLevel >= logger.Error && !errors.Is(err, gorm.ErrRecordNotFound):
-		fileLogger.Printf("[%.3fms] [rows:%d] %s\n[ERROR] %v", float64(elapsed.Nanoseconds())/1e6, rows, sql, err)
+		logContent += fmt.Sprintf("Execution Time: %.3fms\n", float64(elapsed.Nanoseconds())/1e6)
+		logContent += fmt.Sprintf("Number Of Rows: %d\n", rows)
+		logContent += fmt.Sprintf("Error: %v\n", err)
 	case elapsed > 200*time.Millisecond && l.logLevel >= logger.Warn: // Log slow queries
-		fileLogger.Printf("[%.3fms] [rows:%d] %s\n[SLOW QUERY]", float64(elapsed.Nanoseconds())/1e6, rows, sql)
+		logContent += fmt.Sprintf("Execution Time: %.3fms [SLOW QUERY]\n", float64(elapsed.Nanoseconds())/1e6)
+		logContent += fmt.Sprintf("Number Of Rows: %d\n", rows)
 	case l.logLevel >= logger.Info:
-		fileLogger.Printf("[%.3fms] [rows:%d] %s", float64(elapsed.Nanoseconds())/1e6, rows, sql)
+		logContent += fmt.Sprintf("Execution Time: %.3fms\n", float64(elapsed.Nanoseconds())/1e6)
+		logContent += fmt.Sprintf("Number Of Rows: %d\n", rows)
 	}
+
+	logContent += "===================================================================="
+	logContent += "\n===================================================================="
+	logContent += "\n====================================================================\n"
+	fileLogger.Print(logContent)
 }

@@ -334,7 +334,7 @@ func (r *BillRepository) AddNewPayment2(ctx *gin.Context, tx *gorm.DB, payment *
 }
 
 func (r *BillRepository) GetMomoBills(bills *[]models.BillModel) error {
-	if err := config.DB.Model(&models.BillModel{}).Where("status = ?", constants.Common.BillStatus.PROCESSING).Find(bills).Error; err != nil {
+	if err := config.WorkerDB.Model(&models.BillModel{}).Where("status = ?", constants.Common.BillStatus.PROCESSING).Find(bills).Error; err != nil {
 		return err
 	}
 	return nil

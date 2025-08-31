@@ -178,6 +178,8 @@ func (s *ContractService) DeleteContract(ctx *gin.Context, IDs []int64, roomID i
 		}
 	}
 	return true, config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		return s.contractRepository.Delete(ctx, tx, IDs)
 	})
 }
@@ -208,6 +210,8 @@ func (s *ContractService) DeleteContract2(ctx *gin.Context, IDs []int64) (bool, 
 		}
 	}
 	return true, config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		return s.contractRepository.Delete(ctx, tx, IDs)
 	})
 }
@@ -321,6 +325,8 @@ func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.Edi
 	}
 
 	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		if len(contract.NewFiles) > 0 {
 			newFileNo, err := s.contractRepository.GetNewFileNo(ctx, contractID)
 
@@ -575,6 +581,8 @@ func (s *ContractService) CreateContract(ctx *gin.Context, contract *structs.New
 	deleteFileList := []string{}
 
 	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		if err := s.contractRepository.CreateContract(ctx, tx, &newcontract); err != nil {
 			return err
 		}

@@ -125,6 +125,8 @@ func (s *RoomService) UpdateRoomByRoomIDAndBuildingID(ctx *gin.Context, oldRoomD
 	deleteImageList := []string{}
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		buildingIDStr := strconv.Itoa(int(buildingID))
 		roomNoStr := strconv.Itoa(int(oldRoomData.No))
 		roomImages := []models.RoomImageModel{}

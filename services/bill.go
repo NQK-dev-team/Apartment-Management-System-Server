@@ -82,6 +82,8 @@ func (s *BillService) DeleteBill(ctx *gin.Context, IDs []int64) (bool, error) {
 		}
 	}
 	return true, config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		return s.billRepository.Delete(ctx, tx, IDs)
 	})
 }
@@ -208,6 +210,8 @@ func (s *BillService) UpdateBill(ctx *gin.Context, bill *structs.UpdateBill, ID 
 	}
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		if len(bill.DeletedPayments) > 0 {
 			if err := s.billRepository.DeletePayment(ctx, tx, bill.DeletedPayments); err != nil {
 				return err
@@ -426,6 +430,8 @@ func (s *BillService) AddBill(ctx *gin.Context, bill *structs.AddBill, newBillID
 	}
 
 	return true, true, config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		if err := s.billRepository.CreateBill(ctx, tx, newBill); err != nil {
 			return err
 		}
@@ -476,6 +482,8 @@ func (s *BillService) InitBillPayment(ctx *gin.Context, billID int64, momoRespon
 	orderID, _ := flake.NextID()
 
 	return true, config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		if err := utils.CreateMoMoPayment(bill, requestID, orderID, momoResponse); err != nil {
 			return err
 		}
@@ -524,6 +532,8 @@ func (s *BillService) ProcessMoMoIPN(ctx *gin.Context, payload *structs.MoMoIPNP
 		isSuccess = true
 
 		err = config.DB.Transaction(func(tx *gorm.DB) error {
+			tx = tx.WithContext(ctx)
+
 			bill.Status = constants.Common.BillStatus.PAID
 			bill.PaymentTime = sql.NullTime{
 				Time:  time.Now(),
@@ -540,6 +550,8 @@ func (s *BillService) ProcessMoMoIPN(ctx *gin.Context, payload *structs.MoMoIPNP
 		isSuccess = false
 
 		err = config.DB.Transaction(func(tx *gorm.DB) error {
+			tx = tx.WithContext(ctx)
+
 			if err := s.billRepository.CancelBillPayment(tx, bill.ID); err != nil {
 				return err
 			}
@@ -557,7 +569,7 @@ func (s *BillService) GetMomoResult() error {
 		return err
 	}
 
-	tx := config.DB.Begin()
+	tx := config.WorkerDB.Begin()
 	if tx.Error != nil {
 		return tx.Error
 	}
