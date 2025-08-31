@@ -31,7 +31,8 @@ type UserModel struct {
 	IsOwner              bool           `json:"isOwner" gorm:"column:is_owner;type:bool;not null;"`
 	IsManager            bool           `json:"isManager" gorm:"column:is_manager;type:bool;not null;"`
 	IsCustomer           bool           `json:"isCustomer" gorm:"column:is_customer;type:bool;not null;"`
-	VerifiedAfterCreated bool           `json:"-" gorm:"column:verified_after_created;type:bool;not null;default:false;"`
+	VerifiedAfterCreated bool           `json:"-" gorm:"column:verified_after_created;type:bool;not null;default:false;"` // This flag is used to check if the unverified email was caused due to newly created account or changing emails
+	TicketByPass         bool           `json:"-" gorm:"column:ticket_by_pass;type:bool;not null;default:false;"` // This flag is used to check if the owner can approve/deny support tickets without the need to go through the managers
 }
 
 func (u *UserModel) TableName() string {
