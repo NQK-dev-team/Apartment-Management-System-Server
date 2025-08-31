@@ -576,8 +576,8 @@ func (s *BuildingService) CheckManagerPermission(ctx *gin.Context, buildingID in
 	return true
 }
 
-func (s *BuildingService) GetBuildingStatistic(ctx *gin.Context, buildingID int64, data *structs.BuildingStatistic) error {
-	return s.buildingRepository.GetBuildingStatistic(ctx, buildingID, data)
+func (s *BuildingService) GetBuildingStatistic(ctx *gin.Context, buildingID int64, data *structs.BuildingStatistic, year int64) error {
+	return s.buildingRepository.GetBuildingStatistic(ctx, buildingID, data, year)
 }
 
 func (s *BuildingService) GetAllBuildingStatistic(ctx *gin.Context, data *structs.AllBuildingStatistic) error {

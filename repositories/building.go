@@ -263,7 +263,7 @@ func (r *BuildingRepository) GetAllBuildingStatistic(ctx *gin.Context, data *str
 	return nil
 }
 
-func (r *BuildingRepository) GetBuildingStatistic(ctx *gin.Context, buildingID int64, data *structs.BuildingStatistic) error {
+func (r *BuildingRepository) GetBuildingStatistic(ctx *gin.Context, buildingID int64, data *structs.BuildingStatistic, year int64) error {
 	if err := config.DB.Raw(`SELECT
 		(SELECT COUNT(*) FROM room JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE room.deleted_at IS NULL AND building.id = ?) as total_rooms,
 		(SELECT COUNT(*) FROM room JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE room.status = ? AND room.deleted_at IS NULL AND building.id = ?) as total_rented_rooms,
@@ -314,11 +314,11 @@ func (r *BuildingRepository) GetBuildingStatistic(ctx *gin.Context, buildingID i
 		constants.Common.ContractType.RENT, constants.Common.ContractStatus.NOT_IN_EFFECT, buildingID, constants.Common.ContractType.BUY, constants.Common.ContractStatus.NOT_IN_EFFECT, buildingID,
 		buildingID,
 		constants.Common.BillStatus.PAID, buildingID, constants.Common.BillStatus.UN_PAID, buildingID, constants.Common.BillStatus.OVERDUE, buildingID,
-	// buildingID,
-	// []int{constants.Common.BillStatus.PAID}, buildingID, []int{constants.Common.BillStatus.PAID}, buildingID
 	).Scan(data).Error; err != nil {
 		return err
 	}
+
+	data.RevenueStatistic = []structs.RevenueStatisticStruct{}
 
 	if err := config.DB.Raw(`
     SELECT
@@ -327,13 +327,13 @@ func (r *BuildingRepository) GetBuildingStatistic(ctx *gin.Context, buildingID i
         SUM(CASE WHEN b.status IN ? THEN b.amount ELSE 0 END) AS total_actual_revenue,
         SUM(CASE WHEN b.status NOT IN ? THEN b.amount ELSE 0 END) AS total_remaining_revenue
     FROM bill AS b JOIN contract ON contract.id = b.contract_id AND contract.deleted_at IS NULL JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL
-    WHERE b.deleted_at IS NULL AND building.id = ?
+    WHERE b.deleted_at IS NULL AND building.id = ? AND EXTRACT(YEAR FROM b.period) = ?
     GROUP BY period
     ORDER BY period
     `,
 		[]int{constants.Common.BillStatus.PAID},
 		[]int{constants.Common.BillStatus.PAID},
-		buildingID,
+		buildingID, year,
 	).Scan(&data.RevenueStatistic).Error; err != nil {
 		return err
 	}

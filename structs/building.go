@@ -124,7 +124,7 @@ type BuildingStatistic struct {
 	TotalAvailableRooms       int64                    `json:"totalAvailableRooms" gorm:"column:total_available_rooms"`
 	TotalMaintenancedRooms    int64                    `json:"totalMaintenancedRooms" gorm:"column:total_maintenanced_rooms"`
 	TotalUnavailableRooms     int64                    `json:"totalUnavailableRooms" gorm:"column:total_unavailable_rooms"`
-	TotalContract             int64                    `json:"total" gorm:"column:total_contract"`
+	TotalContract             int64                    `json:"total_contract" gorm:"column:total_contract"`
 	TotalRent                 int64                    `json:"total_rent" gorm:"column:total_rent_contract"`
 	TotalBuy                  int64                    `json:"total_buy" gorm:"column:total_buy_contract"`
 	TotalActiveRent           int64                    `json:"total_active_rent" gorm:"column:total_active_rent_contract"`

@@ -720,6 +720,11 @@ func (c *BuildingController) GetBuildingStatistic(ctx *gin.Context) {
 		buildingID = 0
 	}
 
+	year, err := strconv.ParseInt(ctx.Query("year"), 10, 64)
+	if err != nil {
+		year = int64(time.Now().Year())
+	}
+
 	if permission := c.buildingService.CheckManagerPermission(ctx, buildingID); !permission {
 		response.Message = config.GetMessageCode("PERMISSION_DENIED")
 		ctx.JSON(http.StatusForbidden, response)
@@ -729,7 +734,7 @@ func (c *BuildingController) GetBuildingStatistic(ctx *gin.Context) {
 	data := &structs.BuildingStatistic{}
 	data.RevenueStatistic = []structs.RevenueStatisticStruct{}
 
-	if err := c.buildingService.GetBuildingStatistic(ctx, buildingID, data); err != nil {
+	if err := c.buildingService.GetBuildingStatistic(ctx, buildingID, data, year); err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(http.StatusInternalServerError, response)
 		return
