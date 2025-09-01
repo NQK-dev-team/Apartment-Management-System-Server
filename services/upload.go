@@ -45,6 +45,8 @@ func NewUploadService() *UploadService {
 
 func (s *UploadService) UploadFile(ctx *gin.Context, upload *structs.UploadStruct) error {
 	return config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		uploadModel := &models.UploadFileModel{
 			CreatorID: ctx.GetInt64("userID"),
 			FileName:  upload.File.Filename,

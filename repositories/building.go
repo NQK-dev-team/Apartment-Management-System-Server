@@ -2,7 +2,9 @@ package repositories
 
 import (
 	"api/config"
+	"api/constants"
 	"api/models"
+	"api/structs"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -239,6 +241,100 @@ func (r *BuildingRepository) GetBuildingByContractID(ctx *gin.Context, building 
 		Joins("JOIN room ON room.building_id = building.id AND room.deleted_at IS NULL").
 		Joins("JOIN contract ON contract.room_id = room.id AND contract.deleted_at IS NULL").
 		Where("contract.id = ? AND building.deleted_at IS NULL", ID).Find(building).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *BuildingRepository) GetAllBuildingStatistic(ctx *gin.Context, data *structs.AllBuildingStatistic) error {
+	if err := config.DB.Raw(`SELECT
+		(SELECT COUNT(*) FROM building WHERE deleted_at IS NULL) as total_buildings,
+		(SELECT COUNT(*) FROM room JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE room.deleted_at IS NULL) as total_rooms,
+		(SELECT COUNT(*) FROM room JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE room.status = ? AND room.deleted_at IS NULL) as total_rented_rooms,
+		(SELECT COUNT(*) FROM room JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE room.status = ? AND room.deleted_at IS NULL) as total_bought_rooms,
+		(SELECT COUNT(*) FROM room JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE room.status = ? AND room.deleted_at IS NULL) as total_available_rooms,
+		(SELECT COUNT(*) FROM room JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE room.status = ? AND room.deleted_at IS NULL) as total_maintenanced_rooms,
+		(SELECT COUNT(*) FROM room JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE room.status = ? AND room.deleted_at IS NULL) as total_unavailable_rooms
+	`, constants.Common.RoomStatus.RENTED, constants.Common.RoomStatus.SOLD, constants.Common.RoomStatus.AVAILABLE, constants.Common.RoomStatus.MAINTENANCE, constants.Common.RoomStatus.UNAVAILABLE).Scan(data).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *BuildingRepository) GetBuildingStatistic(ctx *gin.Context, buildingID int64, data *structs.BuildingStatistic, year int64) error {
+	if err := config.DB.Raw(`SELECT
+		(SELECT COUNT(*) FROM room JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE room.deleted_at IS NULL AND building.id = ?) as total_rooms,
+		(SELECT COUNT(*) FROM room JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE room.status = ? AND room.deleted_at IS NULL AND building.id = ?) as total_rented_rooms,
+		(SELECT COUNT(*) FROM room JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE room.status = ? AND room.deleted_at IS NULL AND building.id = ?) as total_bought_rooms,
+		(SELECT COUNT(*) FROM room JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE room.status = ? AND room.deleted_at IS NULL AND building.id = ?) as total_available_rooms,
+		(SELECT COUNT(*) FROM room JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE room.status = ? AND room.deleted_at IS NULL AND building.id = ?) as total_maintenanced_rooms,
+		(SELECT COUNT(*) FROM room JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE room.status = ? AND room.deleted_at IS NULL AND building.id = ?) as total_unavailable_rooms,
+
+		(SELECT COUNT(*) FROM contract JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE contract.deleted_at IS NULL AND building.id = ?) AS total_contract,
+		(SELECT COUNT(*) FROM contract JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE contract.deleted_at IS NULL AND contract.type = ? AND building.id = ?) AS total_rent_contract,
+		(SELECT COUNT(*) FROM contract JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE contract.deleted_at IS NULL AND contract.type = ? AND building.id = ?) AS total_buy_contract,
+
+		(SELECT COUNT(*) FROM contract JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE contract.deleted_at IS NULL AND contract.type = ? AND contract.status = ? AND building.id = ?) AS total_active_rent_contract,
+		(SELECT COUNT(*) FROM contract JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE contract.deleted_at IS NULL AND contract.type = ? AND contract.status = ? AND building.id = ?) AS total_active_buy_contract,
+
+		(SELECT COUNT(*) FROM contract JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE contract.deleted_at IS NULL AND contract.type = ? AND contract.status = ? AND building.id = ?) AS total_expire_rent_contract,
+
+		(SELECT COUNT(*) FROM contract JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE contract.deleted_at IS NULL AND contract.type = ? AND contract.status = ? AND building.id = ?) AS total_cancel_rent_contract,
+		(SELECT COUNT(*) FROM contract JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE contract.deleted_at IS NULL AND contract.type = ? AND contract.status = ? AND building.id = ?) AS total_cancel_buy_contract,
+
+		(SELECT COUNT(*) FROM contract JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE contract.deleted_at IS NULL AND contract.type = ? AND contract.status = ? AND building.id = ?) AS total_wait_for_signature_rent_contract,
+		(SELECT COUNT(*) FROM contract JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE contract.deleted_at IS NULL AND contract.type = ? AND contract.status = ? AND building.id = ?) AS total_wait_for_signature_buy_contract,
+
+		(SELECT COUNT(*) FROM contract JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE contract.deleted_at IS NULL AND contract.type = ? AND contract.status = ? AND building.id = ?) AS total_not_in_effect_rent_contract,
+		(SELECT COUNT(*) FROM contract JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE contract.deleted_at IS NULL AND contract.type = ? AND contract.status = ? AND building.id = ?) AS total_not_in_effect_buy_contract,
+
+		(SELECT COUNT(*) FROM bill JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE bill.deleted_at IS NULL AND building.id = ? AND date_trunc('month', bill.period) = date_trunc('month', NOW())) as total_bill,
+		(SELECT COUNT(*) FROM bill JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE bill.deleted_at IS NULL AND bill.status = ? AND building.id = ? AND date_trunc('month', bill.period) = date_trunc('month', NOW())) as total_paid,
+		(SELECT COUNT(*) FROM bill JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE bill.deleted_at IS NULL AND bill.status = ? AND building.id = ? AND date_trunc('month', bill.period) = date_trunc('month', NOW())) as total_unpaid,
+		(SELECT COUNT(*) FROM bill JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE bill.deleted_at IS NULL AND bill.status = ? AND building.id = ? AND date_trunc('month', bill.period) = date_trunc('month', NOW())) as total_overdue
+	`, buildingID,
+		constants.Common.RoomStatus.RENTED,
+		buildingID,
+		constants.Common.RoomStatus.SOLD,
+		buildingID,
+		constants.Common.RoomStatus.AVAILABLE,
+		buildingID,
+		constants.Common.RoomStatus.MAINTENANCE,
+		buildingID,
+		constants.Common.RoomStatus.UNAVAILABLE,
+		buildingID,
+		buildingID,
+		constants.Common.ContractType.RENT, buildingID, constants.Common.ContractType.BUY, buildingID,
+		constants.Common.ContractType.RENT, constants.Common.ContractStatus.ACTIVE, buildingID, constants.Common.ContractType.BUY, constants.Common.ContractStatus.ACTIVE, buildingID,
+		constants.Common.ContractType.RENT, constants.Common.ContractStatus.EXPIRED, buildingID,
+		constants.Common.ContractType.RENT, constants.Common.ContractStatus.CANCELLED, buildingID, constants.Common.ContractType.BUY, constants.Common.ContractStatus.CANCELLED, buildingID,
+		constants.Common.ContractType.RENT, constants.Common.ContractStatus.WAITING_FOR_SIGNATURE, buildingID, constants.Common.ContractType.BUY, constants.Common.ContractStatus.WAITING_FOR_SIGNATURE, buildingID,
+		constants.Common.ContractType.RENT, constants.Common.ContractStatus.NOT_IN_EFFECT, buildingID, constants.Common.ContractType.BUY, constants.Common.ContractStatus.NOT_IN_EFFECT, buildingID,
+		buildingID,
+		constants.Common.BillStatus.PAID, buildingID, constants.Common.BillStatus.UN_PAID, buildingID, constants.Common.BillStatus.OVERDUE, buildingID,
+	).Scan(data).Error; err != nil {
+		return err
+	}
+
+	data.RevenueStatistic = []structs.RevenueStatisticStruct{}
+
+	if err := config.DB.Raw(`
+    SELECT
+        b.period AS period,
+        SUM(b.amount) AS total_expected_revenue,
+        SUM(CASE WHEN b.status IN ? THEN b.amount ELSE 0 END) AS total_actual_revenue,
+        SUM(CASE WHEN b.status NOT IN ? THEN b.amount ELSE 0 END) AS total_remaining_revenue
+    FROM bill AS b JOIN contract ON contract.id = b.contract_id AND contract.deleted_at IS NULL JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL
+    WHERE b.deleted_at IS NULL AND building.id = ? AND EXTRACT(YEAR FROM b.period) = ?
+    GROUP BY period
+    ORDER BY period
+    `,
+		[]int{constants.Common.BillStatus.PAID},
+		[]int{constants.Common.BillStatus.PAID},
+		buildingID, year,
+	).Scan(&data.RevenueStatistic).Error; err != nil {
 		return err
 	}
 

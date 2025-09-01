@@ -25,15 +25,16 @@ func GenerateJWTToken(claim structs.JWTPayload) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.MapClaims{
-		"userID":     claim.UserID,
-		"fullName":   claim.FullName,
-		"imagePath":  claim.ImagePath,
-		"isCustomer": claim.IsCustomer,
-		"isManager":  claim.IsManager,
-		"isOwner":    claim.IsOwner,
-		"userNo":     claim.UserNo,
-		"iat":        time.Now().Unix(),
-		"exp":        time.Now().Add(time.Second * time.Duration(expireTime)).Unix(),
+		"userID":       claim.UserID,
+		"fullName":     claim.FullName,
+		"imagePath":    claim.ImagePath,
+		"isCustomer":   claim.IsCustomer,
+		"isManager":    claim.IsManager,
+		"isOwner":      claim.IsOwner,
+		"userNo":       claim.UserNo,
+		"ticketByPass": claim.TicketByPass,
+		"iat":          time.Now().Unix(),
+		"exp":          time.Now().Add(time.Second * time.Duration(expireTime)).Unix(),
 	})
 
 	return token.SignedString([]byte(secretKey))
@@ -65,6 +66,7 @@ func ExtractJWTClaim(token *jwt.Token, outputClaim *structs.JTWClaim) {
 	outputClaim.IsManager = claims["isManager"].(bool)
 	outputClaim.IsOwner = claims["isOwner"].(bool)
 	outputClaim.UserNo = claims["userNo"].(string)
+	outputClaim.TicketByPass = claims["ticketByPass"].(bool)
 	outputClaim.ServiceToken = token.Raw
 	outputClaim.IAT = int64(claims["iat"].(float64))
 	outputClaim.EXP = int64(claims["exp"].(float64))

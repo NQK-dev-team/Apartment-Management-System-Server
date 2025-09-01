@@ -167,3 +167,11 @@ func (r *UserRepository) GetCustomerDetail(ctx *gin.Context, user *models.UserMo
 	}
 	return nil
 }
+
+func (r *UserRepository) GetTotalCustomer(ctx *gin.Context, total *int64) error {
+	if err := config.DB.Model(&models.UserModel{}).Where("is_owner = false AND is_manager = false AND is_customer = true").Count(total).Error; err != nil {
+		return err
+	}
+
+	return nil
+}

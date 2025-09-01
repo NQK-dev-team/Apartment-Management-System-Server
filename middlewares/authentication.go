@@ -112,5 +112,7 @@ func (m *AuthenticationMiddleware) AuthMiddleware(ctx *gin.Context) {
 
 	ctx.Set("userID", claims.UserID)
 
+	ctx.Set("ticketByPass", claims.TicketByPass)
+
 	ctx.Next()
 }

@@ -116,7 +116,7 @@ func (l *CustomMigrationLogger) Trace(ctx context.Context, begin time.Time, fc f
 	case err != nil && l.logLevel >= logger.Error && !errors.Is(err, gorm.ErrRecordNotFound):
 		fileLogger.Printf("[%.3fms] %s\n[ERROR] %v", float64(elapsed.Nanoseconds())/1e6, sql, err)
 	case elapsed > 200*time.Millisecond && l.logLevel >= logger.Warn: // Log slow queries
-		fileLogger.Printf("[%.3fms] %s\n[SLOW QUERY]", float64(elapsed.Nanoseconds())/1e6, sql)
+		fileLogger.Printf("[%.3fms] [SLOW QUERY] %s\n", float64(elapsed.Nanoseconds())/1e6, sql)
 	case l.logLevel >= logger.Info:
 		fileLogger.Printf("[%.3fms] %s", float64(elapsed.Nanoseconds())/1e6, sql)
 	}

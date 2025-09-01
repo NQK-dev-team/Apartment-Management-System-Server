@@ -711,3 +711,51 @@ func (c *BuildingController) DeleteRoomContract(ctx *gin.Context) {
 	response.Message = config.GetMessageCode("DELETE_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }
+
+func (c *BuildingController) GetBuildingStatistic(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+
+	buildingID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		buildingID = 0
+	}
+
+	year, err := strconv.ParseInt(ctx.Query("year"), 10, 64)
+	if err != nil {
+		year = int64(time.Now().Year())
+	}
+
+	if permission := c.buildingService.CheckManagerPermission(ctx, buildingID); !permission {
+		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		ctx.JSON(http.StatusForbidden, response)
+		return
+	}
+
+	data := &structs.BuildingStatistic{}
+	data.RevenueStatistic = []structs.RevenueStatisticStruct{}
+
+	if err := c.buildingService.GetBuildingStatistic(ctx, buildingID, data, year); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = data
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *BuildingController) GetAllBuildingStatistic(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	data := &structs.AllBuildingStatistic{}
+
+	if err := c.buildingService.GetAllBuildingStatistic(ctx, data); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = data
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}

@@ -9,6 +9,7 @@ import (
 
 func InitContractRoutes(router *gin.RouterGroup) {
 	contractRoutes := router.Group("/contract")
+	contractOwnerRoutes := router.Group("/contract")
 	contractController := controllers.NewContractController()
 	authorizationMiddle := middlewares.NewAuthorizationMiddleware()
 
@@ -22,5 +23,10 @@ func InitContractRoutes(router *gin.RouterGroup) {
 		contractRoutes.POST("/:id/update", contractController.UpdateContract)
 		contractRoutes.POST("/add", contractController.AddContract)
 		contractRoutes.GET("/active-list", contractController.GetActiveContractList)
+	}
+
+	contractOwnerRoutes.Use(authorizationMiddle.AuthOwnerMiddleware)
+	{
+		contractOwnerRoutes.GET("/statistic", contractController.GetContractStatistic)
 	}
 }

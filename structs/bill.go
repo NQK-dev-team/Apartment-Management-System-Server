@@ -70,3 +70,18 @@ type UploadBill struct {
 	PayerID     int64  `json:"payerID" validate:"required_if=Status 2"`
 	PaymentTime string `json:"paymentTime" validate:"required_unless=PayerID 0,omitempty,datetime=2006-01-02,validate_payment_time"`
 }
+
+type RevenueStatisticStruct struct {
+	Period                string  `json:"period" gorm:"column:period"`
+	TotalExpectedRevenue  float64 `json:"totalExpectedRevenue" gorm:"column:total_expected_revenue"`
+	TotalActualRevenue    float64 `json:"totalActualRevenue" gorm:"column:total_actual_revenue"`
+	TotalRemainingRevenue float64 `json:"totalRemainingRevenue" gorm:"column:total_remaining_revenue"`
+}
+
+type BillStatistic struct {
+	TotalBill        int                      `json:"totalBill" gorm:"column:total_bill"`
+	TotalPaid        int                      `json:"totalPaid" gorm:"column:total_paid"`
+	TotalUnpaid      int                      `json:"totalUnpaid" gorm:"column:total_unpaid"`
+	TotalOverdue     int                      `json:"totalOverdue" gorm:"column:total_overdue"`
+	RevenueStatistic []RevenueStatisticStruct `json:"revenueStatistic" gorm:"-"`
+}

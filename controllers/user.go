@@ -730,3 +730,18 @@ func (c *UserController) ChangeEmail(ctx *gin.Context) {
 	response.Message = config.GetMessageCode("UPDATE_SUCCESS")
 	ctx.JSON(http.StatusOK, response)
 }
+
+func (c *UserController) GetTotalCustomer(ctx *gin.Context) {
+	response := config.NewDataResponse(ctx)
+	var total int64
+
+	if err := c.userService.GetTotalCustomer(ctx, &total); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response.Data = total
+	response.Message = config.GetMessageCode("GET_SUCCESS")
+	ctx.JSON(http.StatusOK, response)
+}

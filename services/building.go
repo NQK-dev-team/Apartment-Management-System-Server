@@ -53,6 +53,8 @@ func (s *BuildingService) CreateBuilding(ctx *gin.Context, building *structs.New
 	deleteImageList := []string{}
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		newBuilding := &models.BuildingModel{}
 		newBuilding.Name = building.Name
 		newBuilding.Address = building.Address
@@ -198,6 +200,8 @@ func (s *BuildingService) DeleteBuilding(ctx *gin.Context, id int64) error {
 	}
 
 	return config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		if err := s.buildingRepository.Delete(ctx, tx, []int64{deletedBuilding.ID}); err != nil {
 			return err
 		}
@@ -258,6 +262,8 @@ func (s *BuildingService) UpdateBuilding(ctx *gin.Context, building *structs.Edi
 	deleteImageList := []string{}
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
 		newBuildingData := &models.BuildingModel{}
 
 		if err := s.buildingRepository.GetById(ctx, newBuildingData, building.ID); err != nil {
@@ -574,4 +580,12 @@ func (s *BuildingService) CheckManagerPermission(ctx *gin.Context, buildingID in
 	}
 
 	return true
+}
+
+func (s *BuildingService) GetBuildingStatistic(ctx *gin.Context, buildingID int64, data *structs.BuildingStatistic, year int64) error {
+	return s.buildingRepository.GetBuildingStatistic(ctx, buildingID, data, year)
+}
+
+func (s *BuildingService) GetAllBuildingStatistic(ctx *gin.Context, data *structs.AllBuildingStatistic) error {
+	return s.buildingRepository.GetAllBuildingStatistic(ctx, data)
 }
