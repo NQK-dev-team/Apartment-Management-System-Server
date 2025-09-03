@@ -315,6 +315,21 @@ func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.Edi
 		}
 	}
 
+	for _, resident := range contract.Residents {
+		if resident.UserAccountID != 0 {
+			counter := 0
+			for _, r := range contract.Residents {
+				if r.UserAccountID == resident.UserAccountID {
+					counter++
+				}
+			}
+
+			if counter > 1 {
+				return true, false, nil
+			}
+		}
+	}
+
 	contractIDStr := strconv.Itoa(int(contractID))
 	deleteFileList := []string{}
 
@@ -560,6 +575,21 @@ func (s *ContractService) CreateContract(ctx *gin.Context, contract *structs.New
 	startDate, err := utils.ParseTime(contract.StartDate)
 	if err != nil {
 		return true, true, err
+	}
+
+	for _, resident := range contract.Residents {
+		if resident.UserAccountID != 0 {
+			counter := 0
+			for _, r := range contract.Residents {
+				if r.UserAccountID == resident.UserAccountID {
+					counter++
+				}
+			}
+
+			if counter > 1 {
+				return true, false, nil
+			}
+		}
 	}
 
 	newcontract := models.ContractModel{
