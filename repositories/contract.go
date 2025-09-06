@@ -501,6 +501,15 @@ func (r *ContractRepository) GetContractResidents(ctx *gin.Context, contractID i
 	return nil
 }
 
+func (r *ContractRepository) GetOverlapContract(ctx *gin.Context, contracts *[]models.ContractModel, roomID int64, date string) error {
+	if err := config.DB.Model(&models.ContractModel{}).
+		Where("room_id = ? AND start_date <= ? AND COALESCE(end_date, '2100-01-01') >= ? AND status != ?", roomID, date, date, constants.Common.ContractStatus.CANCELLED).
+		Find(contracts).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *ContractRepository) GetContractStatistic(ctx *gin.Context, data *structs.ContractStatistic) error {
 	if err := config.DB.Raw(`SELECT
 	(SELECT COUNT(*) FROM contract JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL WHERE contract.deleted_at IS NULL) AS total_contract,

@@ -336,15 +336,22 @@ func (c *ContractController) AddContract(ctx *gin.Context) {
 
 	var newContractID int64
 
-	isAllowed, isValid, err := c.contractService.CreateContract(ctx, &contract, &newContractID)
+	allowStatus, isValid, err := c.contractService.CreateContract(ctx, &contract, &newContractID)
 	if err != nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
 		ctx.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
-	if !isAllowed {
-		response.Message = config.GetMessageCode("PERMISSION_DENIED")
+	if allowStatus != 0 {
+		switch allowStatus {
+		case 1:
+			response.Message = config.GetMessageCode("PERMISSION_DENIED")
+		case 2:
+			response.Message = config.GetMessageCode("ROOM_UNAVAILABLE")
+		case 3:
+			response.Message = config.GetMessageCode("CONTRACT_OVERLAP")
+		}
 		ctx.JSON(http.StatusForbidden, response)
 		return
 	}

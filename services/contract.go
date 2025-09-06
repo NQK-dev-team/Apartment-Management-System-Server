@@ -486,37 +486,28 @@ func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.Edi
 	return true, true, nil
 }
 
-func (s *ContractService) CreateContract(ctx *gin.Context, contract *structs.NewContract, newContractID *int64) (bool, bool, error) {
+func (s *ContractService) CreateContract(ctx *gin.Context, contract *structs.NewContract, newContractID *int64) (int, bool, error) {
 	role := ctx.GetString("role")
 
 	room := models.RoomModel{}
 
 	if err := s.roomRepository.GetRoomByRoomIDAndBuildingID(ctx, &room, contract.RoomID, contract.BuildingID); err != nil {
-		return true, true, err
+		return 0, true, err
 	}
 
 	if room.ID == 0 {
-		return true, false, nil
+		return 0, false, nil
 	}
 
-	if room.Status != constants.Common.RoomStatus.AVAILABLE {
-		return false, true, nil
-	}
-
-	contractCheck := &structs.Contract{}
-	if err := s.contractRepository.GetRoomActiveContract(ctx, contractCheck, contract.RoomID); err != nil {
-		return true, true, err
-	}
-
-	if contractCheck.ID != 0 {
-		return false, true, nil
+	if room.Status != constants.Common.RoomStatus.AVAILABLE && room.Status != constants.Common.RoomStatus.RENTED {
+		return 2, true, nil
 	}
 
 	if role == constants.Roles.Manager {
 		isAllowed := s.buildingService.CheckManagerPermission(ctx, contract.BuildingID)
 
 		if !isAllowed {
-			return false, true, nil
+			return 1, true, nil
 		}
 	}
 
@@ -530,7 +521,7 @@ func (s *ContractService) CreateContract(ctx *gin.Context, contract *structs.New
 	if contract.SignDate == "" {
 		result, err := utils.CompareDates(contract.StartDate, currentDate)
 		if err != nil {
-			return true, true, err
+			return 0, true, err
 		}
 
 		switch result {
@@ -542,7 +533,7 @@ func (s *ContractService) CreateContract(ctx *gin.Context, contract *structs.New
 	} else {
 		result, err := utils.CompareDates(contract.StartDate, currentDate)
 		if err != nil {
-			return true, true, err
+			return 0, true, err
 		}
 
 		switch result {
@@ -554,7 +545,7 @@ func (s *ContractService) CreateContract(ctx *gin.Context, contract *structs.New
 			} else {
 				result, err := utils.CompareDates(contract.EndDate, currentDate)
 				if err != nil {
-					return true, true, err
+					return 0, true, err
 				}
 
 				switch result {
@@ -569,12 +560,12 @@ func (s *ContractService) CreateContract(ctx *gin.Context, contract *structs.New
 
 	createdAt, err := utils.ParseTime(contract.CreatedAt)
 	if err != nil {
-		return true, true, err
+		return 0, true, err
 	}
 
 	startDate, err := utils.ParseTime(contract.StartDate)
 	if err != nil {
-		return true, true, err
+		return 0, true, err
 	}
 
 	for _, resident := range contract.Residents {
@@ -587,8 +578,26 @@ func (s *ContractService) CreateContract(ctx *gin.Context, contract *structs.New
 			}
 
 			if counter > 1 {
-				return true, false, nil
+				return 0, false, nil
 			}
+		}
+	}
+
+	contracts := []models.ContractModel{}
+
+	if err := s.contractRepository.GetOverlapContract(ctx, &contracts, contract.RoomID, contract.StartDate); err != nil {
+		return 0, true, err
+	}
+
+	if len(contracts) > 0 {
+		return 3, true, nil
+	} else if contract.EndDate != "" {
+		if err := s.contractRepository.GetOverlapContract(ctx, &contracts, contract.RoomID, contract.EndDate); err != nil {
+			return 0, true, err
+		}
+
+		if len(contracts) > 0 {
+			return 3, true, nil
 		}
 	}
 
@@ -714,10 +723,10 @@ func (s *ContractService) CreateContract(ctx *gin.Context, contract *structs.New
 		for _, path := range deleteFileList {
 			utils.RemoveFile(path)
 		}
-		return true, true, err
+		return 0, true, err
 	}
 
-	return true, true, nil
+	return 0, true, nil
 }
 
 func (s *ContractService) UpdateContractStatus() error {

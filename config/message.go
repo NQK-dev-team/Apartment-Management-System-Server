@@ -59,6 +59,8 @@ var messageList = map[string]string{
 	"BILL_ALREADY_PAID":      "MSG_E0020",
 	"IPN_PAYLOAD_INVALID":    "MSG_E0021",
 	"BILL_PROCESSING":        "MSG_E0022",
+	"ROOM_UNAVAILABLE":       "MSG_E0023",
+	"CONTRACT_OVERLAP":       "MSG_E0024",
 
 	// Parameter error messages
 	"INVALID_PARAMETER":    "MSG_V0001",
