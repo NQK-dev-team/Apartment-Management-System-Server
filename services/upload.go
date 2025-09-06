@@ -292,6 +292,46 @@ func (s *UploadService) ProcessAddCustomer(f *excelize.File, tx *gorm.DB, upload
 	return fileError
 }
 
+func (s *UploadService) CheckUserPermissionForBuilding(ctx *gin.Context, buildingID int64) bool {
+	userID := ctx.GetInt64("userID")
+
+	userModel := &models.UserModel{}
+	if err := s.userRepository.GetByID(ctx, userModel, userID); err != nil {
+		return false
+	}
+
+	role := utils.GetUserRole(userModel)
+
+	if role != constants.Roles.Manager && role != constants.Roles.Owner {
+		return false
+	}
+
+	if role == constants.Roles.Manager {
+		buildings := []models.BuildingModel{}
+
+		if err := s.buildingRepository.GetBuildingBaseOnSchedule(ctx, &buildings, userID); err != nil {
+			return false
+		}
+
+		if len(buildings) == 0 {
+			return false
+		}
+
+		var result = false
+
+		for _, building := range buildings {
+			if building.ID == buildingID {
+				result = true
+				break
+			}
+		}
+
+		return result
+	}
+
+	return true
+}
+
 func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload *models.UploadFileModel) []error {
 	failCell, _ := f.NewStyle(&excelize.Style{
 		Font: &excelize.Font{
@@ -356,6 +396,10 @@ func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload
 		return []error{fmt.Errorf("building with ID %d not found", buildingID)}
 	}
 
+	if !s.CheckUserPermissionForBuilding(ctx, buildingID) {
+		return []error{fmt.Errorf("user: %d does not have permission for building ID: %d", upload.CreatorID, buildingID)}
+	}
+
 	dataRows := rows[5:]
 
 	fileError := []error{}
@@ -387,8 +431,8 @@ func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload
 			} else if roomModel.ID == 0 {
 				fileError = append(fileError, fmt.Errorf("row %d: failed to get info of room no: %d", row-5, roomNo))
 				processSuccess = false
-			} else if len(roomModel.Contracts) > 0 {
-				fileError = append(fileError, fmt.Errorf("row %d: room is already contracted", row-5))
+			} else if roomModel.Status != constants.Common.RoomStatus.AVAILABLE && roomModel.Status != constants.Common.RoomStatus.RENTED {
+				fileError = append(fileError, fmt.Errorf("row %d: room is unavailable, status: %d", row-5, roomModel.Status))
 				processSuccess = false
 			} else {
 				// Get customer info
@@ -500,172 +544,195 @@ func (s *UploadService) ProcessAddContract(f *excelize.File, tx *gorm.DB, upload
 							}
 
 							if processSuccess {
-								contractModel := &models.ContractModel{
-									DefaultModel: models.DefaultModel{
-										CreatedAt: createAt,
-										CreatedBy: upload.CreatorID,
-									},
-									Value:         newContract.ContractValue,
-									Type:          newContract.ContractType,
-									StartDate:     startDate,
-									EndDate:       endDate,
-									SignDate:      signDate,
-									CreatorID:     newContract.CreatorID,
-									HouseholderID: newContract.HouseholderID,
-									RoomID:        newContract.RoomID,
-									Status:        status,
-								}
-
-								tx.SavePoint(fmt.Sprintf("sp_contract_%d", row-5))
-								if err := s.contractRepository.CreateContract(ctx, tx, contractModel); err != nil {
+								contracts := []models.ContractModel{}
+								if err := s.contractRepository.GetOverlapContract(ctx, &contracts, roomModel.ID, newContract.StartDate); err != nil {
 									fileError = append(fileError, fmt.Errorf("row %d: %v", row-5, err))
 									processSuccess = false
-									tx.RollbackTo(fmt.Sprintf("sp_contract_%d", row-5))
-								} else {
-									residentSheetRows, err := f.GetRows(contractNo)
-									residentRows := [][]string{}
-									if err == nil {
-										if len(residentSheetRows) >= 6 {
-											residentRows = residentSheetRows[5:]
-										}
+								}
+
+								if len(contracts) > 0 {
+									fileError = append(fileError, fmt.Errorf("row %d: new contract overlaps with existing contracts in room %d", row-5, roomModel.No))
+									processSuccess = false
+								} else if newContract.EndDate != "" {
+									if err := s.contractRepository.GetOverlapContract(ctx, &contracts, roomModel.ID, newContract.EndDate); err != nil {
+										fileError = append(fileError, fmt.Errorf("row %d: %v", row-5, err))
+										processSuccess = false
 									}
 
-									if len(residentRows) > 0 {
-										for index2 := range residentRows {
-											residentRowNo := index2 + 6
-											subProcessSuccess := true
+									if len(contracts) > 0 {
+										fileError = append(fileError, fmt.Errorf("row %d: new contract overlaps with existing contracts in room %d", row-5, roomModel.No))
+										processSuccess = false
+									}
+								}
 
-											residentUserModel := &models.UserModel{}
-											residentNo, _ := f.GetCellValue(contractNo, fmt.Sprintf("B%d", residentRowNo))
-											residentNo = strings.TrimSpace(residentNo)
-											residentLastName, _ := f.GetCellValue(contractNo, fmt.Sprintf("C%d", residentRowNo))
-											residentLastName = strings.TrimSpace(residentLastName)
-											residentMiddleName, _ := f.GetCellValue(contractNo, fmt.Sprintf("D%d", residentRowNo))
-											residentMiddleName = strings.TrimSpace(residentMiddleName)
-											residentFirstName, _ := f.GetCellValue(contractNo, fmt.Sprintf("E%d", residentRowNo))
-											residentFirstName = strings.TrimSpace(residentFirstName)
+								if processSuccess {
+									contractModel := &models.ContractModel{
+										DefaultModel: models.DefaultModel{
+											CreatedAt: createAt,
+											CreatedBy: upload.CreatorID,
+										},
+										Value:         newContract.ContractValue,
+										Type:          newContract.ContractType,
+										StartDate:     startDate,
+										EndDate:       endDate,
+										SignDate:      signDate,
+										CreatorID:     newContract.CreatorID,
+										HouseholderID: newContract.HouseholderID,
+										RoomID:        newContract.RoomID,
+										Status:        status,
+									}
 
-											residentGenderStr, _ := f.GetCellValue(contractNo, fmt.Sprintf("F%d", residentRowNo))
-											residentGender := 0
-											if utils.CompareStringRaw("Nam", strings.TrimSpace(residentGenderStr)) || utils.CompareStringRaw("Male", strings.TrimSpace(residentGenderStr)) {
-												residentGender = constants.Common.UserGender.MALE
-											} else if utils.CompareStringRaw("Nữ", strings.TrimSpace(residentGenderStr)) || utils.CompareStringRaw("Female", strings.TrimSpace(residentGenderStr)) {
-												residentGender = constants.Common.UserGender.FEMALE
-											} else if utils.CompareStringRaw("Khác", strings.TrimSpace(residentGenderStr)) || utils.CompareStringRaw("Other", strings.TrimSpace(residentGenderStr)) {
-												residentGender = constants.Common.UserGender.OTHER
+									tx.SavePoint(fmt.Sprintf("sp_contract_%d", row-5))
+									if err := s.contractRepository.CreateContract(ctx, tx, contractModel); err != nil {
+										fileError = append(fileError, fmt.Errorf("row %d: %v", row-5, err))
+										processSuccess = false
+										tx.RollbackTo(fmt.Sprintf("sp_contract_%d", row-5))
+									} else {
+										residentSheetRows, err := f.GetRows(contractNo)
+										residentRows := [][]string{}
+										if err == nil {
+											if len(residentSheetRows) >= 6 {
+												residentRows = residentSheetRows[5:]
 											}
+										}
 
-											residentSSN, _ := f.GetCellValue(contractNo, fmt.Sprintf("G%d", residentRowNo))
-											residentSSN = strings.TrimSpace(residentSSN)
-											residentOldSSN, _ := f.GetCellValue(contractNo, fmt.Sprintf("H%d", residentRowNo))
-											residentOldSSN = strings.TrimSpace(residentOldSSN)
-											residentDOB, _ := f.GetCellValue(contractNo, fmt.Sprintf("I%d", residentRowNo))
-											residentDOB = strings.TrimSpace(residentDOB)
-											residentPOB, _ := f.GetCellValue(contractNo, fmt.Sprintf("J%d", residentRowNo))
-											residentPOB = strings.TrimSpace(residentPOB)
-											residentEmail, _ := f.GetCellValue(contractNo, fmt.Sprintf("K%d", residentRowNo))
-											residentEmail = strings.TrimSpace(residentEmail)
-											residentPhone, _ := f.GetCellValue(contractNo, fmt.Sprintf("L%d", residentRowNo))
-											residentPhone = strings.TrimSpace(residentPhone)
+										if len(residentRows) > 0 {
+											for index2 := range residentRows {
+												residentRowNo := index2 + 6
+												subProcessSuccess := true
 
-											residentRelationStr, _ := f.GetCellValue(contractNo, fmt.Sprintf("M%d", residentRowNo))
-											residentRelation := 0
-											if utils.CompareStringRaw("Con cái", strings.TrimSpace(residentRelationStr)) || utils.CompareStringRaw("Child", strings.TrimSpace(residentRelationStr)) {
-												residentRelation = constants.Common.ResidentRelationship.CHILD
-											} else if utils.CompareStringRaw("Vợ/Chồng", strings.TrimSpace(residentRelationStr)) || utils.CompareStringRaw("Spouse", strings.TrimSpace(residentRelationStr)) {
-												residentRelation = constants.Common.ResidentRelationship.SPOUSE
-											} else if utils.CompareStringRaw("Cha/Mẹ", strings.TrimSpace(residentRelationStr)) || utils.CompareStringRaw("Parent", strings.TrimSpace(residentRelationStr)) {
-												residentRelation = constants.Common.ResidentRelationship.PARENT
-											} else if utils.CompareStringRaw("Khác", strings.TrimSpace(residentRelationStr)) || utils.CompareStringRaw("Other", strings.TrimSpace(residentRelationStr)) {
-												residentRelation = constants.Common.ResidentRelationship.OTHER
-											}
+												residentUserModel := &models.UserModel{}
+												residentNo, _ := f.GetCellValue(contractNo, fmt.Sprintf("B%d", residentRowNo))
+												residentNo = strings.TrimSpace(residentNo)
+												residentLastName, _ := f.GetCellValue(contractNo, fmt.Sprintf("C%d", residentRowNo))
+												residentLastName = strings.TrimSpace(residentLastName)
+												residentMiddleName, _ := f.GetCellValue(contractNo, fmt.Sprintf("D%d", residentRowNo))
+												residentMiddleName = strings.TrimSpace(residentMiddleName)
+												residentFirstName, _ := f.GetCellValue(contractNo, fmt.Sprintf("E%d", residentRowNo))
+												residentFirstName = strings.TrimSpace(residentFirstName)
 
-											if residentNo != "" {
-												if err := s.userRepository.GetCustomerByUserNo(nil, residentUserModel, residentNo); err != nil {
-													fileError = append(fileError, fmt.Errorf("row %d, resident %d: failed to get resident's customer account info: %v", row-5, residentRowNo-5, err))
-													processSuccess = false
-													subProcessSuccess = false
+												residentGenderStr, _ := f.GetCellValue(contractNo, fmt.Sprintf("F%d", residentRowNo))
+												residentGender := 0
+												if utils.CompareStringRaw("Nam", strings.TrimSpace(residentGenderStr)) || utils.CompareStringRaw("Male", strings.TrimSpace(residentGenderStr)) {
+													residentGender = constants.Common.UserGender.MALE
+												} else if utils.CompareStringRaw("Nữ", strings.TrimSpace(residentGenderStr)) || utils.CompareStringRaw("Female", strings.TrimSpace(residentGenderStr)) {
+													residentGender = constants.Common.UserGender.FEMALE
+												} else if utils.CompareStringRaw("Khác", strings.TrimSpace(residentGenderStr)) || utils.CompareStringRaw("Other", strings.TrimSpace(residentGenderStr)) {
+													residentGender = constants.Common.UserGender.OTHER
+												}
+
+												residentSSN, _ := f.GetCellValue(contractNo, fmt.Sprintf("G%d", residentRowNo))
+												residentSSN = strings.TrimSpace(residentSSN)
+												residentOldSSN, _ := f.GetCellValue(contractNo, fmt.Sprintf("H%d", residentRowNo))
+												residentOldSSN = strings.TrimSpace(residentOldSSN)
+												residentDOB, _ := f.GetCellValue(contractNo, fmt.Sprintf("I%d", residentRowNo))
+												residentDOB = strings.TrimSpace(residentDOB)
+												residentPOB, _ := f.GetCellValue(contractNo, fmt.Sprintf("J%d", residentRowNo))
+												residentPOB = strings.TrimSpace(residentPOB)
+												residentEmail, _ := f.GetCellValue(contractNo, fmt.Sprintf("K%d", residentRowNo))
+												residentEmail = strings.TrimSpace(residentEmail)
+												residentPhone, _ := f.GetCellValue(contractNo, fmt.Sprintf("L%d", residentRowNo))
+												residentPhone = strings.TrimSpace(residentPhone)
+
+												residentRelationStr, _ := f.GetCellValue(contractNo, fmt.Sprintf("M%d", residentRowNo))
+												residentRelation := 0
+												if utils.CompareStringRaw("Con cái", strings.TrimSpace(residentRelationStr)) || utils.CompareStringRaw("Child", strings.TrimSpace(residentRelationStr)) {
+													residentRelation = constants.Common.ResidentRelationship.CHILD
+												} else if utils.CompareStringRaw("Vợ/Chồng", strings.TrimSpace(residentRelationStr)) || utils.CompareStringRaw("Spouse", strings.TrimSpace(residentRelationStr)) {
+													residentRelation = constants.Common.ResidentRelationship.SPOUSE
+												} else if utils.CompareStringRaw("Cha/Mẹ", strings.TrimSpace(residentRelationStr)) || utils.CompareStringRaw("Parent", strings.TrimSpace(residentRelationStr)) {
+													residentRelation = constants.Common.ResidentRelationship.PARENT
+												} else if utils.CompareStringRaw("Khác", strings.TrimSpace(residentRelationStr)) || utils.CompareStringRaw("Other", strings.TrimSpace(residentRelationStr)) {
+													residentRelation = constants.Common.ResidentRelationship.OTHER
+												}
+
+												if residentNo != "" {
+													if err := s.userRepository.GetCustomerByUserNo(nil, residentUserModel, residentNo); err != nil {
+														fileError = append(fileError, fmt.Errorf("row %d, resident %d: failed to get resident's customer account info: %v", row-5, residentRowNo-5, err))
+														processSuccess = false
+														subProcessSuccess = false
+													} else {
+														if residentUserModel.ID == 0 {
+															fileError = append(fileError, fmt.Errorf("row %d, resident %d: customer of number %s not found", row-5, residentRowNo-5, residentNo))
+															processSuccess = false
+															subProcessSuccess = false
+														}
+													}
 												} else {
-													if residentUserModel.ID == 0 {
-														fileError = append(fileError, fmt.Errorf("row %d, resident %d: customer of number %s not found", row-5, residentRowNo-5, residentNo))
+													residentData := &structs.ContractResidents{
+														FirstName:               residentFirstName,
+														LastName:                residentLastName,
+														MiddleName:              residentMiddleName,
+														SSN:                     residentSSN,
+														OldSSN:                  residentOldSSN,
+														DOB:                     residentDOB,
+														POB:                     residentPOB,
+														Phone:                   residentPhone,
+														Email:                   residentEmail,
+														Gender:                  residentGender,
+														RelationWithHouseholder: residentRelation,
+													}
+
+													if err := constants.Validate.Struct(residentData); err != nil {
+														fileError = append(fileError, fmt.Errorf("row %d, resident %d: %v", row-5, residentRowNo-5, err))
 														processSuccess = false
 														subProcessSuccess = false
 													}
 												}
-											} else {
-												residentData := &structs.ContractResidents{
-													FirstName:               residentFirstName,
-													LastName:                residentLastName,
-													MiddleName:              residentMiddleName,
-													SSN:                     residentSSN,
-													OldSSN:                  residentOldSSN,
-													DOB:                     residentDOB,
-													POB:                     residentPOB,
-													Phone:                   residentPhone,
-													Email:                   residentEmail,
-													Gender:                  residentGender,
-													RelationWithHouseholder: residentRelation,
-												}
 
-												if err := constants.Validate.Struct(residentData); err != nil {
-													fileError = append(fileError, fmt.Errorf("row %d, resident %d: %v", row-5, residentRowNo-5, err))
-													processSuccess = false
-													subProcessSuccess = false
-												}
-											}
+												if subProcessSuccess {
+													var residentData *models.RoomResidentModel
 
-											if subProcessSuccess {
-												var residentData *models.RoomResidentModel
+													if residentUserModel.ID != 0 {
+														residentData = &models.RoomResidentModel{
+															FirstName:               residentUserModel.FirstName,
+															LastName:                residentUserModel.LastName,
+															MiddleName:              residentUserModel.MiddleName,
+															SSN:                     sql.NullString{String: residentUserModel.SSN, Valid: residentUserModel.SSN != ""},
+															OldSSN:                  residentUserModel.OldSSN,
+															DOB:                     residentUserModel.DOB,
+															POB:                     residentUserModel.POB,
+															Phone:                   sql.NullString{String: residentUserModel.Phone, Valid: residentUserModel.Phone != ""},
+															Email:                   sql.NullString{String: residentUserModel.Email, Valid: residentUserModel.Email != ""},
+															Gender:                  residentUserModel.Gender,
+															RelationWithHouseholder: residentRelation,
+															UserAccountID:           sql.NullInt64{Int64: residentUserModel.ID, Valid: true},
+														}
+													} else {
+														dob, _ := time.Parse("2006-01-02", residentDOB)
 
-												if residentUserModel.ID != 0 {
-													residentData = &models.RoomResidentModel{
-														FirstName:               residentUserModel.FirstName,
-														LastName:                residentUserModel.LastName,
-														MiddleName:              residentUserModel.MiddleName,
-														SSN:                     sql.NullString{String: residentUserModel.SSN, Valid: residentUserModel.SSN != ""},
-														OldSSN:                  residentUserModel.OldSSN,
-														DOB:                     residentUserModel.DOB,
-														POB:                     residentUserModel.POB,
-														Phone:                   sql.NullString{String: residentUserModel.Phone, Valid: residentUserModel.Phone != ""},
-														Email:                   sql.NullString{String: residentUserModel.Email, Valid: residentUserModel.Email != ""},
-														Gender:                  residentUserModel.Gender,
-														RelationWithHouseholder: residentRelation,
-														UserAccountID:           sql.NullInt64{Int64: residentUserModel.ID, Valid: true},
+														residentData = &models.RoomResidentModel{
+															FirstName:               residentFirstName,
+															LastName:                residentLastName,
+															MiddleName:              sql.NullString{String: residentMiddleName, Valid: residentMiddleName != ""},
+															SSN:                     sql.NullString{String: residentSSN, Valid: residentSSN != ""},
+															OldSSN:                  sql.NullString{String: residentOldSSN, Valid: residentOldSSN != ""},
+															DOB:                     dob,
+															POB:                     residentPOB,
+															Phone:                   sql.NullString{String: residentPhone, Valid: residentPhone != ""},
+															Email:                   sql.NullString{String: residentEmail, Valid: residentEmail != ""},
+															Gender:                  residentGender,
+															RelationWithHouseholder: residentRelation,
+															UserAccountID:           sql.NullInt64{Int64: 0, Valid: false},
+														}
 													}
+
+													tx.SavePoint(fmt.Sprintf("sp_contract_%d_resident_%d", row-5, residentRowNo-5))
+													if err := s.contractRepository.AddNewRoomResident(ctx, tx, residentData, contractModel.ID); err != nil {
+														fileError = append(fileError, fmt.Errorf("row %d, resident %d: %v", row-5, residentRowNo-5, err))
+														subProcessSuccess = false
+														processSuccess = false
+														tx.RollbackTo(fmt.Sprintf("sp_contract_%d_resident_%d", row-5, residentRowNo-5))
+													}
+												}
+
+												if subProcessSuccess {
+													f.SetCellValue(contractNo, fmt.Sprintf("N%d", residentRowNo), "✔")
+													f.SetCellStyle(contractNo, fmt.Sprintf("N%d", residentRowNo), fmt.Sprintf("N%d", residentRowNo), successCell)
 												} else {
-													dob, _ := time.Parse("2006-01-02", residentDOB)
-
-													residentData = &models.RoomResidentModel{
-														FirstName:               residentFirstName,
-														LastName:                residentLastName,
-														MiddleName:              sql.NullString{String: residentMiddleName, Valid: residentMiddleName != ""},
-														SSN:                     sql.NullString{String: residentSSN, Valid: residentSSN != ""},
-														OldSSN:                  sql.NullString{String: residentOldSSN, Valid: residentOldSSN != ""},
-														DOB:                     dob,
-														POB:                     residentPOB,
-														Phone:                   sql.NullString{String: residentPhone, Valid: residentPhone != ""},
-														Email:                   sql.NullString{String: residentEmail, Valid: residentEmail != ""},
-														Gender:                  residentGender,
-														RelationWithHouseholder: residentRelation,
-														UserAccountID:           sql.NullInt64{Int64: 0, Valid: false},
-													}
+													f.SetCellValue(contractNo, fmt.Sprintf("N%d", residentRowNo), "✘")
+													f.SetCellStyle(contractNo, fmt.Sprintf("N%d", residentRowNo), fmt.Sprintf("N%d", residentRowNo), failCell)
 												}
-
-												tx.SavePoint(fmt.Sprintf("sp_contract_%d_resident_%d", row-5, residentRowNo-5))
-												if err := s.contractRepository.AddNewRoomResident(ctx, tx, residentData, contractModel.ID); err != nil {
-													fileError = append(fileError, fmt.Errorf("row %d, resident %d: %v", row-5, residentRowNo-5, err))
-													subProcessSuccess = false
-													processSuccess = false
-													tx.RollbackTo(fmt.Sprintf("sp_contract_%d_resident_%d", row-5, residentRowNo-5))
-												}
-											}
-
-											if subProcessSuccess {
-												f.SetCellValue(contractNo, fmt.Sprintf("N%d", residentRowNo), "✔")
-												f.SetCellStyle(contractNo, fmt.Sprintf("N%d", residentRowNo), fmt.Sprintf("N%d", residentRowNo), successCell)
-											} else {
-												f.SetCellValue(contractNo, fmt.Sprintf("N%d", residentRowNo), "✘")
-												f.SetCellStyle(contractNo, fmt.Sprintf("N%d", residentRowNo), fmt.Sprintf("N%d", residentRowNo), failCell)
 											}
 										}
 									}
@@ -743,6 +810,10 @@ func (s *UploadService) ProcessAddBill(f *excelize.File, tx *gorm.DB, upload *mo
 	buildingID, err := strconv.ParseInt(buildingIDStr, 10, 64)
 	if err != nil {
 		return []error{err}
+	}
+
+	if !s.CheckUserPermissionForBuilding(ctx, buildingID) {
+		return []error{fmt.Errorf("user: %d does not have permission for building ID: %d", upload.CreatorID, buildingID)}
 	}
 	paymentPeriodRow := rows[1]
 	paymentYearStr := paymentPeriodRow[1]

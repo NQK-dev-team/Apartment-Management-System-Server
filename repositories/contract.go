@@ -462,19 +462,19 @@ func (r *ContractRepository) UpdateRoomResident(ctx *gin.Context, tx *gorm.DB, r
 
 func (r *ContractRepository) UpdateContractStatus(tx *gorm.DB) error {
 	if err := tx.Model(&models.ContractModel{}).
-		Where("sign_date IS NOT NULL AND start_date <= now() AND COALESCE(end_date,now()) >= now() AND status NOT IN ?", []int{constants.Common.ContractStatus.ACTIVE, constants.Common.ContractStatus.EXPIRED, constants.Common.ContractStatus.CANCELLED}).
+		Where("sign_date IS NOT NULL AND start_date <= now() AND COALESCE(end_date,now()) >= now() AND status NOT IN ? AND deleted_at IS NULL", []int{constants.Common.ContractStatus.ACTIVE, constants.Common.ContractStatus.EXPIRED, constants.Common.ContractStatus.CANCELLED}).
 		Update("status", constants.Common.ContractStatus.ACTIVE).Error; err != nil {
 		return err
 	}
 
 	if err := tx.Model(&models.ContractModel{}).
-		Where("sign_date IS NOT NULL AND type = 1 AND start_date <= now() AND end_date < now() AND status NOT IN ?", []int{constants.Common.ContractStatus.EXPIRED}).
+		Where("sign_date IS NOT NULL AND type = 1 AND start_date <= now() AND end_date < now() AND status NOT IN ? AND deleted_at IS NULL", []int{constants.Common.ContractStatus.EXPIRED}).
 		Update("status", constants.Common.ContractStatus.EXPIRED).Error; err != nil {
 		return err
 	}
 
 	if err := tx.Model(&models.ContractModel{}).
-		Where("sign_date IS NULL AND start_date <= now() AND status NOT IN ?", []int{constants.Common.ContractStatus.CANCELLED}).
+		Where("sign_date IS NULL AND start_date <= now() AND status NOT IN ? AND deleted_at IS NULL", []int{constants.Common.ContractStatus.CANCELLED}).
 		Update("status", constants.Common.ContractStatus.CANCELLED).Error; err != nil {
 		return err
 	}
@@ -496,6 +496,15 @@ func (r *ContractRepository) GetContractResidents(ctx *gin.Context, contractID i
 		Joins("JOIN room_resident_list ON room_resident_list.resident_id = room_resident.ID").
 		Where("room_resident_list.contract_id = ? AND room_resident.deleted_at IS NULL", contractID).
 		Find(residents).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ContractRepository) GetOverlapContract(ctx *gin.Context, contracts *[]models.ContractModel, roomID int64, date string) error {
+	if err := config.DB.Model(&models.ContractModel{}).
+		Where("room_id = ? AND start_date <= ? AND COALESCE(end_date, '2100-01-01') >= ? AND status != ?", roomID, date, date, constants.Common.ContractStatus.CANCELLED).
+		Find(contracts).Error; err != nil {
 		return err
 	}
 	return nil
