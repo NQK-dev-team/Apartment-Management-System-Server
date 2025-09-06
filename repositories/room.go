@@ -184,12 +184,12 @@ func (r *RoomRepository) GetRoomByRoomIDAndBuildingID(ctx *gin.Context, room *mo
 }
 
 func (r *RoomRepository) UpdateRoomStatus(tx *gorm.DB) error {
-	if err := tx.Exec("UPDATE room SET status = contract.type FROM contract WHERE contract.room_id = room.id AND contract.deleted_at IS NULL AND contract.status = ? AND room.status NOT IN ?",
+	if err := tx.Exec("UPDATE room SET status = contract.type FROM contract WHERE contract.room_id = room.id AND contract.deleted_at IS NULL AND contract.status = ? AND room.status NOT IN ? AND room.deleted_at IS NULL",
 		constants.Common.ContractStatus.ACTIVE, []int{constants.Common.RoomStatus.RENTED, constants.Common.RoomStatus.SOLD}).Error; err != nil {
 		return err
 	}
 
-	if err := tx.Exec("UPDATE room SET status = ? WHERE NOT EXISTS (SELECT * FROM contract WHERE contract.room_id = room.id AND contract.deleted_at IS NULL AND contract.status = ?) AND room.status IN ?",
+	if err := tx.Exec("UPDATE room SET status = ? WHERE NOT EXISTS (SELECT * FROM contract WHERE contract.room_id = room.id AND contract.deleted_at IS NULL AND contract.status = ?) AND room.status IN ? AND room.deleted_at IS NULL",
 		constants.Common.RoomStatus.AVAILABLE, constants.Common.ContractStatus.ACTIVE, []int{constants.Common.RoomStatus.RENTED, constants.Common.RoomStatus.SOLD}).Error; err != nil {
 		return err
 	}

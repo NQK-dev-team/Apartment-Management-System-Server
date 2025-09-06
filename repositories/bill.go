@@ -305,15 +305,16 @@ func (r *BillRepository) UpdateBillOfCancelContract(ctx *gin.Context, tx *gorm.D
 }
 
 func (r *BillRepository) UpdateBillStatus(tx *gorm.DB) error {
-	if err := tx.Exec("UPDATE bill SET status = ? WHERE payer_id IS NULL AND payment_time IS NULL AND deleted_at IS NULL AND date_trunc('month', period) < date_trunc('month', NOW()) AND status = ? AND contract_id IN (SELECT contract.id FROM contract where contract.deleted_at IS NULL AND contract.status = ?)", constants.Common.BillStatus.OVERDUE, constants.Common.BillStatus.UN_PAID, constants.Common.ContractStatus.ACTIVE).Error; err != nil {
+	if err := tx.Exec("UPDATE bill SET status = ? WHERE payer_id IS NULL AND payment_time IS NULL AND deleted_at IS NULL AND date_trunc('month', period) < date_trunc('month', NOW()) AND status = ? AND contract_id IN (SELECT contract.id FROM contract where contract.deleted_at IS NULL AND contract.status = ?)",
+		constants.Common.BillStatus.OVERDUE, constants.Common.BillStatus.UN_PAID, constants.Common.ContractStatus.ACTIVE).Error; err != nil {
 		return err
 	}
 
 	if err := tx.Exec(`
 	UPDATE bill SET status =
 		CASE
-			WHEN bill.period <= contract.end_date THEN ?
-			WHEN bill.period > contract.end_date THEN ?
+			WHEN bill.period <= COALESCE(contract.end_date,'2100-01-01') THEN ?
+			WHEN bill.period > COALESCE(contract.end_date,'2100-01-01') THEN ?
 			ELSE bill.status
 		END
 	FROM contract
