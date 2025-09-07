@@ -151,7 +151,7 @@ func (r *BillRepository) GetDeletableBills(ctx *gin.Context, bills *[]models.Bil
 			Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
 			Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 			Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
-			Where("bill.id in ? and bill.status in ? AND bill.deleted_at IS NULL", IDs, []int{constants.Common.BillStatus.UN_PAID, constants.Common.BillStatus.OVERDUE}).Find(bills).Error; err != nil {
+			Where("bill.id in ? and bill.status in ? AND bill.deleted_at IS NULL", IDs, []int{constants.Common.BillStatus.UN_PAID, constants.Common.BillStatus.OVERDUE, constants.Common.BillStatus.CANCELLED}).Find(bills).Error; err != nil {
 			return err
 		}
 	} else {
@@ -159,7 +159,7 @@ func (r *BillRepository) GetDeletableBills(ctx *gin.Context, bills *[]models.Bil
 			Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
 			Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
 			Joins("JOIN building ON building.id = room.building_id AND building.deleted_at IS NULL").
-			Where("bill.id in ? and bill.status in ? and contract.creator_id = ? AND bill.deleted_at IS NULL", IDs, []int{constants.Common.BillStatus.UN_PAID, constants.Common.BillStatus.OVERDUE}, *managerID)
+			Where("bill.id in ? and bill.status in ? and contract.creator_id = ? AND bill.deleted_at IS NULL", IDs, []int{constants.Common.BillStatus.UN_PAID, constants.Common.BillStatus.OVERDUE, constants.Common.BillStatus.CANCELLED}, *managerID)
 		query2 := config.DB.Model(&models.BillModel{}).
 			Joins("JOIN contract ON contract.id = bill.contract_id AND contract.deleted_at IS NULL").
 			Joins("JOIN room ON room.id = contract.room_id AND room.deleted_at IS NULL").
