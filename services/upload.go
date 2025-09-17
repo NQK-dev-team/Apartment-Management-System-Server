@@ -1185,7 +1185,7 @@ func (s *UploadService) RunUploadCron() {
 					tx := config.DB.Begin()
 					fileDecompositions := strings.Split(upload.URLPath, "/")
 					fileName := fileDecompositions[len(fileDecompositions)-1]
-					fmt.Printf("Recovered from panic while processing file %s: %v\n", fileName, r)
+					fmt.Fprintf(logFile, "Recovered from panic while processing file %s: %v\n", fileName, r)
 					if err := s.CronFileFail(tx, upload); err != nil {
 						fmt.Fprintf(logFile, "failed to update upload file %s: %v\n", fileName, err)
 						tx.Rollback()
