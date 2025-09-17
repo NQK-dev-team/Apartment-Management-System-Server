@@ -1157,6 +1157,18 @@ func (s *UploadService) ProcessUploadFile(upload *models.UploadFileModel) error 
 
 	fmt.Fprintf(logFile, "File %s processed successfully\n", fileName)
 
+	defer func() {
+		if r := recover(); r != nil {
+			fileDecompositions := strings.Split(upload.URLPath, "/")
+			fileName := fileDecompositions[len(fileDecompositions)-1]
+			fmt.Printf("Recovered from panic while processing file %s: %v\n", fileName, r)
+			if err := s.CronFileFail(tx, upload); err != nil {
+				fmt.Fprintf(logFile, "failed to update upload file %s: %v\n", fileName, err)
+				tx.Rollback()
+			}
+		}
+	}()
+
 	tx.Commit()
 
 	return nil
@@ -1177,14 +1189,6 @@ func (s *UploadService) RunUploadCron() {
 		// go
 		func(upload *models.UploadFileModel) {
 			// defer wg.Done()
-			defer func() {
-				if r := recover(); r != nil {
-					fileDecompositions := strings.Split(upload.URLPath, "/")
-					fileName := fileDecompositions[len(fileDecompositions)-1]
-					fmt.Printf("Recovered from panic while processing file %s: %v\n", fileName, r)
-				}
-			}()
-
 			// Process each upload file
 			fileDecompositions := strings.Split(upload.URLPath, "/")
 			fileName := fileDecompositions[len(fileDecompositions)-1]
