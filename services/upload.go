@@ -1061,15 +1061,6 @@ func (s *UploadService) ProcessUploadFile(upload *models.UploadFileModel, fileNa
 		return err
 	}
 
-	// From the file content create a .xlsx/.xls file for go-exelize to read on
-	currentDate := time.Now().Format("2006-01-02")
-	currentYear := time.Now().Format("2006")
-	currentMonth := time.Now().Format("2006-01")
-	filePath = filepath.Join("assets", "cron", currentYear, currentMonth, currentDate, filePath)
-	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
-		return err
-	}
-
 	file, err := os.Create(filePath)
 	if err != nil {
 		return err
@@ -1171,6 +1162,16 @@ func (s *UploadService) RunUploadCron() {
 			filePath := strings.ReplaceAll(upload.URLPath, "/api/", "")
 			fileDecompositions := strings.Split(upload.URLPath, "/")
 			fileName := fileDecompositions[len(fileDecompositions)-1]
+
+			currentDate := time.Now().Format("2006-01-02")
+			// currentYear := time.Now().Format("2006")
+			// currentMonth := time.Now().Format("2006-01")
+			// filePath = filepath.Join("assets", "cron", currentYear, currentMonth, currentDate, filePath)
+			filePath = filepath.Join("assets", "cron", currentDate, filePath)
+			if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+				fmt.Printf("Failed to create directory for file %s: %v\n", fileName, err)
+				return
+			}
 
 			logFile, err := os.Create(filepath.Join(filepath.Dir(filePath), "result.log"))
 			if err != nil {
