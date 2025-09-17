@@ -34,6 +34,12 @@ func main() {
 		return
 	}
 
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("Recovered from panic: %v\n", r)
+		}
+	}()
+
 	// Run upload cron
 	uploadService := services.NewUploadService()
 	uploadService.RunUploadCron()
