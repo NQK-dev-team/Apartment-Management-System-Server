@@ -16,6 +16,13 @@ import (
 )
 
 func main() {
+	appEnv := config.GetEnv("APP_ENV")
+	if appEnv == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	} else {
+		gin.SetMode(gin.DebugMode)
+	}
+
 	router := gin.New()
 
 	// Load .env file
