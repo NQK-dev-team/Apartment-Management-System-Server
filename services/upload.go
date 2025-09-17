@@ -1054,11 +1054,7 @@ func (s *UploadService) ProcessAddBill(f *excelize.File, tx *gorm.DB, upload *mo
 	return fileError
 }
 
-func (s *UploadService) ProcessUploadFile(upload *models.UploadFileModel) error {
-	filePath := strings.ReplaceAll(upload.URLPath, "/api/", "")
-	fileDecompositions := strings.Split(upload.URLPath, "/")
-	fileName := fileDecompositions[len(fileDecompositions)-1]
-
+func (s *UploadService) ProcessUploadFile(upload *models.UploadFileModel, fileName, filePath string, logFile *os.File) error {
 	// Read the file content
 	bytes, err := utils.ReadFile(filePath)
 	if err != nil {
@@ -1079,12 +1075,6 @@ func (s *UploadService) ProcessUploadFile(upload *models.UploadFileModel) error 
 		return err
 	}
 	defer file.Close()
-
-	logFile, err := os.Create(filepath.Join(filepath.Dir(filePath), "result.log"))
-	if err != nil {
-		return err
-	}
-	defer logFile.Close()
 
 	if _, err := file.Write(bytes); err != nil {
 		return err
@@ -1177,7 +1167,18 @@ func (s *UploadService) RunUploadCron() {
 		// go
 		func(upload *models.UploadFileModel) {
 			// defer wg.Done()
-			// Process each upload file
+
+			filePath := strings.ReplaceAll(upload.URLPath, "/api/", "")
+			fileDecompositions := strings.Split(upload.URLPath, "/")
+			fileName := fileDecompositions[len(fileDecompositions)-1]
+
+			logFile, err := os.Create(filepath.Join(filepath.Dir(filePath), "result.log"))
+			if err != nil {
+				fmt.Printf("Failed to create log file for %s: %v\n", fileName, err)
+				return
+			}
+			defer logFile.Close()
+
 			defer func() {
 				if r := recover(); r != nil {
 					tx := config.DB.Begin()
@@ -1185,16 +1186,15 @@ func (s *UploadService) RunUploadCron() {
 					fileName := fileDecompositions[len(fileDecompositions)-1]
 					fmt.Printf("Recovered from panic while processing file %s: %v\n", fileName, r)
 					if err := s.CronFileFail(tx, upload); err != nil {
-						// fmt.Fprintf(logFile, "failed to update upload file %s: %v\n", fileName, err)
+						fmt.Fprintf(logFile, "failed to update upload file %s: %v\n", fileName, err)
 						tx.Rollback()
 					}
 					tx.Commit()
 				}
 			}()
 
-			fileDecompositions := strings.Split(upload.URLPath, "/")
-			fileName := fileDecompositions[len(fileDecompositions)-1]
-			if err := s.ProcessUploadFile(upload); err == nil {
+			// Process each upload file
+			if err := s.ProcessUploadFile(upload, fileName, filePath, logFile); err == nil {
 				fmt.Printf("File %s processed successfully\n", fileName)
 			} else {
 				fmt.Printf("Failed to process file %s\n", fileName)
