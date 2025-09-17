@@ -107,7 +107,7 @@ func main() {
 	fmt.Println("----------------------------------------")
 	fmt.Println("|                                      |")
 	fmt.Println("|                                      |")
-	fmt.Printf("|   Server is running on port %s    |\n", port)
+	fmt.Printf("|   Server is running on port %s     |\n", port)
 	if isHTTPS == "true" {
 		fmt.Println("|   TLS is enabled                     |")
 	}
