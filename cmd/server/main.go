@@ -16,6 +16,12 @@ import (
 )
 
 func main() {
+	// Load .env file
+	err := godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
+
 	appEnv := config.GetEnv("APP_ENV")
 	if appEnv == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -24,12 +30,6 @@ func main() {
 	}
 
 	router := gin.New()
-
-	// Load .env file
-	err := godotenv.Load()
-	if err != nil {
-		panic(err)
-	}
 
 	// Middleware
 	// CORS
