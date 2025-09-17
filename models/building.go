@@ -1,8 +1,6 @@
 package models
 
 import (
-	"api/config"
-	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -10,10 +8,13 @@ import (
 
 type BuildingModel struct {
 	DefaultModel
-	Name       string `json:"name" gorm:"column:name;type:varchar(255);not null"`
-	Address    string `json:"address" gorm:"column:address;type:varchar(255);not null"`
-	TotalFloor int    `json:"totalFloor" gorm:"column:total_floor;type:int;not null"`
-	TotalRoom  int    `json:"totalRoom" gorm:"column:total_room;type:int;not null"`
+	Name       string                 `json:"name" gorm:"column:name;type:varchar(255);not null;"`
+	Address    string                 `json:"address" gorm:"column:address;type:varchar(255);not null;"`
+	TotalFloor int                    `json:"totalFloor" gorm:"column:total_floor;type:int;not null;"`
+	TotalRoom  int                    `json:"totalRoom" gorm:"column:total_room;type:int;not null;"`
+	Images     []BuildingImageModel   `json:"images" gorm:"foreignKey:building_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Services   []BuildingServiceModel `json:"services" gorm:"foreignKey:building_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Rooms      []RoomModel            `json:"rooms" gorm:"foreignKey:building_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 func (u *BuildingModel) TableName() string {
@@ -21,30 +22,31 @@ func (u *BuildingModel) TableName() string {
 }
 
 func (u *BuildingModel) BeforeCreate(tx *gorm.DB) error {
-	username, _ := tx.Get("username")
-	if username == nil {
-		username = "SYSTEM"
+	userID, _ := tx.Get("userID")
+	if userID != nil {
+		u.CreatedBy = userID.(int64)
+		u.UpdatedBy = userID.(int64)
 	}
-	u.CreatedBy = username.(string)
-	u.UpdatedBy = username.(string)
-	u.CreatedAt = time.Now()
-	u.UpdatedAt = time.Now()
+	// u.CreatedAt = time.Now()
+	// u.UpdatedAt = time.Now()
 
 	return nil
 }
 
 func (u *BuildingModel) BeforeUpdate(tx *gorm.DB) error {
-	if tx.Statement.Changed("updated_at", "updated_by") {
-		return errors.New(config.GetMessageCode("CONCURRENCY_ERROR"))
+	// if tx.Statement.Changed("UpdatedAt", "UpdatedBy") {
+	// 	return errors.New(config.GetMessageCode("CONCURRENCY_ERROR"))
+	// }
+
+	isQuiet, _ := tx.Get("isQuiet")
+	if isQuiet != nil && isQuiet.(bool) {
+		return nil
 	}
 
-	username, _ := tx.Get("username")
-	if username == nil {
-		username = "SYSTEM"
+	userID, _ := tx.Get("userID")
+	if userID != nil {
+		tx.Statement.SetColumn("updated_by", userID.(int64))
 	}
-	tx.Statement.SetColumn("created_by", username.(string))
-	tx.Statement.SetColumn("updated_by", username.(string))
-	tx.Statement.SetColumn("created_at", time.Now())
 	tx.Statement.SetColumn("updated_at", time.Now())
 
 	return nil

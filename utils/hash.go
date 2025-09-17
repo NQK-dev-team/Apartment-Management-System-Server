@@ -11,9 +11,9 @@ import (
 
 func HashPassword(inputStr string) (string, error) {
 	// Use bcrypt algorithm to hash the input string
-	roundConfig, err := config.GetEnv("BCRYPT_ROUNDS")
-	if err != nil {
-		return "", err
+	roundConfig := config.GetEnv("BCRYPT_ROUNDS")
+	if roundConfig == "" {
+		roundConfig = "12"
 	}
 	rounds, err := strconv.Atoi(roundConfig)
 	if err != nil {

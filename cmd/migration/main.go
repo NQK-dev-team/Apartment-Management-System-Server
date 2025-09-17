@@ -5,49 +5,64 @@ import (
 	"api/migrations"
 	"fmt"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 var userMigration *migrations.UserMigration
-var refreshTokenMigration *migrations.RefreshTokenMigration
-var emailVerifyTokenMigration *migrations.EmailVerifyTokenMigration
-var passwordResetTokenMigration *migrations.PasswordResetTokenMigration
 var buildingMigration *migrations.BuildingMigration
-var roomMigration *migrations.RoomMigration
+var contractMigration *migrations.ContractMigration
+var systemMigration *migrations.SystemMigration
+
+// var messageMigration *migrations.MessageMigration
+var notificationMigration *migrations.NotificationMigration
+var supportTicketMigration *migrations.SupportTicketMigration
 
 func migrateUp() {
 	fmt.Println("--------- Migrate Up Start ---------")
 	userMigration.Up()
-	refreshTokenMigration.Up()
-	emailVerifyTokenMigration.Up()
-	passwordResetTokenMigration.Up()
 	buildingMigration.Up()
-	roomMigration.Up()
+	contractMigration.Up()
+	// messageMigration.Up()
+	notificationMigration.Up()
+	supportTicketMigration.Up()
+	systemMigration.Up()
 	fmt.Println("--------- Migrate Up Finish ---------")
+	fmt.Println("Check log files at assets/migration/*.log")
 }
 
 func migrateDown() {
 	fmt.Println("--------- Migrating Down Start ---------")
-	userMigration.Down()
-	refreshTokenMigration.Down()
-	emailVerifyTokenMigration.Down()
-	passwordResetTokenMigration.Down()
+	supportTicketMigration.Down()
+	notificationMigration.Down()
+	// messageMigration.Down()
+	contractMigration.Down()
 	buildingMigration.Down()
-	roomMigration.Down()
+	userMigration.Down()
+	systemMigration.Down()
 	fmt.Println("--------- Migrating Down Finish ---------")
+	fmt.Println("Check log files at assets/migration/*.log")
 }
 
 func initMigrations() {
 	userMigration = migrations.NewUserMigration()
-	refreshTokenMigration = migrations.NewRefreshTokenMigration()
-	emailVerifyTokenMigration = migrations.NewEmailVerifyTokenMigration()
-	passwordResetTokenMigration = migrations.NewPasswordResetTokenMigration()
 	buildingMigration = migrations.NewBuildingMigration()
-	roomMigration = migrations.NewRoomMigration()
+	contractMigration = migrations.NewContractMigration()
+	// messageMigration = migrations.NewMessageMigration()
+	notificationMigration = migrations.NewNotificationMigration()
+	supportTicketMigration = migrations.NewSupportTicketMigration()
+	systemMigration = migrations.NewSystemMigration()
 }
 
 func migrateHandler(mode string) {
+	// Load .env file
+	err := godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
+
 	// Init DB
-	err := config.InitDB()
+	err = config.InitDB()
 	if err != nil {
 		panic(err)
 	}

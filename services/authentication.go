@@ -6,6 +6,7 @@ import (
 	"api/repositories"
 	"api/structs"
 	"api/utils"
+	"database/sql"
 	"errors"
 	"fmt"
 	"strconv"
@@ -58,11 +59,13 @@ func (s *AuthenticationService) Login(ctx *gin.Context, email string, password s
 	jwtPayload.IsCustomer = user.IsCustomer
 	jwtPayload.IsManager = user.IsManager
 	jwtPayload.IsOwner = user.IsOwner
+	jwtPayload.UserNo = user.No
+	jwtPayload.TicketByPass = user.TicketByPass
 
-	if user.MiddleName != "" {
-		jwtPayload.FullName = user.FirstName + " " + user.MiddleName + " " + user.LastName
+	if user.MiddleName.Valid {
+		jwtPayload.FullName = user.LastName + " " + user.MiddleName.String + " " + user.FirstName
 	} else {
-		jwtPayload.FullName = user.FirstName + " " + user.LastName
+		jwtPayload.FullName = user.LastName + " " + user.FirstName
 	}
 
 	// Create JWT token
@@ -74,6 +77,10 @@ func (s *AuthenticationService) Login(ctx *gin.Context, email string, password s
 	var refreshToken = ""
 
 	if remember {
+		if err := s.DeleteRefreshToken(ctx, user.ID); err != nil {
+			return "", "", err, true
+		}
+
 		refreshToken, _ = s.CreateRefreshToken(ctx, user.ID)
 	}
 
@@ -99,14 +106,14 @@ func (s *AuthenticationService) CreateRefreshToken(ctx *gin.Context, userID int6
 		UserID: userID,
 	}
 
-	err = config.DB.Transaction(func(tx *gorm.DB) error {
-		if err := s.refreshTokenRepository.Create(ctx, &refreshToken); err != nil {
-			return err
-		}
-		return nil
-	})
+	// err = config.DB.Transaction(func(tx *gorm.DB) error {
+	// 	if err := s.refreshTokenRepository.Create(ctx, tx, &refreshToken); err != nil {
+	// 		return err
+	// 	}
+	// 	return nil
+	// })
 
-	if err != nil {
+	if err := s.refreshTokenRepository.Create(&refreshToken); err != nil {
 		return "", err
 	}
 
@@ -147,11 +154,13 @@ func (s *AuthenticationService) GetNewToken(ctx *gin.Context, refreshToken strin
 	jwtPayload.IsCustomer = user.IsCustomer
 	jwtPayload.IsManager = user.IsManager
 	jwtPayload.IsOwner = user.IsOwner
+	jwtPayload.UserNo = user.No
+	jwtPayload.TicketByPass = user.TicketByPass
 
-	if user.MiddleName != "" {
-		jwtPayload.FullName = user.FirstName + " " + user.MiddleName + " " + user.LastName
+	if user.MiddleName.Valid {
+		jwtPayload.FullName = user.LastName + " " + user.MiddleName.String + " " + user.FirstName
 	} else {
-		jwtPayload.FullName = user.FirstName + " " + user.LastName
+		jwtPayload.FullName = user.LastName + " " + user.FirstName
 	}
 
 	// Create JWT token
@@ -169,7 +178,22 @@ func (s *AuthenticationService) VerifyToken(ctx *gin.Context, jwtToken string) (
 		return false, err
 	}
 
-	return true, nil
+	token, _ := utils.ValidateJWTToken(jwtToken)
+	claims := structs.JTWClaim{}
+
+	if token == nil {
+		return false, nil
+	}
+
+	utils.ExtractJWTClaim(token, &claims)
+
+	user := models.UserModel{}
+
+	if err := s.userRepository.GetByID(ctx, &user, claims.UserID); err != nil {
+		return false, err
+	}
+
+	return user.IsOwner == claims.IsOwner && user.IsManager == claims.IsManager && user.IsCustomer == claims.IsCustomer, nil
 }
 
 func (s *AuthenticationService) ExtractJWTData(ctx *gin.Context, jwt string) *structs.JTWClaim {
@@ -185,6 +209,116 @@ func (s *AuthenticationService) ExtractJWTData(ctx *gin.Context, jwt string) *st
 	return &claims
 }
 
-func (s *AuthenticationService) Logout(ctx *gin.Context) error {
+func (s *AuthenticationService) CheckResetPasswordToken(ctx *gin.Context, token string, email string) (bool, error) {
+	passwordResetToken := []models.PasswordResetTokenModel{}
+	if err := s.passwordResetTokenRepository.GetByEmail(ctx, email, &passwordResetToken); err != nil {
+		return false, err
+	}
+
+	if len(passwordResetToken) == 0 {
+		return false, nil
+	}
+
+	if !utils.CompareHashString(passwordResetToken[0].Token, token) {
+		return false, nil
+	}
+
+	if passwordResetToken[0].ExpiresAt.Add(7 * 24 * time.Hour).Before(time.Now()) {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func (s *AuthenticationService) CheckEmailVerifyToken(ctx *gin.Context, verifyEmailToken structs.VerifyEmailToken) (bool, error) {
+	emailVerifyToken := []models.EmailVerifyTokenModel{}
+	if err := s.emailVerifyTokenRepository.GetByEmail(ctx, verifyEmailToken.Email, &emailVerifyToken); err != nil {
+		return false, err
+	}
+
+	if len(emailVerifyToken) == 0 {
+		return false, nil
+	}
+
+	if !utils.CompareHashString(emailVerifyToken[0].Token, verifyEmailToken.Token) {
+		return false, nil
+	}
+
+	if emailVerifyToken[0].ExpiresAt.Add(7 * 24 * time.Hour).Before(time.Now()) {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func (s *AuthenticationService) VerifyEmail(ctx *gin.Context, verifyEmailToken structs.VerifyEmailToken) error {
+	var user = &models.UserModel{}
+	s.userRepository.GetByEmail(ctx, user, verifyEmailToken.Email)
+
+	user.EmailVerifiedAt = sql.NullTime{Time: time.Now(), Valid: true}
+	user.VerifiedAfterCreated = true
+
+	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
+		if err := s.userRepository.Update(ctx, tx, user, false); err != nil {
+			return err
+		}
+		// if err := s.emailVerifyTokenRepository.Delete(ctx, tx, verifyEmailToken.Email); err != nil {
+		// 	return err
+		// }
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if err := s.emailVerifyTokenRepository.Delete(verifyEmailToken.Email); err != nil {
+		return err
+	}
+
+	return err
+}
+
+func (s *AuthenticationService) DeleteRefreshToken(ctx *gin.Context, userID int64) error {
+	// err := config.DB.Transaction(func(tx *gorm.DB) error {
+	// 	if err := s.refreshTokenRepository.Delete(ctx, tx, userID); err != nil {
+	// 		return err
+	// 	}
+	// 	return nil
+	// })
+	// return err
+
+	if err := s.refreshTokenRepository.Delete(userID); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (s *AuthenticationService) DeletePasswordResetToken(ctx *gin.Context, email string) error {
+	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
+		if err := s.passwordResetTokenRepository.Delete(ctx, tx, email); err != nil {
+			return err
+		}
+		return nil
+	})
+	return err
+}
+
+func (s *AuthenticationService) CheckPassword(ctx *gin.Context, providedPassword string, userPassword string) bool {
+	return utils.CompareHashPassword(userPassword, providedPassword)
+}
+
+func (s *AuthenticationService) GetRefreshToken(ctx *gin.Context, refreshTokenRecord *models.RefreshTokenModel, userID int64) error {
+	if err := s.refreshTokenRepository.GetByUserID(ctx, refreshTokenRecord, userID); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AuthenticationService) GetUserDataByEmail(ctx *gin.Context, user *models.UserModel, email string) error {
+	return s.userRepository.GetByEmail(ctx, user, email)
 }

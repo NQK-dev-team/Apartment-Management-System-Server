@@ -2,8 +2,11 @@ package middlewares
 
 import (
 	"api/config"
+	"api/models"
 	"api/services"
 	"api/utils"
+	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,35 +34,35 @@ func (m *AuthenticationMiddleware) AuthMiddleware(ctx *gin.Context) {
 	if jwt == "" {
 		if refreshToken == "" {
 			response.Message = config.GetMessageCode("TOKEN_VERIFY_FAILED")
-			ctx.AbortWithStatusJSON(401, response)
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, response)
 			return
 		} else {
 			newJwt, err := m.authenticationService.GetNewToken(ctx, refreshToken)
 
 			if err != nil {
 				response.Message = config.GetMessageCode("TOKEN_REFRESH_FAILED")
-				ctx.AbortWithStatusJSON(401, response)
+				ctx.AbortWithStatusJSON(http.StatusUnauthorized, response)
 				return
 			}
 
 			response.JWTToken = newJwt
 		}
 	} else {
-		_, err := m.authenticationService.VerifyToken(ctx, jwt)
-		if err != nil {
+		isValid, err := m.authenticationService.VerifyToken(ctx, jwt)
+		if err != nil || !isValid {
 			if refreshToken != "" {
 				newJwt, err := m.authenticationService.GetNewToken(ctx, refreshToken)
 
 				if err != nil {
 					response.Message = config.GetMessageCode("TOKEN_REFRESH_FAILED")
-					ctx.AbortWithStatusJSON(401, response)
+					ctx.AbortWithStatusJSON(http.StatusUnauthorized, response)
 					return
 				}
 
 				response.JWTToken = newJwt
 			} else {
 				response.Message = config.GetMessageCode("TOKEN_VERIFY_FAILED")
-				ctx.AbortWithStatusJSON(401, response)
+				ctx.AbortWithStatusJSON(http.StatusUnauthorized, response)
 				return
 			}
 		} else {
@@ -71,15 +74,45 @@ func (m *AuthenticationMiddleware) AuthMiddleware(ctx *gin.Context) {
 
 	if claims == nil {
 		response.Message = config.GetMessageCode("SYSTEM_ERROR")
-		ctx.AbortWithStatusJSON(500, response)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, response)
 		return
 	}
 
 	ctx.Set("role", utils.GetRoleString(claims))
 
-	if response.JWTToken != jwt {
-		ctx.Set("jwt", response.JWTToken)
+	// Get the refresh token
+	refreshTokenRecord := &models.RefreshTokenModel{}
+	if err := m.authenticationService.GetRefreshToken(ctx, refreshTokenRecord, claims.UserID); err != nil {
+		response.Message = config.GetMessageCode("SYSTEM_ERROR")
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, response)
+		return
 	}
+
+	// Check if the refresh token expiration date is less than 1 day from now
+	if refreshTokenRecord.ExpiresAt.Before(time.Now().AddDate(0, 0, 1)) {
+		// Delete the old refresh token
+		if err := m.authenticationService.DeleteRefreshToken(ctx, claims.UserID); err != nil {
+			response.Message = config.GetMessageCode("SYSTEM_ERROR")
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, response)
+			return
+		}
+		// Generate a new refresh token
+		newRefreshToken, err := m.authenticationService.CreateRefreshToken(ctx, claims.UserID)
+		if err != nil {
+			response.Message = config.GetMessageCode("SYSTEM_ERROR")
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, response)
+			return
+		}
+		ctx.Set("refreshToken", newRefreshToken)
+	}
+
+	// if response.JWTToken != jwt {
+	ctx.Set("jwt", response.JWTToken)
+	// }
+
+	ctx.Set("userID", claims.UserID)
+
+	ctx.Set("ticketByPass", claims.TicketByPass)
 
 	ctx.Next()
 }

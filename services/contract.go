@@ -1,0 +1,774 @@
+package services
+
+import (
+	"api/config"
+	"api/constants"
+	"api/models"
+	"api/repositories"
+	"api/structs"
+	"api/utils"
+	"database/sql"
+	"errors"
+	"strconv"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+)
+
+type ContractService struct {
+	contractRepository *repositories.ContractRepository
+	billRepository     *repositories.BillRepository
+	ticketRepository   *repositories.SupportTicketRepository
+	buildingRepository *repositories.BuildingRepository
+	userRepository     *repositories.UserRepository
+	roomRepository     *repositories.RoomRepository
+	buildingService    *BuildingService
+}
+
+func NewContractService() *ContractService {
+	return &ContractService{
+		contractRepository: repositories.NewContractRepository(),
+		billRepository:     repositories.NewBillRepository(),
+		ticketRepository:   repositories.NewSupportTicketRepository(),
+		buildingRepository: repositories.NewBuildingRepository(),
+		userRepository:     repositories.NewUserRepository(),
+		roomRepository:     repositories.NewRoomRepository(),
+		buildingService:    NewBuildingService(true),
+	}
+}
+
+func (s *ContractService) GetContractList(ctx *gin.Context, contracts *[]structs.Contract, limit int64, offset int64) error {
+	role := ctx.GetString("role")
+
+	if role == constants.Roles.Manager || role == constants.Roles.Customer {
+		if role == constants.Roles.Manager {
+			return s.contractRepository.GetContractsByManagerID2(ctx, contracts, ctx.GetInt64("userID"), limit, offset)
+		} else {
+			return s.contractRepository.GetContractsByCustomerID2(ctx, contracts, ctx.GetInt64("userID"), limit, offset)
+		}
+
+	}
+
+	return s.contractRepository.GetContracts(ctx, contracts, limit, offset)
+}
+
+func (s *ContractService) GetActiveContractList(ctx *gin.Context, contracts *[]structs.Contract, limit int64, offset int64) error {
+	role := ctx.GetString("role")
+
+	if role == constants.Roles.Manager {
+		if role == constants.Roles.Manager {
+			return s.contractRepository.GetActiveContractsByManagerID(ctx, contracts, ctx.GetInt64("userID"), limit, offset)
+		}
+
+	}
+
+	return s.contractRepository.GetActiveContracts(ctx, contracts, limit, offset)
+}
+
+func (s *ContractService) GetContractDetail(ctx *gin.Context, contract *structs.Contract, id int64) (bool, error) {
+	if err := s.contractRepository.GetContractByID(ctx, contract, id); err != nil {
+		return false, err
+	}
+
+	if contract.ID == 0 {
+		return true, nil
+	}
+
+	if err := s.billRepository.GetByContractId(ctx, &contract.Bills, contract.ID); err != nil {
+		return false, err
+	}
+
+	role := ctx.GetString("role")
+
+	if role == constants.Roles.Manager || role == constants.Roles.Customer {
+		if role == constants.Roles.Manager {
+			isAllowed, err := s.CheckManagerContractPermission(ctx, ctx.GetInt64("userID"), contract.ID)
+
+			if err != nil {
+				return false, err
+			}
+
+			if !isAllowed {
+				return false, nil
+			}
+
+			// return contract.CreatorID == ctx.GetInt64("userID"), nil
+			return true, nil
+		} else {
+			if contract.HouseholderID == ctx.GetInt64("userID") {
+				return true, nil
+			}
+
+			for _, resident := range contract.Residents {
+				if resident.UserAccountID.Int64 == ctx.GetInt64("userID") {
+					return true, nil
+				}
+			}
+
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+func (s *ContractService) GetContractBill(ctx *gin.Context, bills *[]models.BillModel, contractID int64) (bool, error) {
+	contract := &structs.Contract{}
+
+	if err := s.contractRepository.GetContractByID(ctx, contract, contractID); err != nil {
+		return false, err
+	}
+
+	if contractID == 0 {
+		return true, nil
+	}
+
+	if err := s.billRepository.GetByContractId(ctx, bills, contractID); err != nil {
+		return false, err
+	}
+
+	role := ctx.GetString("role")
+
+	if role == constants.Roles.Manager || role == constants.Roles.Customer {
+		if role == constants.Roles.Manager {
+			isAllowed, err := s.CheckManagerContractPermission(ctx, ctx.GetInt64("userID"), contractID)
+
+			if err != nil {
+				return false, err
+			}
+
+			if !isAllowed {
+				return false, nil
+			}
+
+			// return contract.CreatorID == ctx.GetInt64("userID"), nil
+			return true, nil
+		} else {
+			return contract.HouseholderID == ctx.GetInt64("userID"), nil
+		}
+	}
+
+	return true, nil
+}
+
+func (s *ContractService) DeleteContract(ctx *gin.Context, IDs []int64, roomID int64, buildingID int64) (bool, error) {
+	role := ctx.GetString("role")
+
+	switch role {
+	case constants.Roles.Manager:
+		userID := ctx.GetInt64("userID")
+
+		contracts := []models.ContractModel{}
+		if err := s.contractRepository.GetDeletableContracts(ctx, &contracts, IDs, &userID, roomID, buildingID); err != nil {
+			return true, err
+		}
+
+		if len(contracts) != len(IDs) {
+			return false, nil
+		}
+	case constants.Roles.Owner:
+		contracts := []models.ContractModel{}
+		if err := s.contractRepository.GetDeletableContracts(ctx, &contracts, IDs, nil, roomID, buildingID); err != nil {
+			return true, err
+		}
+
+		if len(contracts) != len(IDs) {
+			return false, nil
+		}
+	}
+	return true, config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
+		return s.contractRepository.Delete(ctx, tx, IDs)
+	})
+}
+
+func (s *ContractService) DeleteContract2(ctx *gin.Context, IDs []int64) (bool, error) {
+	role := ctx.GetString("role")
+
+	switch role {
+	case constants.Roles.Manager:
+		userID := ctx.GetInt64("userID")
+
+		contracts := []models.ContractModel{}
+		if err := s.contractRepository.GetDeletableContracts2(ctx, &contracts, IDs, &userID); err != nil {
+			return true, err
+		}
+
+		if len(contracts) != len(IDs) {
+			return false, nil
+		}
+	case constants.Roles.Owner:
+		contracts := []models.ContractModel{}
+		if err := s.contractRepository.GetDeletableContracts2(ctx, &contracts, IDs, nil); err != nil {
+			return true, err
+		}
+
+		if len(contracts) != len(IDs) {
+			return false, nil
+		}
+	}
+	return true, config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
+		return s.contractRepository.Delete(ctx, tx, IDs)
+	})
+}
+
+func (s *ContractService) CheckManagerContractPermission(ctx *gin.Context, managerID int64, contractID int64) (bool, error) {
+	managerBuildings := []models.BuildingModel{}
+	if err := s.buildingRepository.GetBuildingBaseOnSchedule(ctx, &managerBuildings, managerID); err != nil {
+		return false, err
+	}
+
+	contractBuilding := models.BuildingModel{}
+	if err := s.buildingRepository.GetBuildingByContractID(ctx, &contractBuilding, contractID); err != nil {
+		return false, err
+	}
+
+	for _, building := range managerBuildings {
+		if building.ID == contractBuilding.ID {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (s *ContractService) UpdateContract(ctx *gin.Context, contract *structs.EditContract, contractID int64) (bool, bool, error) {
+	oldContractData := &structs.Contract{}
+
+	if err := s.contractRepository.GetContractByID(ctx, oldContractData, contractID); err != nil {
+		return true, true, err
+	}
+
+	if oldContractData.ID == 0 {
+		return true, true, errors.New("contract not found")
+	}
+
+	role := ctx.GetString("role")
+
+	if role == constants.Roles.Manager {
+		isAllowed, err := s.CheckManagerContractPermission(ctx, ctx.GetInt64("userID"), contractID)
+
+		if err != nil {
+			return true, true, err
+		}
+
+		if !isAllowed {
+			return false, true, nil
+		}
+	}
+
+	if oldContractData.Status == constants.Common.ContractStatus.EXPIRED || oldContractData.Status == constants.Common.ContractStatus.CANCELLED {
+		return false, true, nil
+	}
+
+	isContractSigned := false
+	contractActiveResult, err := utils.CompareDates(oldContractData.StartDate.Format("2006-01-02"), time.Now().Format("2006-01-02"))
+
+	if err != nil {
+		return true, true, err
+	}
+	isContractActive := contractActiveResult == 0 || contractActiveResult == -1
+
+	if oldContractData.SignDate.Valid {
+		if contract.NewSignDate != "" {
+			return true, false, nil
+		}
+		isContractSigned = true
+	} else {
+		if contract.NewSignDate != "" {
+			result, err := utils.CompareDates(contract.NewSignDate, oldContractData.StartDate.Format("2006-01-02"))
+			if err != nil {
+				return true, true, err
+			}
+
+			if result == 1 {
+				return true, false, nil
+			}
+
+			isContractSigned = true
+		}
+	}
+
+	if isContractSigned && isContractActive {
+		if contract.Status != constants.Common.ContractStatus.ACTIVE && contract.Status != constants.Common.ContractStatus.EXPIRED && contract.Status != constants.Common.ContractStatus.CANCELLED {
+			return true, false, nil
+		}
+
+		if oldContractData.Type == constants.Common.ContractType.BUY && contract.Status == constants.Common.ContractStatus.EXPIRED {
+			return true, false, nil
+		}
+	} else if isContractSigned && !isContractActive {
+		if contract.Status != constants.Common.ContractStatus.NOT_IN_EFFECT && contract.Status != constants.Common.ContractStatus.CANCELLED {
+			return true, false, nil
+		}
+	} else if !isContractSigned && isContractActive {
+		if contract.Status != constants.Common.ContractStatus.CANCELLED {
+			return true, false, nil
+		}
+	} else {
+		if contract.Status != constants.Common.ContractStatus.WAITING_FOR_SIGNATURE && contract.Status != constants.Common.ContractStatus.CANCELLED {
+			return true, false, nil
+		}
+	}
+
+	for _, resident := range contract.Residents {
+		if resident.UserAccountID != 0 {
+			counter := 0
+			for _, r := range contract.Residents {
+				if r.UserAccountID == resident.UserAccountID {
+					counter++
+				}
+			}
+
+			if counter > 1 {
+				return true, false, nil
+			}
+		}
+	}
+
+	contractIDStr := strconv.Itoa(int(contractID))
+	deleteFileList := []string{}
+
+	updatedContractData := &models.ContractModel{}
+
+	if err := s.contractRepository.GetById(ctx, updatedContractData, contractID); err != nil {
+		return true, true, err
+	}
+
+	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
+		if len(contract.NewFiles) > 0 {
+			newFileNo, err := s.contractRepository.GetNewFileNo(ctx, contractID)
+
+			if err != nil {
+				return err
+			}
+
+			newContractFiles := []models.ContractFileModel{}
+
+			for index, file := range contract.NewFiles {
+				filePath, err := utils.StoreFile(file.File, constants.GetContractFileURL("files", contractIDStr, ""))
+				if err != nil {
+					return err
+				}
+				newContractFiles = append(newContractFiles, models.ContractFileModel{
+					ContractID: contractID,
+					DefaultFileModel: models.DefaultFileModel{
+						Path:  filePath,
+						No:    index + 1 + newFileNo,
+						Title: file.Title,
+					},
+				})
+				deleteFileList = append(deleteFileList, filePath)
+			}
+
+			if err := s.contractRepository.AddFile(ctx, tx, &newContractFiles); err != nil {
+				return err
+			}
+		}
+
+		if len(contract.RemovedResidents) > 0 {
+			if err := s.contractRepository.DeleteResident(ctx, tx, contract.RemovedResidents); err != nil {
+				return err
+			}
+		}
+
+		newResidents := []models.RoomResidentModel{}
+		updateResidents := []models.RoomResidentModel{}
+
+		for _, resident := range contract.Residents {
+			var residentData *models.RoomResidentModel
+
+			if resident.UserAccountID != 0 {
+				customer := &models.UserModel{}
+				if err := s.userRepository.GetCustomerDetail(ctx, customer, resident.UserAccountID); err != nil {
+					return err
+				}
+
+				if customer.ID == 0 {
+					return errors.New("customer not found")
+				}
+
+				residentData = &models.RoomResidentModel{
+					FirstName:               customer.FirstName,
+					LastName:                customer.LastName,
+					MiddleName:              customer.MiddleName,
+					SSN:                     sql.NullString{String: customer.SSN, Valid: customer.SSN != ""},
+					OldSSN:                  customer.OldSSN,
+					DOB:                     customer.DOB,
+					POB:                     customer.POB,
+					Phone:                   sql.NullString{String: customer.Phone, Valid: customer.Phone != ""},
+					Email:                   sql.NullString{String: customer.Email, Valid: customer.Email != ""},
+					Gender:                  customer.Gender,
+					RelationWithHouseholder: resident.RelationWithHouseholder,
+					UserAccountID:           sql.NullInt64{Int64: customer.ID, Valid: true},
+				}
+			} else {
+				dob, _ := time.Parse("2006-01-02", resident.DOB)
+
+				residentData = &models.RoomResidentModel{
+					FirstName:               resident.FirstName,
+					LastName:                resident.LastName,
+					MiddleName:              sql.NullString{String: resident.MiddleName, Valid: resident.MiddleName != ""},
+					SSN:                     sql.NullString{String: resident.SSN, Valid: resident.SSN != ""},
+					OldSSN:                  sql.NullString{String: resident.OldSSN, Valid: resident.OldSSN != ""},
+					DOB:                     dob,
+					POB:                     resident.POB,
+					Phone:                   sql.NullString{String: resident.Phone, Valid: resident.Phone != ""},
+					Email:                   sql.NullString{String: resident.Email, Valid: resident.Email != ""},
+					Gender:                  resident.Gender,
+					RelationWithHouseholder: resident.RelationWithHouseholder,
+					UserAccountID:           sql.NullInt64{Int64: 0, Valid: false},
+				}
+			}
+
+			if resident.ID != 0 {
+				residentData.ID = resident.ID
+				updateResidents = append(updateResidents, *residentData)
+			} else {
+				newResidents = append(newResidents, *residentData)
+			}
+		}
+
+		if len(newResidents) > 0 {
+			for _, newResident := range newResidents {
+				if err := s.contractRepository.AddNewRoomResident(ctx, tx, &newResident, contractID); err != nil {
+					return err
+				}
+			}
+		}
+
+		if len(updateResidents) > 0 {
+			for _, updateResident := range updateResidents {
+				if err := s.contractRepository.UpdateRoomResident(ctx, tx, &updateResident); err != nil {
+					return err
+				}
+			}
+		}
+
+		updatedContractData.Status = contract.Status
+		if contract.NewSignDate != "" {
+			updatedContractData.SignDate = utils.StringToNullTime(contract.NewSignDate)
+		}
+
+		if (contract.Status == constants.Common.ContractStatus.EXPIRED || contract.Status == constants.Common.ContractStatus.CANCELLED) && updatedContractData.Type == constants.Common.ContractType.RENT {
+			updatedContractData.EndDate = sql.NullTime{
+				Time:  time.Now(),
+				Valid: true,
+			}
+		}
+
+		if err := s.contractRepository.UpdateContract(ctx, tx, updatedContractData); err != nil {
+			return err
+		}
+
+		if updatedContractData.Status == constants.Common.ContractStatus.CANCELLED {
+			if err := s.billRepository.UpdateBillOfCancelContract(ctx, tx, updatedContractData.ID); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		for _, path := range deleteFileList {
+			utils.RemoveFile(path)
+		}
+		return false, false, err
+	}
+
+	return true, true, nil
+}
+
+func (s *ContractService) CreateContract(ctx *gin.Context, contract *structs.NewContract, newContractID *int64) (int, bool, error) {
+	role := ctx.GetString("role")
+
+	room := models.RoomModel{}
+
+	if err := s.roomRepository.GetRoomByRoomIDAndBuildingID(ctx, &room, contract.RoomID, contract.BuildingID); err != nil {
+		return 0, true, err
+	}
+
+	if room.ID == 0 {
+		return 0, false, nil
+	}
+
+	if room.Status != constants.Common.RoomStatus.AVAILABLE && room.Status != constants.Common.RoomStatus.RENTED {
+		return 2, true, nil
+	}
+
+	if role == constants.Roles.Manager {
+		isAllowed := s.buildingService.CheckManagerPermission(ctx, contract.BuildingID)
+
+		if !isAllowed {
+			return 1, true, nil
+		}
+	}
+
+	status := 0
+	currentDate := time.Now().Format("2006-01-02")
+
+	if contract.ContractType == constants.Common.ContractType.BUY {
+		contract.EndDate = ""
+	}
+
+	if contract.SignDate == "" {
+		result, err := utils.CompareDates(contract.StartDate, currentDate)
+		if err != nil {
+			return 0, true, err
+		}
+
+		switch result {
+		case 1:
+			status = constants.Common.ContractStatus.WAITING_FOR_SIGNATURE
+		case 0, -1:
+			status = constants.Common.ContractStatus.CANCELLED
+		}
+	} else {
+		result, err := utils.CompareDates(contract.StartDate, currentDate)
+		if err != nil {
+			return 0, true, err
+		}
+
+		switch result {
+		case 1:
+			status = constants.Common.ContractStatus.NOT_IN_EFFECT
+		case 0, -1:
+			if contract.EndDate == "" {
+				status = constants.Common.ContractStatus.ACTIVE
+			} else {
+				result, err := utils.CompareDates(contract.EndDate, currentDate)
+				if err != nil {
+					return 0, true, err
+				}
+
+				switch result {
+				case -1:
+					status = constants.Common.ContractStatus.EXPIRED
+				case 0, 1:
+					status = constants.Common.ContractStatus.ACTIVE
+				}
+			}
+		}
+	}
+
+	createdAt, err := utils.ParseTime(contract.CreatedAt)
+	if err != nil {
+		return 0, true, err
+	}
+
+	startDate, err := utils.ParseTime(contract.StartDate)
+	if err != nil {
+		return 0, true, err
+	}
+
+	for _, resident := range contract.Residents {
+		if resident.UserAccountID != 0 {
+			counter := 0
+			for _, r := range contract.Residents {
+				if r.UserAccountID == resident.UserAccountID {
+					counter++
+				}
+			}
+
+			if counter > 1 {
+				return 0, false, nil
+			}
+		}
+	}
+
+	contracts := []models.ContractModel{}
+
+	if err := s.contractRepository.GetOverlapContract(ctx, &contracts, contract.RoomID, contract.StartDate); err != nil {
+		return 0, true, err
+	}
+
+	if len(contracts) > 0 {
+		return 3, true, nil
+	} else if contract.EndDate != "" {
+		if err := s.contractRepository.GetOverlapContract(ctx, &contracts, contract.RoomID, contract.EndDate); err != nil {
+			return 0, true, err
+		}
+
+		if len(contracts) > 0 {
+			return 3, true, nil
+		}
+	}
+
+	newcontract := models.ContractModel{
+		DefaultModel: models.DefaultModel{
+			CreatedAt: createdAt,
+			CreatedBy: ctx.GetInt64("userID"),
+		},
+		RoomID:        contract.RoomID,
+		HouseholderID: contract.HouseholderID,
+		Type:          contract.ContractType,
+		Value:         contract.ContractValue,
+		StartDate:     startDate,
+		SignDate:      utils.StringToNullTime(contract.SignDate),
+		EndDate:       utils.StringToNullTime(contract.EndDate),
+		CreatorID:     ctx.GetInt64("userID"),
+		Status:        status,
+	}
+
+	deleteFileList := []string{}
+
+	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+
+		if err := s.contractRepository.CreateContract(ctx, tx, &newcontract); err != nil {
+			return err
+		}
+
+		*newContractID = newcontract.ID
+
+		if len(contract.NewFiles) > 0 {
+			contractIDStr := strconv.Itoa(int(newcontract.ID))
+			newContractFiles := []models.ContractFileModel{}
+
+			for index, file := range contract.NewFiles {
+				filePath, err := utils.StoreFile(file.File, constants.GetContractFileURL("files", contractIDStr, ""))
+				if err != nil {
+					return err
+				}
+				newContractFiles = append(newContractFiles, models.ContractFileModel{
+					ContractID: *newContractID,
+					DefaultFileModel: models.DefaultFileModel{
+						Path:  filePath,
+						No:    index + 1,
+						Title: file.Title,
+					},
+				})
+				deleteFileList = append(deleteFileList, filePath)
+			}
+
+			if err := s.contractRepository.AddFile(ctx, tx, &newContractFiles); err != nil {
+				return err
+			}
+		}
+
+		if len(contract.Residents) > 0 {
+			newResidents := []models.RoomResidentModel{}
+
+			for _, resident := range contract.Residents {
+				var residentData *models.RoomResidentModel
+
+				if resident.UserAccountID != 0 {
+					customer := &models.UserModel{}
+					if err := s.userRepository.GetCustomerDetail(ctx, customer, resident.UserAccountID); err != nil {
+						return err
+					}
+
+					if customer.ID == 0 {
+						return errors.New("customer not found")
+					}
+
+					residentData = &models.RoomResidentModel{
+						FirstName:               customer.FirstName,
+						LastName:                customer.LastName,
+						MiddleName:              customer.MiddleName,
+						SSN:                     sql.NullString{String: customer.SSN, Valid: customer.SSN != ""},
+						OldSSN:                  customer.OldSSN,
+						DOB:                     customer.DOB,
+						POB:                     customer.POB,
+						Phone:                   sql.NullString{String: customer.Phone, Valid: customer.Phone != ""},
+						Email:                   sql.NullString{String: customer.Email, Valid: customer.Email != ""},
+						Gender:                  customer.Gender,
+						RelationWithHouseholder: resident.RelationWithHouseholder,
+						UserAccountID:           sql.NullInt64{Int64: customer.ID, Valid: true},
+					}
+				} else {
+					dob, _ := time.Parse("2006-01-02", resident.DOB)
+
+					residentData = &models.RoomResidentModel{
+						FirstName:               resident.FirstName,
+						LastName:                resident.LastName,
+						MiddleName:              sql.NullString{String: resident.MiddleName, Valid: resident.MiddleName != ""},
+						SSN:                     sql.NullString{String: resident.SSN, Valid: resident.SSN != ""},
+						OldSSN:                  sql.NullString{String: resident.OldSSN, Valid: resident.OldSSN != ""},
+						DOB:                     dob,
+						POB:                     resident.POB,
+						Phone:                   sql.NullString{String: resident.Phone, Valid: resident.Phone != ""},
+						Email:                   sql.NullString{String: resident.Email, Valid: resident.Email != ""},
+						Gender:                  resident.Gender,
+						RelationWithHouseholder: resident.RelationWithHouseholder,
+						UserAccountID:           sql.NullInt64{Int64: 0, Valid: false},
+					}
+				}
+
+				if resident.ID == 0 {
+					newResidents = append(newResidents, *residentData)
+				}
+			}
+
+			if len(newResidents) > 0 {
+				for _, newResident := range newResidents {
+					if err := s.contractRepository.AddNewRoomResident(ctx, tx, &newResident, *newContractID); err != nil {
+						return err
+					}
+				}
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		for _, path := range deleteFileList {
+			utils.RemoveFile(path)
+		}
+		return 0, true, err
+	}
+
+	return 0, true, nil
+}
+
+func (s *ContractService) UpdateContractStatus() error {
+	return config.WorkerDB.Transaction(func(tx *gorm.DB) error {
+		return s.contractRepository.UpdateContractStatus(tx)
+	})
+}
+
+func (s *ContractService) GetContractStatistic(ctx *gin.Context, data *structs.ContractStatistic) error {
+	return s.contractRepository.GetContractStatistic(ctx, data)
+}
+
+// func (s *ContractService) DeleteWithoutTransaction(ctx *gin.Context, tx *gorm.DB, id []int64) error {
+// 	contracts := []models.ContractModel{}
+// 	if err := s.contractRepository.GetContractByIDs(ctx, &contracts, id); err != nil {
+// 		return err
+// 	}
+
+// 	billIDs := []int64{}
+// 	ticketIDs := []int64{}
+
+// 	for _, contract := range contracts {
+// 		for _, bill := range contract.Bills {
+// 			billIDs = append(billIDs, bill.ID)
+// 		}
+
+// 		for _, ticket := range contract.SupportTickets {
+// 			ticketIDs = append(ticketIDs, ticket.ID)
+// 		}
+// 	}
+
+// 	if err := s.contractRepository.Delete(ctx, tx, id); err != nil {
+// 		return err
+// 	}
+
+// 	if err := s.billRepository.Delete(ctx, tx, billIDs); err != nil {
+// 		return err
+// 	}
+
+// 	if err := s.ticketRepository.Delete(ctx, tx, ticketIDs); err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+// }
