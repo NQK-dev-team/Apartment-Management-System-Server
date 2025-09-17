@@ -1177,6 +1177,14 @@ func (s *UploadService) RunUploadCron() {
 		// go
 		func(upload *models.UploadFileModel) {
 			// defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					fileDecompositions := strings.Split(upload.URLPath, "/")
+					fileName := fileDecompositions[len(fileDecompositions)-1]
+					fmt.Printf("Recovered from panic while processing file %s: %v\n", fileName, r)
+				}
+			}()
+
 			// Process each upload file
 			fileDecompositions := strings.Split(upload.URLPath, "/")
 			fileName := fileDecompositions[len(fileDecompositions)-1]
