@@ -62,7 +62,7 @@ func (s *UploadService) UploadFile(ctx *gin.Context, upload *structs.UploadStruc
 
 		uploadIDStr := strconv.FormatInt(uploadModel.ID, 10)
 
-		filePath, err := utils.StoreFileSingleMedia(upload.File, constants.GetUploadFileURL("files", uploadIDStr, ""))
+		filePath, err := utils.StoreFileAllMedia(upload.File, constants.GetUploadFileURL("files", uploadIDStr, ""))
 		if err != nil {
 			utils.RemoveFile(filePath)
 			return err
