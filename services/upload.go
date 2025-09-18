@@ -1055,28 +1055,6 @@ func (s *UploadService) ProcessAddBill(f *excelize.File, tx *gorm.DB, upload *mo
 }
 
 func (s *UploadService) ProcessUploadFile(upload *models.UploadFileModel, fileName, filePath string, logFile *os.File, tx *gorm.DB) error {
-	// Read the file content
-	bytes, err := utils.ReadFile(strings.ReplaceAll(upload.URLPath, "/api/", ""))
-	if err != nil {
-		return err
-	}
-
-	file, err := os.Create(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	if _, err := file.Write(bytes); err != nil {
-		return err
-	}
-
-	// tx := config.DB.Begin()
-	// if tx.Error != nil {
-	// 	fmt.Fprintf(logFile, "failed to start transaction for file %s: %v\n", fileName, tx.Error)
-	// 	return tx.Error
-	// }
-
 	// Use go-excelize to read the file
 	f, err := excelize.OpenFile(filePath)
 	if err != nil {
@@ -1150,35 +1128,45 @@ func (s *UploadService) RunUploadCron() {
 		return
 	}
 
-	// // Use a WaitGroup to keep track of active goroutines
-	// var wg sync.WaitGroup
-	// wg.Add(len(*uploads))
-
 	for _, upload := range *uploads {
-		// go
 		func(upload *models.UploadFileModel) {
-			// defer wg.Done()
-
 			filePath := strings.ReplaceAll(upload.URLPath, "/api/", "")
 			fileDecompositions := strings.Split(upload.URLPath, "/")
 			fileName := fileDecompositions[len(fileDecompositions)-1]
 
 			currentDate := time.Now().Format("2006-01-02")
-			// currentYear := time.Now().Format("2006")
-			// currentMonth := time.Now().Format("2006-01")
-			// filePath = filepath.Join("assets", "cron", currentYear, currentMonth, currentDate, filePath)
 			filePath = filepath.Join("assets", "cron", currentDate, filePath)
 			if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
 				fmt.Printf("Failed to create directory for file %s: %v\n", fileName, err)
 				return
 			}
 
+			// Create a log file to write the result
 			logFile, err := os.Create(filepath.Join(filepath.Dir(filePath), "result.log"))
 			if err != nil {
 				fmt.Printf("Failed to create log file for %s: %v\n", fileName, err)
 				return
 			}
 			defer logFile.Close()
+
+			// Read the file content
+			bytes, err := utils.ReadFile(strings.ReplaceAll(upload.URLPath, "/api/", ""))
+			if err != nil {
+				fmt.Fprintf(logFile, "failed to read file %s: %v\n", fileName, err)
+				return
+			}
+
+			file, err := os.Create(filePath)
+			if err != nil {
+				fmt.Fprintf(logFile, "failed to create file %s: %v\n", fileName, err)
+				return
+			}
+			defer file.Close()
+
+			if _, err := file.Write(bytes); err != nil {
+				fmt.Fprintf(logFile, "failed to write file %s: %v\n", fileName, err)
+				return
+			}
 
 			tx := config.DB.Begin()
 
@@ -1227,6 +1215,4 @@ func (s *UploadService) RunUploadCron() {
 	if len(*uploads) > 0 {
 		fmt.Println("Check the log files for more details")
 	}
-
-	// wg.Wait()
 }
