@@ -1202,6 +1202,16 @@ func (s *UploadService) RunUploadCron() {
 			} else {
 				fmt.Printf("Failed to process file %s\n", fileName)
 			}
+
+			if err := utils.OverWriteFile(strings.ReplaceAll(filePath, "/assets/", ""), filePath); err != nil {
+				fmt.Printf("Failed to write result file %s\n", fileName)
+			}
+
+			if err := utils.OverWriteFile(strings.ReplaceAll(filepath.Join(filepath.Dir(filePath), "result.log"), "/assets/", ""), filepath.Join(filepath.Dir(filePath), "result.log")); err != nil {
+				fmt.Printf("Failed to write result log %s\n", fileName)
+			}
+			fmt.Println("-----------------------------------------------------")
+			fmt.Println("-----------------------------------------------------")
 		}(&upload)
 	}
 	if len(*uploads) > 0 {
