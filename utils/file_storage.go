@@ -205,7 +205,7 @@ func StoreFile(file *multipart.FileHeader, folder string) (string, error) {
 	return "", errors.New("failed to save file to all storage services")
 }
 
-func StoreFileSingleMedia(file *multipart.FileHeader, folder string) (string, error) {
+func StoreFileAllMedia(file *multipart.FileHeader, folder string) (string, error) {
 	if folder == "" {
 		return "", errors.New("folder cannot be empty")
 	}
@@ -225,15 +225,13 @@ func StoreFileSingleMedia(file *multipart.FileHeader, folder string) (string, er
 		err1 = errors.New("can not save file to S3")
 	}
 
-	if minioClient != nil && err1 != nil {
+	if minioClient != nil {
 		err2 = saveFileToMinio(file, filePath)
 	} else {
 		err2 = errors.New("can not save file to MinIO")
 	}
 
-	if err1 != nil && err2 != nil {
-		err3 = saveFileToLocal(file, filePath)
-	}
+	err3 = saveFileToLocal(file, filePath)
 
 	if err1 == nil || err2 == nil || err3 == nil {
 		return "/api/" + filePath, nil
