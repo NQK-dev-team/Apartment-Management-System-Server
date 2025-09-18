@@ -546,11 +546,11 @@ func OverWriteFile(targetPath string, sourcePath string) error {
 		localError error = nil
 	)
 
-	if s3Client != nil && fileExistsInS3(targetPath) {
+	if s3Client != nil { //&& fileExistsInS3(targetPath) {
 		s3Error = ovewriteFileToS3(targetPath, sourcePath)
 	}
 
-	if minioClient != nil && fileExistsInMinio(targetPath) {
+	if minioClient != nil { //&& fileExistsInMinio(targetPath) {
 		minioError = ovewriteFileToMinio(targetPath, sourcePath)
 	}
 
