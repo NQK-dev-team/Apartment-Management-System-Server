@@ -1054,7 +1054,7 @@ func (s *UploadService) ProcessAddBill(f *excelize.File, tx *gorm.DB, upload *mo
 	return fileError
 }
 
-func (s *UploadService) ProcessUploadFile(upload *models.UploadFileModel, fileName, filePath string, logFile *os.File) error {
+func (s *UploadService) ProcessUploadFile(upload *models.UploadFileModel, fileName, filePath string, logFile *os.File, tx *gorm.DB) error {
 	// Read the file content
 	bytes, err := utils.ReadFile(strings.ReplaceAll(upload.URLPath, "/api/", ""))
 	if err != nil {
@@ -1071,11 +1071,11 @@ func (s *UploadService) ProcessUploadFile(upload *models.UploadFileModel, fileNa
 		return err
 	}
 
-	tx := config.DB.Begin()
-	if tx.Error != nil {
-		fmt.Fprintf(logFile, "failed to start transaction for file %s: %v\n", fileName, tx.Error)
-		return tx.Error
-	}
+	// tx := config.DB.Begin()
+	// if tx.Error != nil {
+	// 	fmt.Fprintf(logFile, "failed to start transaction for file %s: %v\n", fileName, tx.Error)
+	// 	return tx.Error
+	// }
 
 	// Use go-excelize to read the file
 	f, err := excelize.OpenFile(filePath)
@@ -1180,9 +1180,10 @@ func (s *UploadService) RunUploadCron() {
 			}
 			defer logFile.Close()
 
+			tx := config.DB.Begin()
+
 			defer func() {
 				if r := recover(); r != nil {
-					tx := config.DB.Begin()
 					fileDecompositions := strings.Split(upload.URLPath, "/")
 					fileName := fileDecompositions[len(fileDecompositions)-1]
 					fmt.Printf("Failed to process file %s\n", fileName)
@@ -1196,7 +1197,7 @@ func (s *UploadService) RunUploadCron() {
 			}()
 
 			// Process each upload file
-			if err := s.ProcessUploadFile(upload, fileName, filePath, logFile); err == nil {
+			if err := s.ProcessUploadFile(upload, fileName, filePath, logFile, tx); err == nil {
 				fmt.Printf("File %s processed successfully\n", fileName)
 			} else {
 				fmt.Printf("Failed to process file %s\n", fileName)

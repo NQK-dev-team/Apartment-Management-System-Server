@@ -542,13 +542,25 @@ func OverWriteFile(targetPath string, sourcePath string) error {
 		return errors.New("source path cannot be empty")
 	}
 
+	var (
+		s3Error    error = nil
+		minioError error = nil
+		localError error = nil
+	)
+
 	if s3Client != nil && fileExistsInS3(targetPath) {
-		return ovewriteFileToS3(targetPath, sourcePath)
+		s3Error = ovewriteFileToS3(targetPath, sourcePath)
 	}
 
 	if minioClient != nil && fileExistsInMinio(targetPath) {
-		return ovewriteFileToMinio(targetPath, sourcePath)
+		minioError = ovewriteFileToMinio(targetPath, sourcePath)
 	}
 
-	return ovewriteFileToLocal(filepath.Join("assets", "files", targetPath), sourcePath)
+	localError = ovewriteFileToLocal(filepath.Join("assets", "files", targetPath), sourcePath)
+
+	if s3Error != nil && minioError != nil && localError != nil {
+		return errors.New("failed to overwrite file in all storage services")
+	}
+
+	return nil
 }
