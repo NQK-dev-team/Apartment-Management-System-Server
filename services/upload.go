@@ -1182,6 +1182,12 @@ func (s *UploadService) RunUploadCron() {
 					}
 					tx.Commit()
 
+					// Write the result file back to original location
+					if err := utils.OverWriteFile(strings.ReplaceAll(upload.URLPath, "/api/", ""), filePath); err != nil {
+						fmt.Fprintf(logFile, "failed to overwrite file %s result: %v\n", fileName, err)
+					}
+
+					// Write the results to `cron` directory
 					if err := utils.OverWriteFile(strings.ReplaceAll(filePath, "assets/", ""), filePath); err != nil {
 						fmt.Printf("Failed to write result file %s\n", fileName)
 					}
@@ -1201,6 +1207,7 @@ func (s *UploadService) RunUploadCron() {
 				fmt.Printf("Failed to process file %s\n", fileName)
 			}
 
+			// Write the results to `cron` directory
 			if err := utils.OverWriteFile(strings.ReplaceAll(filePath, "assets/", ""), filePath); err != nil {
 				fmt.Printf("Failed to write result file %s\n", fileName)
 			}
