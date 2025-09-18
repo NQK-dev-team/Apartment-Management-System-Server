@@ -1056,7 +1056,7 @@ func (s *UploadService) ProcessAddBill(f *excelize.File, tx *gorm.DB, upload *mo
 
 func (s *UploadService) ProcessUploadFile(upload *models.UploadFileModel, fileName, filePath string, logFile *os.File) error {
 	// Read the file content
-	bytes, err := utils.ReadFile(filePath)
+	bytes, err := utils.ReadFile(strings.ReplaceAll(upload.URLPath, "/api/", ""))
 	if err != nil {
 		return err
 	}
@@ -1185,6 +1185,7 @@ func (s *UploadService) RunUploadCron() {
 					tx := config.DB.Begin()
 					fileDecompositions := strings.Split(upload.URLPath, "/")
 					fileName := fileDecompositions[len(fileDecompositions)-1]
+					fmt.Printf("Failed to process file %s\n", fileName)
 					fmt.Fprintf(logFile, "Recovered from panic while processing file %s: %v\n", fileName, r)
 					if err := s.CronFileFail(tx, upload); err != nil {
 						fmt.Fprintf(logFile, "failed to update upload file %s: %v\n", fileName, err)
